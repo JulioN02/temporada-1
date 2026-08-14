@@ -62,3 +62,10 @@ export class BcryptLengthError extends JdevError {
     super('BCRYPT_LENGTH_EXCEEDED', message)
   }
 }
+
+/** JWT decode failures (part count, base64url, JSON) → exit 2. */
+export class JwtError extends JdevError {
+  constructor(message: string, code = 'INVALID_JWT') {
+    super(code, message)
+  }
+}

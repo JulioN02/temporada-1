@@ -5,6 +5,7 @@ import { guard, installExitOverride } from './exit.ts'
 import { register as registerBase64 } from './base64.ts'
 import { register as registerHash } from './hash.ts'
 import { register as registerJson } from './json.ts'
+import { register as registerJwt } from './jwt.ts'
 import { register as registerPassword } from './password.ts'
 import { register as registerTimestamp } from './timestamp.ts'
 import { register as registerUuid } from './uuid.ts'
@@ -36,15 +37,7 @@ export function buildProgram(): Command {
   registerTimestamp(program)
   registerHash(program)
   registerPassword(program)
-
-  // --- jwt: required <token> argument (usage error → exit 1); decode lands later ---
-  program
-    .command('jwt')
-    .description('decode a JWT token (header + payload, never the signature)')
-    .argument('<token>', 'JWT token to decode')
-    .action(guard(() => {
-      throw new UsageError("'jdev jwt' is not implemented yet", 'NOT_IMPLEMENTED')
-    }))
+  registerJwt(program)
 
   // --- remaining subcommands: registered now so help lists all 9 ---
   const placeholders: ReadonlyArray<readonly [string, string]> = [
