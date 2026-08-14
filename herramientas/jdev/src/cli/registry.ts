@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { Command } from 'commander'
-import { UsageError } from '../core/errors.ts'
 import { guard, installExitOverride } from './exit.ts'
 import { register as registerBase64 } from './base64.ts'
 import { register as registerCsv } from './csv.ts'
 import { register as registerHash } from './hash.ts'
+import { register as registerHttp } from './http.ts'
 import { register as registerJson } from './json.ts'
 import { register as registerJwt } from './jwt.ts'
 import { register as registerPassword } from './password.ts'
@@ -40,19 +40,7 @@ export function buildProgram(): Command {
   registerPassword(program)
   registerJwt(program)
   registerCsv(program)
-
-  // --- remaining subcommands: registered now so help lists all 9 ---
-  const placeholders: ReadonlyArray<readonly [string, string]> = [
-    ['http', 'issue an HTTP request (mini-curl)'],
-  ]
-  for (const [name, description] of placeholders) {
-    program
-      .command(name)
-      .description(description)
-      .action(guard(() => {
-        throw new UsageError(`'jdev ${name}' is not implemented yet`, 'NOT_IMPLEMENTED')
-      }))
-  }
+  registerHttp(program)
 
   // `jdev` with no arguments: print help to stdout, exit 0 (spec: help lists all 9 subcommands).
   program.action(() => {

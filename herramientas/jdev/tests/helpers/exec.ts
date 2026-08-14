@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 export interface CliResult {
@@ -66,4 +66,31 @@ export function runCliRaw(args: string[], opts: CliRawOptions = {}): CliRawResul
     stderr: result.stderr as Buffer,
     status: result.status,
   }
+}
+
+/**
+ * ASYNC variant of runCli. REQUIRED whenever the CLI talks to a server living
+ * in the TEST process: spawnSync blocks the parent event loop, so the server
+ * could never answer — deadlock until the child's own timeout fires.
+ */
+export function runCliAsync(args: string[], opts: RunCliOptions = {}): Promise<CliResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [ENTRY, ...args], {
+      env: childEnv(opts.env),
+    })
+    const stdout: Buffer[] = []
+    const stderr: Buffer[] = []
+    child.stdout.on('data', (c: Buffer) => stdout.push(c))
+    child.stderr.on('data', (c: Buffer) => stderr.push(c))
+    child.on('error', reject)
+    child.on('close', (code) => {
+      resolve({
+        stdout: Buffer.concat(stdout).toString('utf8'),
+        stderr: Buffer.concat(stderr).toString('utf8'),
+        status: code,
+      })
+    })
+    if (opts.input !== undefined) child.stdin.end(opts.input)
+    else child.stdin.end()
+  })
 }

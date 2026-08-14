@@ -76,3 +76,10 @@ export class CsvError extends JdevError {
     super(code, message)
   }
 }
+
+/** HTTP request failures (timeout, TLS, network/DNS) → exit 2, stdout stays empty. */
+export class HttpError extends JdevError {
+  constructor(message: string, code: 'TIMEOUT' | 'TLS' | 'NETWORK') {
+    super(code, message)
+  }
+}
