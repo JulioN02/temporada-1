@@ -3,6 +3,7 @@ import { Command } from 'commander'
 import { UsageError } from '../core/errors.ts'
 import { guard, installExitOverride } from './exit.ts'
 import { register as registerBase64 } from './base64.ts'
+import { register as registerCsv } from './csv.ts'
 import { register as registerHash } from './hash.ts'
 import { register as registerJson } from './json.ts'
 import { register as registerJwt } from './jwt.ts'
@@ -38,10 +39,10 @@ export function buildProgram(): Command {
   registerHash(program)
   registerPassword(program)
   registerJwt(program)
+  registerCsv(program)
 
   // --- remaining subcommands: registered now so help lists all 9 ---
   const placeholders: ReadonlyArray<readonly [string, string]> = [
-    ['csv', 'inspect, format or convert CSV (RFC 4180)'],
     ['http', 'issue an HTTP request (mini-curl)'],
   ]
   for (const [name, description] of placeholders) {

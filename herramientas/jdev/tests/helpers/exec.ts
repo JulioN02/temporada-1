@@ -12,6 +12,8 @@ export interface RunCliOptions {
   input?: string
   /** extra env vars; NO_COLOR and FORCE_COLOR are stripped unless explicitly given */
   env?: Record<string, string>
+  /** spawnSync maxBuffer for stdout/stderr (default: Node's 1 MiB) */
+  maxBuffer?: number
 }
 
 export interface CliRawOptions {
@@ -44,6 +46,7 @@ export function runCli(args: string[], opts: RunCliOptions = {}): CliResult {
     input: opts.input ?? '',
     env: childEnv(opts.env),
     encoding: 'utf8',
+    ...(opts.maxBuffer === undefined ? {} : { maxBuffer: opts.maxBuffer }),
   })
   return {
     stdout: result.stdout ?? '',

@@ -69,3 +69,10 @@ export class JwtError extends JdevError {
     super(code, message)
   }
 }
+
+/** CSV parse failures (malformed stream) → exit 2, message names the row. */
+export class CsvError extends JdevError {
+  constructor(message: string, code = 'INVALID_CSV') {
+    super(code, message)
+  }
+}
