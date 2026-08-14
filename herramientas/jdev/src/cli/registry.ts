@@ -1,10 +1,9 @@
 import { readFileSync } from 'node:fs'
 import { Command } from 'commander'
 import { UsageError } from '../core/errors.ts'
-import { readInput, resolveInput } from '../utils/io.ts'
-import { stdoutData } from '../utils/output.ts'
 import { guard, installExitOverride } from './exit.ts'
 import { register as registerBase64 } from './base64.ts'
+import { register as registerHash } from './hash.ts'
 import { register as registerJson } from './json.ts'
 import { register as registerTimestamp } from './timestamp.ts'
 import { register as registerUuid } from './uuid.ts'
@@ -34,19 +33,7 @@ export function buildProgram(): Command {
   registerJson(program)
   registerBase64(program)
   registerTimestamp(program)
-
-  // --- hash: io contract only (missing file → exit 2); streaming sha256 lands later ---
-  program
-    .command('hash')
-    .description('print the SHA-256 digest of a file or stdin')
-    .argument('[file]', 'input file (or - for stdin)')
-    .option('-i, --input <file>', 'input file (or - for stdin)')
-    .option('--file <file>', 'alias for --input (spec scenario compatibility)')
-    .action(guard(async (file: string | undefined, opts: { input?: string; file?: string }) => {
-      const target = resolveInput(file, opts.file ?? opts.input)
-      await readInput(target)
-      throw new UsageError("'jdev hash' is not implemented yet", 'NOT_IMPLEMENTED')
-    }))
+  registerHash(program)
 
   // --- jwt: required <token> argument (usage error → exit 1); decode lands later ---
   program

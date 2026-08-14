@@ -32,6 +32,9 @@ export async function readInput(file: string | undefined): Promise<Buffer> {
 
 /** Streaming open of a file-or-stdin source (hash, csv). */
 export function openInput(file: string | undefined): Readable {
+  if (file === undefined && process.stdin.isTTY) {
+    throw new UsageError('missing input: provide a file argument or pipe data on stdin', 'MISSING_INPUT')
+  }
   if (file !== undefined && file !== '-') {
     return createReadStream(file)
   }
