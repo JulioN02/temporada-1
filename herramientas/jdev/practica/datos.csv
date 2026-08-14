@@ -1,0 +1,7 @@
+nombre,email,ciudad
+"Julio, N.",julio@example.com,"Lima"
+María,maria@example.com,"Buenos Aires"
+"Un campo con
+salto de línea",multi@example.com,Madrid
+"Campo con ""comillas""",q@example.com,Quito
+,sin-nombre@example.com,Bogotá
