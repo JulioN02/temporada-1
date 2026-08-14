@@ -1,0 +1,40 @@
+{
+  "name": "jdev",
+  "version": "0.1.0",
+  "description": "Professional CLI dev toolkit: uuid, json, base64, timestamp, hash, password, jwt, csv, http",
+  "type": "module",
+  "bin": {
+    "jdev": "dist/index.js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "test": "node --test",
+    "build": "tsc",
+    "postbuild": "chmod +x dist/index.js",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "cli",
+    "dev-toolkit",
+    "uuid",
+    "json",
+    "jwt",
+    "hash",
+    "csv"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "commander": "^15.0.0",
+    "undici": "^8.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
+  }
+}
