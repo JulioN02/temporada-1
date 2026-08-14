@@ -4,6 +4,7 @@ import { UsageError } from '../core/errors.ts'
 import { readInput, resolveInput } from '../utils/io.ts'
 import { stdoutData } from '../utils/output.ts'
 import { guard, installExitOverride } from './exit.ts'
+import { register as registerBase64 } from './base64.ts'
 import { register as registerJson } from './json.ts'
 import { register as registerUuid } from './uuid.ts'
 
@@ -30,6 +31,7 @@ export function buildProgram(): Command {
 
   registerUuid(program)
   registerJson(program)
+  registerBase64(program)
 
   // --- hash: io contract only (missing file → exit 2); streaming sha256 lands later ---
   program
@@ -55,7 +57,6 @@ export function buildProgram(): Command {
 
   // --- remaining subcommands: registered now so help lists all 9 ---
   const placeholders: ReadonlyArray<readonly [string, string]> = [
-    ['base64', 'encode or decode base64 (RFC 4648, standard or URL-safe)'],
     ['timestamp', 'print the current Unix timestamp or convert an epoch'],
     ['password', 'hash, verify or generate passwords (bcrypt)'],
     ['csv', 'inspect, format or convert CSV (RFC 4180)'],

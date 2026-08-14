@@ -14,22 +14,53 @@ export interface RunCliOptions {
   env?: Record<string, string>
 }
 
+export interface CliRawOptions {
+  /** stdin payload — Buffer keeps binary bytes intact */
+  input?: string | Buffer
+  /** extra env vars; NO_COLOR and FORCE_COLOR are stripped unless explicitly given */
+  env?: Record<string, string>
+}
+
+export interface CliRawResult {
+  stdout: Buffer
+  stderr: Buffer
+  status: number | null
+}
+
 const ENTRY = fileURLToPath(new URL('../../src/index.ts', import.meta.url))
 
-/** Spawn `node src/index.ts <args>` and capture stdout/stderr/status. */
-export function runCli(args: string[], opts: RunCliOptions = {}): CliResult {
+/** Build the child env: strip color overrides unless explicitly requested. */
+function childEnv(extra: Record<string, string> | undefined): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...process.env }
   delete env.NO_COLOR
   delete env.FORCE_COLOR
-  for (const [k, v] of Object.entries(opts.env ?? {})) env[k] = v
+  for (const [k, v] of Object.entries(extra ?? {})) env[k] = v
+  return env
+}
+
+/** Spawn `node src/index.ts <args>` and capture stdout/stderr/status as utf8 strings. */
+export function runCli(args: string[], opts: RunCliOptions = {}): CliResult {
   const result = spawnSync(process.execPath, [ENTRY, ...args], {
     input: opts.input ?? '',
-    env,
+    env: childEnv(opts.env),
     encoding: 'utf8',
   })
   return {
     stdout: result.stdout ?? '',
     stderr: result.stderr ?? '',
+    status: result.status,
+  }
+}
+
+/** Same as runCli but captures raw Buffers — required for binary-safe assertions. */
+export function runCliRaw(args: string[], opts: CliRawOptions = {}): CliRawResult {
+  const result = spawnSync(process.execPath, [ENTRY, ...args], {
+    input: opts.input ?? '',
+    env: childEnv(opts.env),
+  })
+  return {
+    stdout: result.stdout as Buffer,
+    stderr: result.stderr as Buffer,
     status: result.status,
   }
 }
