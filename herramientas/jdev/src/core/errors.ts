@@ -55,3 +55,10 @@ export class TimestampError extends JdevError {
     super(code, message)
   }
 }
+
+/** bcrypt 72-byte limit violations → exit 2 (rejected BEFORE bcryptjs truncates). */
+export class BcryptLengthError extends JdevError {
+  constructor(message: string) {
+    super('BCRYPT_LENGTH_EXCEEDED', message)
+  }
+}

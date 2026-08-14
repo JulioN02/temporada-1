@@ -5,6 +5,7 @@ import { guard, installExitOverride } from './exit.ts'
 import { register as registerBase64 } from './base64.ts'
 import { register as registerHash } from './hash.ts'
 import { register as registerJson } from './json.ts'
+import { register as registerPassword } from './password.ts'
 import { register as registerTimestamp } from './timestamp.ts'
 import { register as registerUuid } from './uuid.ts'
 
@@ -34,6 +35,7 @@ export function buildProgram(): Command {
   registerBase64(program)
   registerTimestamp(program)
   registerHash(program)
+  registerPassword(program)
 
   // --- jwt: required <token> argument (usage error → exit 1); decode lands later ---
   program
@@ -46,7 +48,6 @@ export function buildProgram(): Command {
 
   // --- remaining subcommands: registered now so help lists all 9 ---
   const placeholders: ReadonlyArray<readonly [string, string]> = [
-    ['password', 'hash, verify or generate passwords (bcrypt)'],
     ['csv', 'inspect, format or convert CSV (RFC 4180)'],
     ['http', 'issue an HTTP request (mini-curl)'],
   ]
