@@ -23,7 +23,10 @@ export function register(program: Command): void {
       if (action === 'validate') {
         const result = validateJson(text)
         if (!result.ok) throw jsonFailureToError(result)
-        return // silent on success (script-friendly)
+        // Explicit confirmation: a silent success felt like nothing happened
+        // interactively; exit 0 still makes this safe for script gates.
+        stdoutData('valid JSON\n')
+        return
       }
       const out = action === 'format' ? formatJson(text) : minifyJson(text)
       stdoutData(`${out}\n`)

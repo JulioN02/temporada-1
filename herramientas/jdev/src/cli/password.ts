@@ -43,14 +43,20 @@ export function register(program: Command): void {
           throw new UsageError('password verify requires <password> and <hash> arguments', 'MISSING_VERIFY_ARGS')
         }
         const result = verifyPassword(password, hash)
-        if (result.ok) return // match → exit 0 with EMPTY stdout (script-friendly)
+        if (result.ok) {
+          // Explicit confirmation: a silent exit-0 felt like "nothing happened".
+          stdoutData('password match\n')
+          return
+        }
         if (result.malformed) {
           throw new JdevError(
             'INVALID_BCRYPT_HASH',
             'malformed bcrypt hash (expected $2a$/$2b$/$2y$ + 2-digit cost + 53-char tail)',
           )
         }
-        // mismatch → exit 2 SILENT: a failed credential check must not leak diagnostics
+        // mismatch → exit 2 with an explicit (non-diagnostic) verdict; the
+        // message reveals nothing about the hash or the password itself.
+        stdoutData('password mismatch\n')
         process.exitCode = 2
         return
       }

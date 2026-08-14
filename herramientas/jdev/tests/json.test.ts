@@ -80,10 +80,10 @@ describe('json CLI', () => {
     assert.doesNotMatch(r.stderr, /node:internal|file:\/\//, 'stderr must not contain module paths')
   })
 
-  it('validate success is silent (script-friendly), exit 0', () => {
+  it('validate success confirms with "valid JSON" on stdout, exit 0', () => {
     const r = runCli(['json', 'validate'], { input: '{"a":1}' })
     assert.equal(r.status, 0)
-    assert.equal(r.stdout, '')
+    assert.equal(r.stdout, 'valid JSON\n')
     assert.equal(r.stderr, '')
   })
 

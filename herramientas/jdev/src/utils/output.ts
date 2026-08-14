@@ -19,6 +19,34 @@ export function stderr(msg: string): void {
 }
 
 /** Data → stdout only, never colorized (pipe discipline invariant). */
-export function stdoutData(data: string): void {
+export function stdoutData(data: string | Buffer): void {
+  writeStdout(data, process.stdout.isTTY === true)
+}
+
+/**
+ * Write payload to stdout.
+ *
+ * Visual-pipe ergonomics: when stdout IS a TTY (a human is watching), ensure
+ * the payload ends with a newline so the next shell prompt starts on a fresh
+ * line — applies to binary-safe commands (base64 decode, csv tojson, http
+ * body) whose data is emitted verbatim. When stdout is NOT a TTY (pipe/file),
+ * bytes are written EXACTLY as given: binary purity is preserved for programs
+ * consuming the output (e.g. `jdev base64 decode file > img.png`).
+ */
+export function writeStdout(data: string | Buffer, isTty: boolean): void {
+  if (isTty && !hasTrailingNewline(data)) {
+    if (typeof data === 'string') {
+      process.stdout.write(`${data}\n`)
+    } else {
+      process.stdout.write(Buffer.concat([data, Buffer.from([0x0a])]))
+    }
+    return
+  }
   process.stdout.write(data)
+}
+
+/** True when the payload already ends in a newline (string or raw byte). */
+function hasTrailingNewline(data: string | Buffer): boolean {
+  if (typeof data === 'string') return data.endsWith('\n')
+  return data.length > 0 && data[data.length - 1]! === 0x0a
 }

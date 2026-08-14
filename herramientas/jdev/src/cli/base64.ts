@@ -38,8 +38,9 @@ export function register(program: Command): void {
       if (action === 'encode') {
         stdoutData(`${encodeBase64(buf, encodeOpts(opts.url, opts.padding))}\n`)
       } else {
-        // Raw buffer write, NO added newline — binary-safe decode (data purity).
-        process.stdout.write(decodeBase64(buf.toString('utf8'), decodeOpts(opts.url)))
+        // Binary-safe decode: raw bytes via writeStdout — verbatim in pipes,
+        // with a visual newline added ONLY when stdout is a TTY (helper logic).
+        stdoutData(decodeBase64(buf.toString('utf8'), decodeOpts(opts.url)))
       }
     }))
 }

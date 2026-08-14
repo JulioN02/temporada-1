@@ -4,7 +4,7 @@ import { runCli } from './helpers/exec.ts'
 import { cleanup, makeTempDir, writeTempFile } from './helpers/temp.ts'
 import { JdevError, IoError, UsageError } from '../src/core/errors.ts'
 import { readInput, resolveInput } from '../src/utils/io.ts'
-import { shouldColor } from '../src/utils/output.ts'
+import { shouldColor, writeStdout } from '../src/utils/output.ts'
 
 const COMMANDS = ['uuid', 'json', 'base64', 'timestamp', 'hash', 'password', 'jwt', 'csv', 'http']
 const UUID_V4_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
@@ -91,10 +91,10 @@ describe('cli-core spec scenarios', () => {
     assert.equal(r.stderr, '')
   })
 
-  it('json validate: silent on valid input, exit 2 with stderr on invalid input', () => {
+  it('json validate: confirms "valid JSON" on success, exit 2 with stderr on invalid input', () => {
     const ok = runCli(['json', 'validate'], { input: '{"a":1}' })
     assert.equal(ok.status, 0)
-    assert.equal(ok.stdout, '')
+    assert.equal(ok.stdout, 'valid JSON\n')
     assert.equal(ok.stderr, '')
     const bad = runCli(['json', 'validate'], { input: '{"a":' })
     assert.equal(bad.status, 2)
@@ -133,6 +133,51 @@ describe('utils/output contract', () => {
     assert.equal(shouldColor(), true)
     Object.defineProperty(process.stdout, 'isTTY', { value: false, configurable: true })
     assert.equal(shouldColor(), false)
+  })
+
+  it('writeStdout on a TTY appends a newline when the payload lacks one (visual ergonomics)', () => {
+    let written = ''
+    const orig = process.stdout.write.bind(process.stdout)
+    process.stdout.write = ((s: string) => { written += s; return true }) as typeof process.stdout.write
+    try {
+      writeStdout('Hola mundo', true)
+      assert.equal(written, 'Hola mundo\n')
+      written = ''
+      writeStdout('ya termina\n', true)
+      assert.equal(written, 'ya termina\n', 'no duplicate newline when already present')
+    } finally {
+      process.stdout.write = orig
+    }
+  })
+
+  it('writeStdout on a non-TTY writes bytes verbatim (binary purity preserved)', () => {
+    let written = ''
+    const orig = process.stdout.write.bind(process.stdout)
+    process.stdout.write = ((s: string) => { written += s; return true }) as typeof process.stdout.write
+    try {
+      writeStdout('bytes-crudos', false)
+      assert.equal(written, 'bytes-crudos', 'no newline added when piped')
+      written = ''
+      writeStdout('con\n', false)
+      assert.equal(written, 'con\n')
+    } finally {
+      process.stdout.write = orig
+    }
+  })
+
+  it('writeStdout on a TTY appends a raw 0x0a to Buffer payloads (binary decode ergonomics)', () => {
+    const chunks: Buffer[] = []
+    const orig = process.stdout.write.bind(process.stdout)
+    process.stdout.write = ((s: string | Buffer) => { chunks.push(Buffer.isBuffer(s) ? s : Buffer.from(s)); return true }) as typeof process.stdout.write
+    try {
+      writeStdout(Buffer.from([0x48, 0x69]), true)
+      assert.deepEqual(Buffer.concat(chunks), Buffer.from([0x48, 0x69, 0x0a]))
+      chunks.length = 0
+      writeStdout(Buffer.from([0x48, 0x69, 0x0a]), true)
+      assert.deepEqual(Buffer.concat(chunks), Buffer.from([0x48, 0x69, 0x0a]), 'no duplicate newline byte')
+    } finally {
+      process.stdout.write = orig
+    }
   })
 })
 

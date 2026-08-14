@@ -104,7 +104,7 @@ describe('password CLI', () => {
     assert.equal(r.stdout, `${h}\n`, 'data purity: exactly one line on stdout')
     const v = runCli(['password', 'verify', 'MiClave123!', h])
     assert.equal(v.status, 0)
-    assert.equal(v.stdout, '')
+    assert.equal(v.stdout, 'password match\n')
     assert.equal(v.stderr, '')
   })
 
@@ -122,19 +122,19 @@ describe('password CLI', () => {
     assert.match(r.stderr, /--cost/)
   })
 
-  it('verify: match -> exit 0 with stdout AND stderr empty (silent success)', () => {
+  it('verify: match -> exit 0 with "password match" on stdout (explicit confirmation)', () => {
     const h = runCli(['password', 'hash', 'MiClave123!']).stdout.trim()
     const v = runCli(['password', 'verify', 'MiClave123!', h])
     assert.equal(v.status, 0)
-    assert.equal(v.stdout, '')
+    assert.equal(v.stdout, 'password match\n')
     assert.equal(v.stderr, '')
   })
 
-  it('verify: mismatch -> exit 2, stdout empty, stderr SILENT (no diagnostic)', () => {
+  it('verify: mismatch -> exit 2 with explicit "password mismatch" verdict (no diagnostic leak)', () => {
     const h = runCli(['password', 'hash', 'MiClave123!']).stdout.trim()
     const v = runCli(['password', 'verify', 'otra', h])
     assert.equal(v.status, 2)
-    assert.equal(v.stdout, '')
+    assert.equal(v.stdout, 'password mismatch\n')
     assert.equal(v.stderr, '')
   })
 
