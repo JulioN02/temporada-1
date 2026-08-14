@@ -6,6 +6,7 @@ import { stdoutData } from '../utils/output.ts'
 import { guard, installExitOverride } from './exit.ts'
 import { register as registerBase64 } from './base64.ts'
 import { register as registerJson } from './json.ts'
+import { register as registerTimestamp } from './timestamp.ts'
 import { register as registerUuid } from './uuid.ts'
 
 /** Runtime version read from the package root (works from src/ AND dist/ in the tarball). */
@@ -32,6 +33,7 @@ export function buildProgram(): Command {
   registerUuid(program)
   registerJson(program)
   registerBase64(program)
+  registerTimestamp(program)
 
   // --- hash: io contract only (missing file → exit 2); streaming sha256 lands later ---
   program
@@ -57,7 +59,6 @@ export function buildProgram(): Command {
 
   // --- remaining subcommands: registered now so help lists all 9 ---
   const placeholders: ReadonlyArray<readonly [string, string]> = [
-    ['timestamp', 'print the current Unix timestamp or convert an epoch'],
     ['password', 'hash, verify or generate passwords (bcrypt)'],
     ['csv', 'inspect, format or convert CSV (RFC 4180)'],
     ['http', 'issue an HTTP request (mini-curl)'],
