@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs'
 import { Command } from 'commander'
-import { JdevError, UsageError } from '../core/errors.ts'
+import { UsageError } from '../core/errors.ts'
 import { readInput, resolveInput } from '../utils/io.ts'
 import { stdoutData } from '../utils/output.ts'
 import { guard, installExitOverride } from './exit.ts'
+import { register as registerJson } from './json.ts'
 import { register as registerUuid } from './uuid.ts'
 
 /** Runtime version read from the package root (works from src/ AND dist/ in the tarball). */
@@ -28,29 +29,7 @@ export function buildProgram(): Command {
     .version(readVersion(), '-V, --version', 'output the version number')
 
   registerUuid(program)
-
-  // --- json: minimal format/minify/validate until the json module lands ---
-  program
-    .command('json')
-    .description('format, minify or validate JSON from a file or stdin')
-    .argument('<action>', 'format, minify or validate')
-    .argument('[file]', 'input file (or - for stdin)')
-    .option('-i, --input <file>', 'input file (or - for stdin)')
-    .action(guard(async (action: string, file: string | undefined, opts: { input?: string }) => {
-      if (action !== 'format' && action !== 'minify' && action !== 'validate') {
-        throw new UsageError(`unknown json action '${action}' (expected format, minify or validate)`, 'UNKNOWN_ACTION')
-      }
-      const text = (await readInput(resolveInput(file, opts.input))).toString('utf8')
-      let value: unknown
-      try {
-        value = JSON.parse(text)
-      } catch {
-        throw new JdevError('INVALID_JSON', 'invalid JSON input')
-      }
-      if (action === 'format') stdoutData(`${JSON.stringify(value, null, 2)}\n`)
-      else if (action === 'minify') stdoutData(`${JSON.stringify(value)}\n`)
-      // validate: silent on success (script-friendly)
-    }))
+  registerJson(program)
 
   // --- hash: io contract only (missing file → exit 2); streaming sha256 lands later ---
   program
