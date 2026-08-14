@@ -1,18 +1,10 @@
-import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { Command } from 'commander'
 import { JdevError, UsageError } from '../core/errors.ts'
 import { readInput, resolveInput } from '../utils/io.ts'
 import { stdoutData } from '../utils/output.ts'
-import { installExitOverride, mapErrorToExit } from './exit.ts'
-
-/** Wrap an action so thrown errors flow through mapErrorToExit (exit-code single source of truth). */
-function guard<A extends unknown[]>(fn: (...args: A) => unknown): (...args: A) => Promise<void> {
-  return (...args: A): Promise<void> =>
-    Promise.resolve(fn(...args))
-      .then(() => undefined)
-      .catch(mapErrorToExit)
-}
+import { guard, installExitOverride } from './exit.ts'
+import { register as registerUuid } from './uuid.ts'
 
 /** Runtime version read from the package root (works from src/ AND dist/ in the tarball). */
 function readVersion(): string {
@@ -35,13 +27,7 @@ export function buildProgram(): Command {
     .description('Professional CLI dev toolkit (uuid, json, base64, timestamp, hash, password, jwt, csv, http)')
     .version(readVersion(), '-V, --version', 'output the version number')
 
-  // --- uuid: v4 for now; --v7 and --count land with the uuid module ---
-  program
-    .command('uuid')
-    .description('generate UUIDs (v4, or v7 with --v7)')
-    .action(guard(() => {
-      stdoutData(`${randomUUID()}\n`)
-    }))
+  registerUuid(program)
 
   // --- json: minimal format/minify/validate until the json module lands ---
   program

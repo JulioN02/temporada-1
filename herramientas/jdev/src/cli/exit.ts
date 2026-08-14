@@ -57,6 +57,15 @@ export function mapErrorToExit(err: unknown): void {
   process.exitCode = 2
 }
 
+/** Wrap a commander action so thrown errors flow through mapErrorToExit. */
+export function guard<A extends unknown[]>(fn: (...args: A) => unknown): (...args: A) => Promise<void> {
+  return (...args: A): Promise<void> =>
+    Promise.resolve()
+      .then(() => fn(...args)) // runs inside the chain: sync throws AND async rejections both land in .catch
+      .then(() => undefined)
+      .catch(mapErrorToExit)
+}
+
 /** EPIPE (downstream pipe closed early, e.g. `jdev uuid | head -1`) → exit 0 silently. */
 export function installEpipeGuard(): void {
   const onError = (err: NodeJS.ErrnoException): void => {

@@ -100,6 +100,7 @@ describe('cli-core spec scenarios', () => {
     assert.equal(bad.status, 2)
     assert.equal(bad.stdout, '')
     assert.notEqual(bad.stderr, '')
+    assert.doesNotMatch(bad.stderr, /^\s+at /m, 'stderr must not contain stack frames')
   })
 })
 
