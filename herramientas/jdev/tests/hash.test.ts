@@ -88,6 +88,12 @@ describe('hash CLI', () => {
     assert.equal(r.stdout, `${SHA512_HELLO}\n`)
   })
 
+  it('--algo is a working alias of --algorithm', () => {
+    const r = runCli(['hash', '--algo', 'sha512'], { input: 'hello' })
+    assert.equal(r.status, 0)
+    assert.equal(r.stdout, `${SHA512_HELLO}\n`)
+  })
+
   it('invalid --algorithm is a usage error (exit 1)', () => {
     const r = runCli(['hash', '--algorithm', 'md5'], { input: 'hello' })
     assert.equal(r.status, 1)

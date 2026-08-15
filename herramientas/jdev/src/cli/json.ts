@@ -1,5 +1,5 @@
 import type { Command } from 'commander'
-import { JdevError, UsageError } from '../core/errors.ts'
+import { JdevError, JsonParseError, UsageError } from '../core/errors.ts'
 import { formatJson, minifyJson, validateJson } from '../core/json.ts'
 import { readInput, resolveInput } from '../utils/io.ts'
 import { stdoutData } from '../utils/output.ts'
@@ -32,7 +32,16 @@ export function register(program: Command): void {
         stdoutData(`${t('validJson')}\n`)
         return
       }
-      const out = action === 'format' ? formatJson(text) : minifyJson(text)
-      stdoutData(`${out}\n`)
+      try {
+        const out = action === 'format' ? formatJson(text) : minifyJson(text)
+        stdoutData(`${out}\n`)
+      } catch (err) {
+        // Same localization as validate: INVALID_JSON keeps its exit-2 contract,
+        // the message follows --lang for ALL json actions (not only validate).
+        if (err instanceof JsonParseError) {
+          throw new JdevError('INVALID_JSON', t('invalidJsonAt', { line: err.position.line, column: err.position.column }))
+        }
+        throw err
+      }
     }))
 }

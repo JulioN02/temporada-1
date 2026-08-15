@@ -97,6 +97,21 @@ describe('json CLI', () => {
     assert.match(bad.stderr, /línea 1, columna/)
   })
 
+  it('format parse error is localized too (i18n symmetry with validate)', () => {
+    const r = runCli(['json', 'format', '--lang', 'es'], { input: '{"a":' })
+    assert.equal(r.status, 2)
+    assert.equal(r.stdout, '')
+    assert.match(r.stderr, /línea 1, columna/)
+    assert.doesNotMatch(r.stderr, /^\s+at /m, 'stderr must not contain stack frames')
+  })
+
+  it('minify parse error follows LANG en (deterministic english)', () => {
+    const r = runCli(['json', 'minify'], { input: '{"a":', env: { LANG: 'en_US.UTF-8' } })
+    assert.equal(r.status, 2)
+    assert.equal(r.stdout, '')
+    assert.match(r.stderr, /line 1, column/)
+  })
+
   it('--lang accepts only es or en (flag after the subcommand)', () => {
     const r = runCli(['json', 'validate', '--lang', 'fr'], { input: '{}' })
     assert.equal(r.status, 1)

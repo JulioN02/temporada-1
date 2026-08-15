@@ -48,10 +48,18 @@ describe('tui module contract', () => {
 
   it('tui on a non-TTY stdin/stdout exits 1 with a usage error naming TTY', () => {
     // The test harness pipes stdin (spawnSync input), so process.stdin is not a TTY.
-    const r = runCli(['tui'])
+    const r = runCli(['tui'], { env: { LANG: 'en_US.UTF-8' } })
     assert.equal(r.status, 1)
     assert.equal(r.stdout, '')
     assert.match(r.stderr, /requires an interactive terminal|TTY/i)
+    assert.doesNotMatch(r.stderr, /^\s+at /m, 'stderr must not contain stack frames')
+    assert.doesNotMatch(r.stderr, /node:internal|file:\/\//, 'stderr must not contain module paths')
+  })
+
+  it('tui non-TTY error follows --lang es (localized, no hardcoded English)', () => {
+    const r = runCli(['tui', '--lang', 'es'])
+    assert.equal(r.status, 1)
+    assert.match(r.stderr, /terminal interactiva|TTY/i)
   })
 
   it('tui on a non-TTY never leaks the interactive menu to stdout (pipe discipline)', () => {

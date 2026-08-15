@@ -1,6 +1,7 @@
 import { input } from '@inquirer/prompts'
 import type { Command } from 'commander'
 import { UsageError } from '../core/errors.ts'
+import { guard } from '../cli/exit.ts'
 import { menuSelect } from './menu.ts'
 import { BACK, backToMenu, base64Menu, BOLD, csvMenu, DIM, GREEN, hashMenu, httpMenu, jsonMenu, jwtMenu, passwordMenu, RESET, timestampMenu, uuidMenu } from './modules.ts'
 import { getLang, setLang, t } from '../i18n.ts'
@@ -19,7 +20,7 @@ export function registerTui(program: Command): void {
   program
     .command('tui')
     .description('interactive TUI menu (requires a TTY)')
-    .action(() => runTui())
+    .action(guard(() => runTui()))
 }
 
 /**
@@ -37,10 +38,7 @@ function isExitPromptError(err: unknown): boolean {
  */
 export async function runTui(): Promise<void> {
   if (process.stdin.isTTY !== true || process.stdout.isTTY !== true) {
-    throw new UsageError(
-      'tui requires an interactive terminal (TTY); use plain subcommands (jdev <cmd>) for scripts and automation',
-      'TUI_REQUIRES_TTY',
-    )
+    throw new UsageError(t('tuiRequiresTty'), 'TUI_REQUIRES_TTY')
   }
 
   process.stdout.write(`\n${title()}\n\n`)

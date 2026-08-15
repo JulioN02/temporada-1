@@ -22,9 +22,10 @@ export function register(program: Command): void {
     .option('-i, --input <file>', 'input file (or - for stdin)')
     .option('--file <file>', 'alias for --input (spec scenario compatibility)')
     .option('-a, --algorithm <alg>', 'digest algorithm: sha256 (default) or sha512')
-    .action(guard(async (file: string | undefined, opts: { input?: string; file?: string; algorithm?: string }) => {
+    .option('--algo <alg>', 'alias for --algorithm')
+    .action(guard(async (file: string | undefined, opts: { input?: string; file?: string; algorithm?: string; algo?: string }) => {
       const target = resolveInput(file, opts.file ?? opts.input)
-      const algorithm = parseAlgorithm(opts.algorithm)
+      const algorithm = parseAlgorithm(opts.algorithm ?? opts.algo)
       let digest: string
       try {
         digest = await hashStream(openInput(target), algorithm)
