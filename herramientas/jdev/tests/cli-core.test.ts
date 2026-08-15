@@ -1,10 +1,16 @@
 import { afterEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { runCli } from './helpers/exec.ts'
 import { cleanup, makeTempDir, writeTempFile } from './helpers/temp.ts'
 import { JdevError, IoError, UsageError } from '../src/core/errors.ts'
 import { readInput, resolveInput } from '../src/utils/io.ts'
 import { shouldColor, writeStdout } from '../src/utils/output.ts'
+
+/** Version from package.json — the CLI reads it at runtime, so do the tests. */
+function readPkgVersion(): string {
+  return JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version as string
+}
 
 const COMMANDS = ['uuid', 'json', 'base64', 'timestamp', 'hash', 'password', 'jwt', 'csv', 'http', 'tui']
 const UUID_V4_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
@@ -87,7 +93,7 @@ describe('cli-core spec scenarios', () => {
   it('--version prints the package.json version and exits 0', () => {
     const r = runCli(['--version'])
     assert.equal(r.status, 0)
-    assert.equal(r.stdout.trim(), '0.1.0')
+    assert.equal(r.stdout.trim(), readPkgVersion())
     assert.equal(r.stderr, '')
   })
 
