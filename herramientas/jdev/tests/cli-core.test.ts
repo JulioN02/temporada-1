@@ -6,12 +6,12 @@ import { JdevError, IoError, UsageError } from '../src/core/errors.ts'
 import { readInput, resolveInput } from '../src/utils/io.ts'
 import { shouldColor, writeStdout } from '../src/utils/output.ts'
 
-const COMMANDS = ['uuid', 'json', 'base64', 'timestamp', 'hash', 'password', 'jwt', 'csv', 'http']
+const COMMANDS = ['uuid', 'json', 'base64', 'timestamp', 'hash', 'password', 'jwt', 'csv', 'http', 'tui']
 const UUID_V4_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 const ANSI_RE = /\x1b\[[0-9;]*m/
 
 describe('cli-core spec scenarios', () => {
-  it('help with no args lists the 9 subcommands and exits 0', () => {
+  it('help with no args lists the 10 subcommands and exits 0', () => {
     const r = runCli([])
     assert.equal(r.status, 0)
     assert.equal(r.stderr, '')
@@ -92,11 +92,11 @@ describe('cli-core spec scenarios', () => {
   })
 
   it('json validate: confirms "valid JSON" on success, exit 2 with stderr on invalid input', () => {
-    const ok = runCli(['json', 'validate'], { input: '{"a":1}' })
+    const ok = runCli(['json', 'validate'], { input: '{"a":1}', env: { LANG: 'en_US.UTF-8' } })
     assert.equal(ok.status, 0)
     assert.equal(ok.stdout, 'valid JSON\n')
     assert.equal(ok.stderr, '')
-    const bad = runCli(['json', 'validate'], { input: '{"a":' })
+    const bad = runCli(['json', 'validate'], { input: '{"a":', env: { LANG: 'en_US.UTF-8' } })
     assert.equal(bad.status, 2)
     assert.equal(bad.stdout, '')
     assert.notEqual(bad.stderr, '')

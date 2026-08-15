@@ -1,8 +1,9 @@
 import type { Command } from 'commander'
-import { UsageError } from '../core/errors.ts'
-import { formatJson, jsonFailureToError, minifyJson, validateJson } from '../core/json.ts'
+import { JdevError, UsageError } from '../core/errors.ts'
+import { formatJson, minifyJson, validateJson } from '../core/json.ts'
 import { readInput, resolveInput } from '../utils/io.ts'
 import { stdoutData } from '../utils/output.ts'
+import { t } from '../i18n.ts'
 import { guard } from './exit.ts'
 
 const ACTIONS = new Set(['format', 'minify', 'validate'])
@@ -22,10 +23,13 @@ export function register(program: Command): void {
       const text = (await readInput(resolveInput(file, opts.input))).toString('utf8')
       if (action === 'validate') {
         const result = validateJson(text)
-        if (!result.ok) throw jsonFailureToError(result)
+        if (!result.ok) {
+          // Keep the JSON_PARSE exit-2 contract; the message follows --lang.
+          throw new JdevError('INVALID_JSON', t('invalidJsonAt', { line: result.line, column: result.column }))
+        }
         // Explicit confirmation: a silent success felt like nothing happened
         // interactively; exit 0 still makes this safe for script gates.
-        stdoutData('valid JSON\n')
+        stdoutData(`${t('validJson')}\n`)
         return
       }
       const out = action === 'format' ? formatJson(text) : minifyJson(text)

@@ -80,11 +80,28 @@ describe('json CLI', () => {
     assert.doesNotMatch(r.stderr, /node:internal|file:\/\//, 'stderr must not contain module paths')
   })
 
-  it('validate success confirms with "valid JSON" on stdout, exit 0', () => {
-    const r = runCli(['json', 'validate'], { input: '{"a":1}' })
+  it('validate success confirms with "valid JSON" on stdout, exit 0 (english locale)', () => {
+    const r = runCli(['json', 'validate'], { input: '{"a":1}', env: { LANG: 'en_US.UTF-8' } })
     assert.equal(r.status, 0)
     assert.equal(r.stdout, 'valid JSON\n')
     assert.equal(r.stderr, '')
+  })
+
+  it('validate verdicts follow --lang es after the subcommand', () => {
+    const ok = runCli(['json', 'validate', '--lang', 'es'], { input: '{"a":1}' })
+    assert.equal(ok.status, 0)
+    assert.equal(ok.stdout, 'JSON válido\n')
+    assert.equal(ok.stderr, '')
+    const bad = runCli(['json', 'validate', '--lang', 'es'], { input: '{"a":' })
+    assert.equal(bad.status, 2)
+    assert.match(bad.stderr, /línea 1, columna/)
+  })
+
+  it('--lang accepts only es or en (flag after the subcommand)', () => {
+    const r = runCli(['json', 'validate', '--lang', 'fr'], { input: '{}' })
+    assert.equal(r.status, 1)
+    assert.equal(r.stdout, '')
+    assert.match(r.stderr, /invalid argument|Allowed choices/)
   })
 
   it('unknown action is a usage error (exit 1, empty stdout)', () => {

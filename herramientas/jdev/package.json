@@ -1,7 +1,7 @@
 {
   "name": "jdev",
   "version": "0.1.0",
-  "description": "Professional CLI dev toolkit: uuid, json, base64, timestamp, hash, password, jwt, csv, http",
+  "description": "Professional CLI dev toolkit: uuid, json, base64, timestamp, hash, password, jwt, csv, http + interactive TUI (es/en)",
   "type": "module",
   "bin": {
     "jdev": "dist/index.js"
@@ -29,6 +29,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
     "bcryptjs": "^3.0.3",
     "commander": "^15.0.0",
     "undici": "^8.10.0"

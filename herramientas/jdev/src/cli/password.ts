@@ -2,6 +2,7 @@ import type { Command } from 'commander'
 import { generatePassword, hashPassword, verifyPassword } from '../core/password.ts'
 import { JdevError, UsageError } from '../core/errors.ts'
 import { stdoutData } from '../utils/output.ts'
+import { t } from '../i18n.ts'
 import { guard } from './exit.ts'
 
 function parseCost(raw: string): number {
@@ -45,18 +46,18 @@ export function register(program: Command): void {
         const result = verifyPassword(password, hash)
         if (result.ok) {
           // Explicit confirmation: a silent exit-0 felt like "nothing happened".
-          stdoutData('password match\n')
+          stdoutData(`${t('pwMatch')}\n`)
           return
         }
         if (result.malformed) {
           throw new JdevError(
             'INVALID_BCRYPT_HASH',
-            'malformed bcrypt hash (expected $2a$/$2b$/$2y$ + 2-digit cost + 53-char tail)',
+            t('pwMalformed'),
           )
         }
         // mismatch → exit 2 with an explicit (non-diagnostic) verdict; the
         // message reveals nothing about the hash or the password itself.
-        stdoutData('password mismatch\n')
+        stdoutData(`${t('pwMismatch')}\n`)
         process.exitCode = 2
         return
       }

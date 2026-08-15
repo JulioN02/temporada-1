@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { Command } from 'commander'
+import { Command, Option } from 'commander'
 import { guard, installExitOverride } from './exit.ts'
 import { register as registerBase64 } from './base64.ts'
 import { register as registerCsv } from './csv.ts'
@@ -10,6 +10,8 @@ import { register as registerJwt } from './jwt.ts'
 import { register as registerPassword } from './password.ts'
 import { register as registerTimestamp } from './timestamp.ts'
 import { register as registerUuid } from './uuid.ts'
+import { registerTui } from '../tui/index.ts'
+import { resolveLang, setLang } from '../i18n.ts'
 
 /** Runtime version read from the package root (works from src/ AND dist/ in the tarball). */
 function readVersion(): string {
@@ -19,18 +21,23 @@ function readVersion(): string {
   return pkg.version ?? '0.0.0'
 }
 
+/** `--lang` option: valid anywhere (before or after the subcommand). */
+function langOption(): Option {
+  return new Option('--lang <lang>', 'language for messages: es | en (default: system locale; JDEV_LANG overrides)')
+    .choices(['es', 'en'])
+}
+
 /**
- * Build the `jdev` program registering all 9 subcommands.
- * Commands whose dedicated module has not landed yet keep a minimal
- * placeholder surface (help listing, io/exit contracts) and report
- * NOT_IMPLEMENTED (exit 1) on invocation.
+ * Build the `jdev` program registering all 10 subcommands
+ * (9 dedicated modules + the interactive TUI).
  */
 export function buildProgram(): Command {
   const program = new Command()
   program
     .name('jdev')
-    .description('Professional CLI dev toolkit (uuid, json, base64, timestamp, hash, password, jwt, csv, http)')
+    .description('Professional CLI dev toolkit (uuid, json, base64, timestamp, hash, password, jwt, csv, http, tui)')
     .version(readVersion(), '-V, --version', 'output the version number')
+    .addOption(langOption())
 
   registerUuid(program)
   registerJson(program)
@@ -41,8 +48,17 @@ export function buildProgram(): Command {
   registerJwt(program)
   registerCsv(program)
   registerHttp(program)
+  registerTui(program)
 
-  // `jdev` with no arguments: print help to stdout, exit 0 (spec: help lists all 9 subcommands).
+  // `--lang` must also parse after the subcommand (jdev uuid --lang es).
+  for (const sub of program.commands) sub.addOption(langOption())
+
+  // Resolve the UI/message language before any action runs.
+  program.hook('preAction', (_thisCmd, actionCmd) => {
+    setLang(resolveLang(actionCmd.optsWithGlobals().lang as string | undefined))
+  })
+
+  // `jdev` with no arguments: print help to stdout, exit 0 (spec: help lists all 10 subcommands).
   program.action(() => {
     program.outputHelp()
   })
