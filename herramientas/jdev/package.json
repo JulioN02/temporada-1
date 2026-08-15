@@ -1,6 +1,6 @@
 {
   "name": "jdev",
-  "version": "0.1.0",
+  "version": "0.13.0",
   "description": "Professional CLI dev toolkit: uuid, json, base64, timestamp, hash, password, jwt, csv, http + interactive TUI (es/en)",
   "type": "module",
   "bin": {
