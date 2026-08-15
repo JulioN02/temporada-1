@@ -644,6 +644,12 @@ src/
 - No reemplaza a una GUI: es CLI-first con un TUI de menú.
 - Algunos mensajes internos quedan en inglés (errores de uso, help de commander).
 
+## Contribuciones y contacto
+
+- **Bugs, sugerencias y aportes:** abrí un issue o un PR en el [repositorio de GitHub](https://github.com/JulioN02/jdev). Para reportar un problema, incluí la salida de `jdev --version` y el comando exacto que falló.
+- **Seguridad:** si encontrás una vulnerabilidad, reportala por issue con detalle (antes de explotarla no es necesario: esta herramienta es de lectura/verificación por diseño, pero reportar con tiempo siempre ayuda).
+- **Autor y contacto:** Julio Nieto (`@JulioN02`). Los commits llevan autoría del proyecto; para preguntas directas, preferí los issues para que la respuesta quede pública y útil para todos.
+
 ## Licencia
 
 MIT
