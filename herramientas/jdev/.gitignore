@@ -2,3 +2,6 @@ node_modules/
 dist/
 coverage/
 practica/
+
+# portafolio: local only, no va al repo
+docs/PORTFOLIO.md
