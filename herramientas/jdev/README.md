@@ -12,8 +12,40 @@ jdev tui                        # menú interactivo en pantalla completa
 
 ## Instalación
 
+JDEV se descarga e instala de dos maneras: desde el registro oficial de npm o clonando el repositorio de GitHub. En ambos casos no necesita configuración: funciona apenas se instala.
+
+### Desde npm (recomendado)
+
 ```bash
 npm install -g jdev
+```
+
+Esto instala el binario global `jdev` y queda listo para usar.
+
+### Desde GitHub (código fuente)
+
+```bash
+git clone https://github.com/<usuario>/jdev.git
+cd jdev
+npm install
+```
+
+Para ejecutarlo desde el código fuente:
+
+```bash
+# opción A: construir el binario
+npm run build
+npm link
+
+# opción B: ejecutar directo desde TypeScript (requiere node >= 22.12)
+node src/index.ts --version
+```
+
+### Verificación
+
+```bash
+jdev --version   # 0.13.0
+jdev --help      # lista los 10 subcomandos
 ```
 
 Requisito: **Node.js >= 22.12.0**.
@@ -137,6 +169,23 @@ Soporta dos versiones según estándares públicos:
 | `jdev uuid --v4 [--count N]` | genera N UUIDs v4 |
 | `jdev uuid --v7 [--count N]` | genera N UUIDs v7 (ordenados por tiempo) |
 
+#### Ejemplos
+
+```bash
+$ jdev uuid --v7 --count 2
+01a007c2-6f3d-775c-bd69-5cac5af37e0c
+01a007c2-6f42-727e-9533-da0675232d88
+```
+
+Dos UUIDs v7 en una sola llamada, uno por línea. Los primeros 12 caracteres hex son la marca de tiempo (ms): como los v7 se generaron en el mismo instante, el prefijo es idéntico y crece entre llamadas — por eso son ordenables cronológicamente.
+
+```bash
+$ jdev uuid
+33a94fcf-3127-4ddb-a4d6-0a6a3b8b0c5d
+```
+
+Sin argumentos devuelve un v4 (el valor es aleatorio y distinto en cada ejecución).
+
 ---
 
 ## jdev json — JSON profesional
@@ -170,6 +219,30 @@ Tres operaciones complementarias:
 | `jdev json format [archivo]` | JSON comprimido → JSON indentado 2 espacios |
 | `jdev json minify [archivo]` | JSON indentado → JSON en una línea |
 
+#### Ejemplos
+
+```bash
+$ echo '{"a":1,"b":[1,2]}' | jdev json format
+{
+  "a": 1,
+  "b": [
+    1,
+    2
+  ]
+}
+```
+
+JSON comprimido por stdin → formateado con indentación de 2 espacios en stdout.
+
+```bash
+$ echo '{"a":' | jdev json validate
+invalid JSON at line 2, column 1
+$ echo $?
+2
+```
+
+JSON roto → veredicto localizado con la posición exacta del error y exit code `2` (error de ejecución). Un JSON válido responde `valid JSON` con exit `0`.
+
 ---
 
 ## jdev base64 — Codificación Base64
@@ -201,6 +274,24 @@ La variante `--url` usa `-_` en vez de `+/` y omite el padding `=`. Es la que us
 | `echo -n "base64..." \| jdev base64 encode --url -p` | igual pero forzando padding |
 | `echo -n "aG9sYQ==" \| jdev base64 decode` | decodifica a texto/binario |
 
+#### Ejemplos
+
+```bash
+$ echo -n "hola" | jdev base64 encode
+aG9sYQ==
+$ echo -n "aG9sYQ==" | jdev base64 decode
+hola
+```
+
+El par encode/decode es simétrico. Sin `-n` en `echo` entra un `\n` extra y el base64 cambia — por eso los ejemplos usan `echo -n`.
+
+```bash
+$ echo -n "hola mundo?" | jdev base64 encode --url
+aG9sYSBtdW5kbz8
+```
+
+La variante `--url` usa `-_` y omite el `=` final (válido en query params y JWT).
+
 ---
 
 ## jdev timestamp — Tiempo UNIX ↔ ISO 8601
@@ -231,6 +322,22 @@ El **epoch Unix** es el número de segundos (o ms) desde `1970-01-01T00:00:00Z`.
 | `jdev timestamp --iso` | hora actual en ISO 8601 UTC |
 | `jdev timestamp --iso --local` | hora actual ISO con offset local |
 | `jdev timestamp <epoch> [--ms] [--iso] [--local]` | convierte un epoch dado |
+
+#### Ejemplos
+
+```bash
+$ jdev timestamp
+1786836527
+```
+
+Segundos Unix actuales — el formato en el que las máquinas guardan el tiempo.
+
+```bash
+$ jdev timestamp 1710000000 --iso
+2024-03-09T16:00:00.000Z
+```
+
+Epoch en segundos → ISO 8601 legible (`Z` = UTC). Ideal para traducir el `exp` de un JWT.
 
 ---
 
@@ -265,6 +372,21 @@ Se usan para verificar integridad de descargas, deduplicar contenido y firmas. N
 | `jdev hash --algorithm sha512 archivo.iso` | SHA-512 (o `-a sha512`; `--algo sha512` también vale) |
 | `jdev hash -i archivo` / `--file archivo` | alias de entrada |
 
+#### Ejemplos
+
+```bash
+$ echo -n "texto" | jdev hash
+f46e3b17a6b639e5efddc3d1498ad73491599c22220f7ef6e14772f4ee25b913
+```
+
+64 caracteres hex (32 bytes) = SHA-256. El mismo contenido produce siempre el mismo hash; un byte distinto cambia todo el resultado.
+
+```bash
+$ jdev hash -a sha512 archivo.iso
+```
+
+Procesa el archivo en streaming: memoria fija aunque el archivo pese gigas. Ideal para verificar descargas (`jdev hash archivo.iso` == checksum oficial).
+
 ---
 
 ## jdev password — Contraseñas con bcrypt
@@ -296,6 +418,22 @@ El fundamento de este módulo es que guardar contraseñas en texto plano está p
 | `jdev password hash "<clave>" [--cost N]` | hashea con bcrypt (default cost 10) |
 | `jdev password verify "<clave>" "<hash>"` | ¿coincide? → veredicto (y exit code) |
 
+#### Ejemplos
+
+```bash
+$ jdev password hash "misecreto"
+$2b$10$aQN.lCty6E6dWRnnH10azOLNI8TQxtDgmpbK8azuaSP7y.V71g3Ci
+```
+
+Hash bcrypt con prefijo `$2b$` (cost 10 por defecto). Cada ejecución produce un hash **distinto** (sal aleatoria) aunque la clave sea la misma — la verificación funciona igual.
+
+```bash
+$ jdev password verify "misecreto" '$2b$10$aQN.lCty6E6dWRnnH10azOLNI8TQxtDgmpbK8azuaSP7y.V71g3Ci'
+Contraseña correcta
+```
+
+Timing-safe: `Contraseña correcta` (exit `0`) / `Contraseña incorrecta` (exit `2`) — nunca revela más que eso.
+
 ---
 
 ## jdev jwt — Decodificar tokens JWT (solo lectura)
@@ -321,6 +459,26 @@ jdev es solo lectura por diseño: decodifica las dos primeras partes y omite la 
 | Comando | Función |
 | --- | --- |
 | `jdev jwt "<token>"` | decodifica header y payload |
+
+#### Ejemplos
+
+```bash
+$ jdev jwt "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6Ikp1YW4iLCJhZG1pbiI6dHJ1ZSwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+{
+  "header": {
+    "alg": "HS256",
+    "typ": "JWT"
+  },
+  "payload": {
+    "sub": "1234567890",
+    "name": "Juan",
+    "admin": true,
+    "iat": 1516239022
+  }
+}
+```
+
+Header y payload como JSON legible (2 espacios). La firma (tercera parte) **nunca** se decodifica ni se imprime.
 
 ---
 
@@ -353,6 +511,24 @@ jdev lo procesa en streaming, fila por fila con memoria acotada. Puede digerir a
 | `jdev csv format archivo.csv` | normaliza a RFC 4180 limpio |
 | `jdev csv tojson archivo.csv` | convierte a array de objetos JSON |
 
+#### Ejemplos
+
+```bash
+$ printf 'id,nombre\r\n1,Ana\r\n2,"Beto, el grande"\r\n' | jdev csv format
+id,nombre
+1,Ana
+2,"Beto, el grande"
+```
+
+Input sucio (BOM + CRLF) → RFC 4180 limpio: `\r\n` → `\n`, BOM fuera, comillas donde corresponden.
+
+```bash
+$ printf 'id,nombre\n1,Ana\n2,Beto\n' | jdev csv tojson
+[{"id":"1","nombre":"Ana"},{"id":"2","nombre":"Beto"}]
+```
+
+Array de objetos JSON en streaming: todos los valores quedan como strings (`"1"`, no `1`) — fiel al CSV original.
+
 ---
 
 ## jdev http — Mini curl con secreto protegido
@@ -383,6 +559,25 @@ El status HTTP es dato, no error: un 404 sale con exit `0` (el error real es no-
 | `jdev http -H "Authorization: Bearer x" URL` | cabecera (repetible) |
 | `jdev http --timeout 5 URL` | aborta a los 5 s |
 | `jdev http --insecure https://…` | saltea TLS solo en esta llamada |
+
+#### Ejemplos
+
+```bash
+$ jdev http https://api.example.com/set-cookie
+HTTP/1.1 200 OK
+content-type: application/json; charset=utf-8
+set-cookie: ***
+...
+{"ok":true}
+```
+
+Respuesta como texto plano: código de estado + cabeceras + cuerpo. Las cabeceras sensibles de la **respuesta** (`authorization`, `cookie`, `set-cookie`) se imprimen como `***` — copiar/pegar tokens es la forma más común de filtrarlos. Un 404 también sale con exit `0` (el status es dato, no error).
+
+```bash
+$ jdev http -X POST -d '{"a":1}' https://api.example.com/echo
+```
+
+`-d` manda el body e implica POST; `-H "Authorization: Bearer x"` añade cabeceras (repetible). El secret se **transmite** al destino (como curl) pero nunca se imprime en pantalla.
 
 ---
 
@@ -415,6 +610,12 @@ Cada error tiene un **code** estable (`IO_READ`, `INVALID_JSON`, `INVALID_BCRYPT
 - **JWT:** la firma jamás se decodifica ni se imprime; los errores no repiten el token.
 - **HTTP:** cabeceras `authorization / cookie / set-cookie` siempre mostradas como `***`; `--insecure` es scoped a la request (un **Agent** de undici por llamada, nunca un dispatcher global).
 - **UUID v4:** aleatoriedad criptográfica.
+
+### Notas de seguridad para uso en producción
+
+- El enmascarado de `jdev http` es de **pantalla**: si pasás `-H "Authorization: Bearer x"`, el header **se transmite** al destino (igual que `curl`) — solo no se imprime en tu terminal.
+- `jdev http` es un mini-curl: acepta URLs arbitrarias por diseño. En contextos automatizados o con privilegios, **no alimentes URLs o headers controlados por terceros** (riesgo de SSRF).
+- `--insecure` saltea la verificación TLS **solo para esa request** — nunca para la sesión global. Úsalo solo contra servidores de desarrollo que conocés.
 
 ## Arquitectura: organización en capas
 
