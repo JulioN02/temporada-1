@@ -17,7 +17,7 @@ JDEV se descarga e instala de dos maneras: desde el registro oficial de npm o cl
 ### Desde npm (recomendado)
 
 ```bash
-npm install -g jdev
+npm install -g @jsoftsolutions/jdev
 ```
 
 Esto instala el binario global `jdev` y queda listo para usar.
