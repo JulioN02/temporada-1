@@ -25,8 +25,8 @@ Esto instala el binario global `jdev` y queda listo para usar.
 ### Desde GitHub (código fuente)
 
 ```bash
-git clone https://github.com/<usuario>/jdev.git
-cd jdev
+git clone https://github.com/JulioN02/JDEV-TOOL.git
+cd JDEV-TOOL
 npm install
 ```
 
@@ -646,8 +646,8 @@ src/
 
 ## Contribuciones y contacto
 
-- **Bugs, sugerencias y aportes:** abrí un issue o un PR en el [repositorio de GitHub](https://github.com/JulioN02/jdev). Para reportar un problema, incluí la salida de `jdev --version` y el comando exacto que falló.
-- **Seguridad:** si encontrás una vulnerabilidad, reportala por issue con detalle (antes de explotarla no es necesario: esta herramienta es de lectura/verificación por diseño, pero reportar con tiempo siempre ayuda).
+- **Bugs, sugerencias y aportes:** abrí un issue o un PR en el [repositorio de GitHub](https://github.com/JulioN02/JDEV-TOOL). Para reportar un problema, incluí la salida de `jdev --version` y el comando exacto que falló.
+- **Seguridad:** si encontrás una vulnerabilidad, reportala con detalle. Esta herramienta es de lectura/verificación por diseño, pero reportar con tiempo siempre ayuda.
 - **Autor y contacto:** Julio Nieto (`@JulioN02`). Los commits llevan autoría del proyecto; para preguntas directas, preferí los issues para que la respuesta quede pública y útil para todos.
 
 ## Licencia
