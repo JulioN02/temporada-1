@@ -1,4 +1,4 @@
-import { afterEach, describe, it } from 'node:test'
+import { afterEach, beforeEach, describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { runCli } from './helpers/exec.ts'
@@ -112,6 +112,15 @@ describe('cli-core spec scenarios', () => {
 
 describe('utils/output contract', () => {
   const saved = { no: process.env.NO_COLOR, force: process.env.FORCE_COLOR }
+
+  // The color-policy tests assume a CLEAN environment: the shell that runs
+  // the suite may export NO_COLOR or FORCE_COLOR (common in dotfiles), which
+  // would otherwise leak into "neither variable is set" via afterEach's
+  // restore. Clear both before EVERY test, not just after.
+  beforeEach(() => {
+    delete process.env.NO_COLOR
+    delete process.env.FORCE_COLOR
+  })
 
   afterEach(() => {
     if (saved.no === undefined) delete process.env.NO_COLOR
