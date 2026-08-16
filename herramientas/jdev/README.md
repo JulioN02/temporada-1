@@ -652,4 +652,4 @@ src/
 
 ## Licencia
 
-MIT
+[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) — © 2026 JulioN02. Puedes usar, copiar, modificar y distribuir la herramienta libremente (incluso con fines comerciales), siempre que conserves el aviso de licencia y atribución del autor original.
