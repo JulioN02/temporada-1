@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { DEFAULT_MAPPING, mergeMapping } from '../src/config.ts';
 
 test('DEFAULT_MAPPING covers the 7 built-in categories (R2)', () => {
-  const categories = new Set(Object.values(DEFAULT_MAPPING));
+  const categories: Set<string> = new Set(Object.values(DEFAULT_MAPPING));
   for (const expected of ['PDF', 'Images', 'Videos', 'Audio', 'Code', 'Documents', 'Archives']) {
     assert.ok(categories.has(expected), `missing category ${expected}`);
   }

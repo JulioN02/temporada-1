@@ -40,3 +40,21 @@ test('extractExtension returns lowercase extension or null (R3)', () => {
   assert.equal(extractExtension('LICENSE'), null);
   assert.equal(extractExtension('.env'), null);
 });
+
+test('classify sends dotfiles to misc when the dot is leading (R7 partial)', () => {
+  assert.deepEqual(classify('.env', DEFAULT_MAPPING), { kind: 'misc' });
+});
+
+test('classify returns skip for unknown/no-extension files when omitMisc is set (R5)', () => {
+  assert.deepEqual(classify('data.bin', DEFAULT_MAPPING, true), { kind: 'skip' });
+  assert.deepEqual(classify('LICENSE', DEFAULT_MAPPING, true), { kind: 'skip' });
+  assert.deepEqual(classify('.env', DEFAULT_MAPPING, true), { kind: 'skip' });
+});
+
+test('classify still returns categories when omitMisc is set (R5)', () => {
+  assert.deepEqual(classify('report.pdf', DEFAULT_MAPPING, true), { kind: 'category', category: 'PDF' });
+});
+
+test('classify looks up the lowercase extension against the mapping keys (R3)', () => {
+  assert.deepEqual(classify('photo.PNG', { png: 'Fotos' }), { kind: 'category', category: 'Fotos' });
+});
