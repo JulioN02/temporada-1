@@ -147,6 +147,9 @@ export async function planMoves(
   }
 
   candidates.sort((a, b) => compareNames(a.name, b.name));
+  // Skipped entries are also sorted by path so the report is lexicographic
+  // and deterministic regardless of readdir order (R20).
+  skipped.sort((a, b) => compareNames(a.path, b.path));
 
   const ops: MoveOp[] = [];
   const reserved = new Set<string>();
