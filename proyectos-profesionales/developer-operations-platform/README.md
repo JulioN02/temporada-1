@@ -4,7 +4,7 @@ Proyecto profesional **OPCIONAL** de la Temporada 1. Documentación pedagógica 
 
 > Mini plataforma interna para registrar la operación de tus propios sistemas. **Sin intentar ser** Datadog, Grafana ni Kubernetes.
 
-Estado: 💡 Idea (opcional)
+Estado: 🔲 Pendiente (idea — scaffolding, opcional)
 
 ## Qué es
 

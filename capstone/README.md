@@ -4,7 +4,7 @@
 
 > Al terminar, debe ser **lo mejor que hice durante la Temporada 1**. No tiene que ser gigantesco: tiene que ser **serio, integrado y bien explicado**.
 
-Estado: 💡 Idea
+Estado: 🔲 Pendiente (idea — scaffolding)
 
 ## Qué es
 
@@ -50,4 +50,4 @@ Inventory      Orders        Customers
 ## Enlaces
 
 - Índice de la temporada → [`../README.md`](../README.md)
-- Proyecto base → [`../proyectos-profesionales/inventory-stock/`](../proyectos-profesionales/inventory-stock/)
+- Proyecto base → [Inventory & Stock Management (GitHub)](https://github.com/JulioN02/inventory-stock)

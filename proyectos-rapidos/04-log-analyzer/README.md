@@ -2,7 +2,7 @@
 
 Proyecto rápido de 1–3 días. Documentación en Obsidian → `Proyectos rápidos/Proyectos Rápidos.md`.
 
-Estado: 💡 Idea
+Estado: 🔲 Pendiente (idea)
 
 ## Qué hace
 

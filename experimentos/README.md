@@ -14,11 +14,11 @@ Darse permiso de hacer cosas "raras": entender por dentro lo que usas todos los 
 
 | # | Experimento | Qué construyes | Qué entiendes | Estado |
 |---|---|---|---|---|
-| EXP-01 | **Mini lenguaje de consultas** | Algo como `users where age > 20` convertido a SQL | parsing, tokens, AST, interpretación | 💡 |
-| EXP-02 | **Mini ORM** | `User.find()`, `User.findById()`, `User.create()` muy pequeños | cómo funcionan realmente los ORMs | 💡 |
-| EXP-03 | **Mini Message Queue** | Broker pequeño: colas persistentes en disco, topics, ack, redelivery, consumer groups | por qué un `emit` en memoria no basta para sistemas async; entrega at-least-once | 💡 |
-| EXP-04 | **Mini HTTP Framework** | Framework estilo Express desde cero: router, middleware, errores, parsing de body/query | qué hace Express por debajo cuando escribes `app.get('/users/:id', ...)` | 💡 |
-| EXP-05 | **Mini Storage Engine** | Motor de almacenamiento estilo SQLite: WAL + índice en memoria + recovery | cómo se almacenan los datos físicamente, por qué los WAL hacen rápidas las escrituras | 💡 |
+| EXP-01 | **Mini lenguaje de consultas** | Algo como `users where age > 20` convertido a SQL | parsing, tokens, AST, interpretación | 🔲 Pendiente |
+| EXP-02 | **Mini ORM** | `User.find()`, `User.findById()`, `User.create()` muy pequeños | cómo funcionan realmente los ORMs | 🔲 Pendiente |
+| EXP-03 | **Mini Message Queue** | Broker pequeño: colas persistentes en disco, topics, ack, redelivery, consumer groups | por qué un `emit` en memoria no basta para sistemas async; entrega at-least-once | 🔲 Pendiente |
+| EXP-04 | **Mini HTTP Framework** | Framework estilo Express desde cero: router, middleware, errores, parsing de body/query | qué hace Express por debajo cuando escribes `app.get('/users/:id', ...)` | 🔲 Pendiente |
+| EXP-05 | **Mini Storage Engine** | Motor de almacenamiento estilo SQLite: WAL + índice en memoria + recovery | cómo se almacenan los datos físicamente, por qué los WAL hacen rápidas las escrituras | 🔲 Pendiente |
 
 ## Nota sobre el set
 

@@ -4,7 +4,7 @@ Proyecto profesional CORE de la Temporada 1. Documentación pedagógica en Obsid
 
 > Un **motor de automatización pequeño**: EVENT → RULE → ACTION.
 
-Estado: 💡 Idea
+Estado: 🔲 Pendiente (idea — scaffolding)
 
 ## Qué demuestra
 

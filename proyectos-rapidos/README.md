@@ -15,14 +15,14 @@ No se necesita arquitectura perfecta, frontend espectacular, autenticación, dep
 
 | # | Proyecto | Qué hace | Qué aprendes | Estado |
 |---|---|---|---|---|
-| 01 | **File Organizer** | Organiza archivos automáticamente (Downloads → PDF/, Images/, Videos/, Code/) | filesystem, streams, CLI, configuración | 💡 |
-| 02 | **Markdown → HTML** | Convierte Markdown en HTML (luego: → template → PDF) | parser, transformación, plantillas | 💡 |
-| 03 | **API Health Checker** | Dada una URL devuelve: STATUS, LATENCY, STATUS CODE, SSL, TIMESTAMP | HTTP, conecta con la futura observabilidad | 💡 |
-| 04 | **Log Analyzer** | Entrada `server.log` → Requests, Errors, 404s, 500s, latencia promedio | parsing de logs, estadística básica | 💡 |
-| 05 | **CSV → SQL** | Subes `products.csv` → genera `INSERT INTO products ...` | parsing CSV, generación de código | 💡 |
-| 06 | **HTTP Request Replay** | Guarda una petición HTTP (método, headers, body) y la reproduce | HTTP, serialización, mini tool de desarrollo | 💡 |
-| 07 | **Environment Inspector** | Detecta Node, NPM, Docker, PostgreSQL, Git y muestra ✓/✗ | ejecución de procesos, detección de entorno | 💡 |
-| 08 | **Port Availability Checker** | Dado `localhost` comprueba 22, 80, 443, 3000, 5432 | sockets, conecta con networking | 💡 |
+| 01 | **File Organizer** | Organiza archivos automáticamente (Downloads → PDF/, Images/, Videos/, Code/) | filesystem, streams, CLI, configuración | ✅ **Implementado (v1)** — [`01-file-organizer/`](01-file-organizer/) · guía: [`docs/user-guide.md`](01-file-organizer/docs/user-guide.md) |
+| 02 | **Markdown → HTML** | Convierte Markdown en HTML (luego: → template → PDF) | parser, transformación, plantillas | 🔲 Pendiente |
+| 03 | **API Health Checker** | Dada una URL devuelve: STATUS, LATENCY, STATUS CODE, SSL, TIMESTAMP | HTTP, conecta con la futura observabilidad | 🔲 Pendiente |
+| 04 | **Log Analyzer** | Entrada `server.log` → Requests, Errors, 404s, 500s, latencia promedio | parsing de logs, estadística básica | 🔲 Pendiente |
+| 05 | **CSV → SQL** | Subes `products.csv` → genera `INSERT INTO products ...` | parsing CSV, generación de código | 🔲 Pendiente |
+| 06 | **HTTP Request Replay** | Guarda una petición HTTP (método, headers, body) y la reproduce | HTTP, serialización, mini tool de desarrollo | 🔲 Pendiente |
+| 07 | **Environment Inspector** | Detecta Node, NPM, Docker, PostgreSQL, Git y muestra ✓/✗ | ejecución de procesos, detección de entorno | 🔲 Pendiente |
+| 08 | **Port Availability Checker** | Dado `localhost` comprueba 22, 80, 443, 3000, 5432 | sockets, conecta con networking | 🔲 Pendiente |
 
 ## Cómo surgen más
 

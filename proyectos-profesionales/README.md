@@ -8,9 +8,11 @@ Evidencia de portafolio real de la Temporada 1. Aquí vive el código de los pro
 
 | Proyecto | Tipo | Estado | Código |
 |---|---|---|---|
-| **Inventory & Stock Management** — stock como consecuencia de movimientos inmutables | CORE | 💡 Idea | [`inventory-stock/`](inventory-stock/) |
-| **Workflow Automation Engine** — EVENT → RULE → ACTION | CORE | 💡 Idea | [`workflow-engine/`](workflow-engine/) |
-| **Developer/Operations Platform** — mini plataforma interna (opcional) | EXTENSION | 💡 Idea | [`developer-operations-platform/`](developer-operations-platform/) |
+| **Inventory & Stock Management** — stock como consecuencia de movimientos inmutables | CORE | ✅ **Entregado** — 138/138 tests | [GitHub](https://github.com/JulioN02/inventory-stock) |
+| **Workflow Automation Engine** — EVENT → RULE → ACTION | CORE | 🔲 Pendiente (idea) | [`workflow-engine/`](workflow-engine/) |
+| **Developer/Operations Platform** — mini plataforma interna (opcional) | EXTENSION | 🔲 Pendiente (idea, opcional) | [`developer-operations-platform/`](developer-operations-platform/) |
+
+> **Nota:** el repositorio de **Inventory & Stock Management** vive en GitHub como proyecto independiente ([`JulioN02/inventory-stock`](https://github.com/JulioN02/inventory-stock)); la carpeta local está ignorada en este workspace por tener remote propio.
 
 ## Criterio común de "hecho" (nivel profesional)
 

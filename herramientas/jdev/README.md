@@ -44,7 +44,7 @@ node src/index.ts --version
 ### Verificacion
 
 ```bash
-jdev --version   # 0.13.0
+jdev --version   # 0.13.1
 jdev --help      # lista los 10 subcomandos
 ```
 
