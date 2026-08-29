@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>01 · File Organizer — organiza tu carpeta automáticamente</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body><!-- ================= HEADER ================= -->
+<header class="hero">
+  <div class="wrap">
+    <span class="tag">● Proyecto rápido · Temporada 1</span>
+    <h1>01 · <span class="accent">File Organizer</span> — una carpeta ordenada en un comando</h1>
+    <p class="sub">
+      La carpeta de descargas acumula archivos desordenados: <b>PDFs, imágenes, scripts,
+      instaladores y datos</b> mezclados en un solo nivel. Encontrar algo se vuelve lento y ordenar a
+      mano es tedioso. Este proyecto es un <b>CLI de Node/TypeScript</b> que automatiza esa tarea con
+      una regla simple: <b>clasificar cada archivo por su extensión</b> y moverlo a su carpeta de
+      categoría (<code>PDF/</code>, <code>Images/</code>, <code>Videos/</code>, <code>Code/</code>,
+      …). Es seguro por diseño: <b>nunca sobrescribe, nunca borra</b>, es idempotente y admite un modo
+      de ensayo (<code>--dry-run</code>) que no escribe nada. Este dashboard explica cómo funciona y
+      por qué es confiable.
+    </p>
+    <div class="chips">
+      <span class="chip">Stack: <b>Node 26 · TypeScript nativo (sin build)</b></span>
+      <span class="chip">Dependencias: <b>0 en runtime</b></span>
+      <span class="chip">Clasificación: <b>por extensión (función pura)</b></span>
+      <span class="chip">Seguridad: <b>nunca sobrescribe · dry-run sin escrituras</b></span>
+      <span class="chip">Evidencia: <b>50/50 tests · typecheck limpio</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- ================= 01 · EL PROBLEMA ================= -->
+<section id="problema">
+  <div class="wrap">
+    <h2><span class="num">01</span> El problema: una carpeta que nadie ordenó</h2>
+    <p class="lede">
+      Cada descarga, captura y archivo suelto termina en el mismo lugar: la carpeta de descargas.
+      Con el tiempo conviven documentos, imágenes, ejecutables y basura sin ningún orden, y el costo
+      aparece en cada búsqueda.
+    </p>
+
+    <div class="growth">
+      <div class="gch g1"><div class="k">Archivos sueltos</div><div class="v">mezcla</div><div class="d">PDFs, imágenes, scripts, instaladores en un solo nivel</div></div>
+      <div class="gch g2"><div class="k">Búsqueda lenta</div><div class="v">tiempo</div><div class="d">localizar un archivo exige revisar nombres uno por uno</div></div>
+      <div class="gch g3"><div class="k">Orden manual</div><div class="v">tedio</div><div class="d">crear carpetas y arrastrar archivos es repetitivo y propenso a errores</div></div>
+    </div>
+
+    <div class="cmp-grid" style="margin-top:22px">
+      <div class="card">
+        <h3>El costo de no ordenar</h3>
+        <ul class="req-list">
+          <li><b>Reporte.pdf</b> — un documento que necesitas para una reunión, enterrado entre decenas de nombres.</li>
+          <li><b>foto.png</b> — una captura que querías adjuntar y no recuerdas el nombre exacto.</li>
+          <li><b>setup.exe</b> — un instalador que ya no usas, ocupando espacio sin que sepas.</li>
+          <li><b>notas.md</b> — tu propio archivo, confundido con el resto del desorden.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Lo que se quiere</h3>
+        <div class="step-flow">
+          <span class="step conflict">1 · descargas caóticas</span><span class="arrow">→</span>
+          <span class="step win">2 · un comando</span><span class="arrow">→</span>
+          <span class="step win">3 · carpetas por categoría</span><span class="arrow">→</span>
+          <span class="step block">4 · búsqueda inmediata</span>
+        </div>
+        <p class="lede" style="margin-top:10px; margin-bottom:0">
+          La idea: <b>una regla simple y determinista</b> — la categoría de un archivo se deriva de su
+          extensión — aplicada por un CLI con modo de ensayo. Nada se pierde, nada se sobrescribe y el
+          resultado se puede revisar antes de escribir.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout">
+      La pregunta del proyecto: <i>"¿puedo automatizar el orden de una carpeta con una regla simple,
+      sin arriesgar mis archivos?"</i>. La respuesta vive en cinco invariantes (los
+      <a href="#axiomas"><b>axiomas</b></a>) que el organizador respeta siempre.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 · CÓMO FUNCIONA ================= -->
+<section id="flujo">
+  <div class="wrap">
+    <h2><span class="num">02</span> Cómo funciona: un flujo de 4 pasos</h2>
+    <p class="lede">
+      El organizador separa <b>leer y decidir</b> (plan) de <b>escribir</b> (ejecución). Esa
+      separación es la clave: permite ensayar sin efectos y reportar con determinismo.
+    </p>
+
+    <div class="step-flow flow-big">
+      <span class="step win">1 · scan</span><span class="arrow">→</span>
+      <span class="step info">2 · classify</span><span class="arrow">→</span>
+      <span class="step replay">3 · plan</span><span class="arrow">→</span>
+      <span class="step block">4 · move</span>
+    </div>
+
+    <div class="cmp-grid" style="margin-top:22px">
+      <div class="card">
+        <h3>scan · <code>mover.ts</code></h3>
+        <ul class="req-list">
+          <li><code>readdir</code> con <code>withFileTypes</code>: distingue archivos, directorios y symlinks <b>sin un <code>stat</code> extra</b>.</li>
+          <li>Solo procesa <b>archivos regulares del nivel superior</b>; filtra directorios, ocultos, symlinks y los archivos de configuración cargados.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>classify · <code>classify.ts</code></h3>
+        <ul class="req-list">
+          <li>Función <b>pura</b> por extensión: mismo nombre, mismo resultado. Sin I/O, sin estado global.</li>
+          <li>Extensión desconocida o archivo sin extensión → carpeta miscelánea (<code>Others</code> por defecto) o se omite.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>plan · <code>mover.ts</code></h3>
+        <ul class="req-list">
+          <li>Resuelve <b>destinos y colisiones antes de escribir</b> (conjunto de reservas intra-plan).</li>
+          <li>Orden lexicográfico por nombre: reporte estable y determinista.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>move · <code>mover.ts</code> + <code>cli.ts</code></h3>
+        <ul class="req-list">
+          <li><code>mkdir</code> recursivo de la carpeta destino + <code>rename</code> (atómico), con <b>fallback cross-device (EXDEV)</b>.</li>
+          <li>En <code>--dry-run</code> esta etapa no ejecuta <b>ninguna escritura</b> (ni siquiera <code>mkdir</code>).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>Plan ≠ ejecución.</b> Escanear y clasificar es <b>lectura pura</b>: se puede ejecutar mil veces
+      sin cambiar nada. Solo la última etapa escribe, y solo si no estás en modo de ensayo. Por eso el
+      reporte del dry-run es <b>idéntico</b> al plan real.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 03 · CLASIFICACIÓN INTERACTIVA ================= -->
+<section id="clasificador">
+  <div class="wrap">
+    <h2><span class="num">03</span> Probalo: ¿a qué categoría va cada archivo?</h2>
+    <p class="lede">
+      Escribí un nombre de archivo (o elegí un ejemplo) y observá la clasificación con el <b>mapeo
+      por defecto real</b> del proyecto — la misma lógica de <code>classify()</code> traducida a
+      JavaScript.
+    </p>
+
+    <div class="classifier card">
+      <div class="classifier-input">
+        <label for="classify-input">Nombre de archivo</label>
+        <input id="classify-input" type="text" placeholder="p. ej. report.pdf, foto.png, datos.bin" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="classifier-examples">
+        <button class="chip-btn" data-file="report.pdf">report.pdf</button>
+        <button class="chip-btn" data-file="foto.png">foto.png</button>
+        <button class="chip-btn" data-file="movie.mkv">movie.mkv</button>
+        <button class="chip-btn" data-file="playlist.mp3">playlist.mp3</button>
+        <button class="chip-btn" data-file="script.py">script.py</button>
+        <button class="chip-btn" data-file="archive.tar.gz">archive.tar.gz</button>
+        <button class="chip-btn" data-file="datos.bin">datos.bin</button>
+        <button class="chip-btn" data-file="LICENSE">LICENSE</button>
+        <button class="chip-btn" data-file=".env">.env</button>
+      </div>
+
+      <div class="classifier-out">
+        <div class="stat"><div class="k">Extensión</div><div class="v info class-ext">—</div></div>
+        <div class="stat"><div class="k">Categoría</div><div class="v good class-cat">—</div></div>
+        <div class="stat"><div class="k">Destino</div><div class="v warn class-dest">—</div></div>
+      </div>
+      <div class="classifier-note" hidden></div>
+
+      <div class="classifier-rule">
+        <b>La regla:</b> solo se mira la <b>última extensión</b> (<code>archive.tar.gz</code> → <code>gz</code>);
+        un nombre sin punto (<code>LICENSE</code>) o con punto inicial (<code>.env</code>) no tiene
+        extensión → <b>carpeta miscelánea</b> (o se omite si la configuración lo pide). Un archivo que
+        empieza con <code>.</code> además es <b>oculto</b>: por defecto ni siquiera se escanea.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 04 · DRY-RUN VS REAL ================= -->
+<section id="dryrun">
+  <div class="wrap">
+    <h2><span class="num">04</span> Dry-run vs. ejecución real: ensayar sin tocar nada</h2>
+    <p class="lede">
+      El modo de ensayo muestra el plan <b>sin escribir una sola letra</b>: ni mueve archivos, ni crea
+      carpetas. Es la salvaguarda para revisar el resultado antes de comprometerte. La única diferencia
+      con la ejecución real es… que no ejecuta.
+    </p>
+
+    <div class="cmp-grid">
+      <div class="card">
+        <h3><code>--dry-run</code> · modo ensayo</h3>
+        <ul class="req-list">
+          <li>Imprime el plan con el prefijo <code>[dry-run]</code> en cada línea.</li>
+          <li><b>Cero escrituras</b>: ni <code>rename</code>, ni <code>mkdir</code>, ni <code>unlink</code>.</li>
+          <li>Perfecto para revisar antes de una corrida real.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Ejecución real · modo normal</h3>
+        <ul class="req-list">
+          <li>Crea las carpetas de categoría y mueve cada archivo con <code>rename</code>.</li>
+          <li>Reporta el mismo formato en stdout; los errores van a stderr y el código de salida es <code>1</code> si algo falló.</li>
+          <li>Idempotente: una segunda corrida produce <b>0 movimientos</b>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sim-run-host">
+      <div class="sim-run-tabs">
+        <button class="tab-btn active" data-mode="dry">Ensayo · <code>--dry-run</code></button>
+        <button class="tab-btn" data-mode="real">Real · sin flags</button>
+      </div>
+      <div class="terminal" id="terminal"></div>
+      <button class="btn-play sim-run" id="term-run">▶ Ejecutar simulación</button>
+    </div>
+
+    <div class="callout" style="margin-top:18px">
+      En <code>--dry-run</code> el reporte del plan se muestra <b>tal cual</b> se ejecutaría: el mismo
+      orden, los mismos destinos, el mismo conteo <code>Moved: n | Skipped: n | Errors: n</code>. La
+      diferencia es que no pasa nada en disco.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 05 · COLISIONES ================= -->
+<section id="colisiones">
+  <div class="wrap">
+    <h2><span class="num">05</span> Colisiones: por qué nunca se pierde un archivo</h2>
+    <p class="lede">
+      ¿Qué pasa si la carpeta destino ya tiene un archivo con el mismo nombre? La respuesta: <b>nunca
+      sobrescribir</b>. El organizador añade un sufijo determinista — <code>name (1).ext</code>,
+      <code>name (2).ext</code>, … — comprobando el disco <b>y</b> las reservas del mismo plan.
+    </p>
+
+    <div class="cmp-grid">
+      <div class="card">
+        <h3>La regla de oro</h3>
+        <ul class="req-list">
+          <li>Si <code>PDF/report.pdf</code> ya existe → el nuevo se llama <code>report (1).pdf</code>.</li>
+          <li>Si <code>report (1).pdf</code> también existe (o fue reservado por otro movimiento del plan) → <code>report (2).pdf</code>.</li>
+          <li>El sufijo es <b>determinista</b>: misma entrada, mismo resultado.</li>
+          <li>Nunca se borra ni se reemplaza un archivo existente (axioma 3).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>El caso sutil: reservas intra-plan</h3>
+        <p class="lede" style="margin:0">
+          Dos archivos de la raíz pueden terminar queriendo el <b>mismo destino</b> dentro del plan.
+          El conjunto de <b>reservas</b> lo impide: el primer movimiento «reserva» su nombre y el
+          segundo elige otro. Probalo abajo.
+        </p>
+      </div>
+    </div>
+
+    <div class="collision card" style="margin-top:18px">
+      <div class="collision-top">
+        <div>
+          <b>Escenario</b> — la carpeta <code>PDF/</code> ya contiene <code>report.pdf</code> de una
+          corrida anterior, y en la raíz hay <code>report.pdf</code> y <code>report (1).pdf</code>.
+        </div>
+        <div class="collision-fs" id="collision-fs"></div>
+      </div>
+      <div class="collision-steps" id="collision-steps"></div>
+      <button class="btn-play sim-run" id="collision-run">▶ Resolver colisiones</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 06 · PRECEDENCIA ================= -->
+<section id="precedencia">
+  <div class="wrap">
+    <h2><span class="num">06</span> Precedencia de configuración: 5 capas, gana la superior</h2>
+    <p class="lede">
+      La configuración activa se resuelve de menor a mayor precedencia. Ante un conflicto, <b>la capa
+      superior gana</b>, y el mapeo se <b>fusiona por extensión</b> (una clave presente sobrescribe o
+      extiende; las demás conservan su valor por defecto — no es un reemplazo total).
+    </p>
+
+    <div class="prec-chain">
+      <div class="prec-layer high"><span class="prec-pos">5</span><b>Flags del CLI</b><span class="prec-desc"><code>--dry-run</code> · <code>--include-hidden</code> · <code>--config</code> — gobiernan la ejecución</span></div>
+      <div class="prec-layer high"><span class="prec-pos">4</span><b><code>--config &lt;ruta&gt;</code></b><span class="prec-desc">archivo explícito · <b>debe existir</b> (error fatal si no)</span></div>
+      <div class="prec-layer mid"><span class="prec-pos">3</span><b><code>&lt;target&gt;/.file-organizer.json</code></b><span class="prec-desc">configuración local del directorio a organizar (opcional)</span></div>
+      <div class="prec-layer mid"><span class="prec-pos">2</span><b><code>&lt;cwd&gt;/.file-organizer.json</code></b><span class="prec-desc">configuración del directorio actual (opcional)</span></div>
+      <div class="prec-layer base"><span class="prec-pos">1</span><b>Valores por defecto embebidos</b><span class="prec-desc">mapeo completo + <code>miscFolder: "Others"</code> + <code>omitMisc: false</code></span></div>
+    </div>
+
+    <div class="card prec-demo">
+      <h3>Demo: ¿qué <code>miscFolder</code> queda activo?</h3>
+      <p class="lede" style="margin:4px 0 14px">
+        Activá o desactivá cada capa opcional y observá cuál gana. Las capas ausentes simplemente se
+        saltan.
+      </p>
+      <div class="prec-toggles">
+        <label class="prec-toggle"><input type="checkbox" id="prec-cwd" /> <code>&lt;cwd&gt;/.file-organizer.json</code> · <code>miscFolder: "Otros"</code></label>
+        <label class="prec-toggle"><input type="checkbox" id="prec-target" /> <code>&lt;target&gt;/.file-organizer.json</code> · <code>miscFolder: "Varios"</code></label>
+        <label class="prec-toggle"><input type="checkbox" id="prec-config" /> <code>--config ./mi-config.json</code> · <code>miscFolder: "Mezclados"</code></label>
+      </div>
+      <div class="prec-result">
+        <div class="stat"><div class="k">miscFolder activo</div><div class="v good prec-misc">Others</div></div>
+        <div class="prec-merge">
+          <b>Fusión del mapping (por extensión):</b>
+          <pre class="prec-json" id="prec-json"></pre>
+        </div>
+      </div>
+      <div class="prec-note">
+        Reglas: el <code>mapping</code> se fusiona en cada capa (claves nuevas se añaden, claves
+        repetidas se sobrescriben); los archivos de configuración cargados entran a la <b>lista de
+        ignorados</b> (nunca se mueven); un JSON malformado o con claves desconocidas es <b>error
+        fatal</b> con código de salida <code>1</code> — nunca un fallback silencioso.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 07 · AXIOMAS ================= -->
+<section id="axiomas">
+  <div class="wrap">
+    <h2><span class="num">07</span> Los 5 axiomas del organizador</h2>
+    <p class="lede">
+      Invariantes que el código respeta siempre. Son el «contrato» de seguridad del proyecto: si un
+      cambio futuro los violara, los tests lo detectarían.
+    </p>
+    <div class="axiom-grid">
+      <div class="axiom">
+        <span class="ax-num">A1</span>
+        <h3>La categoría se deriva solo de la extensión</h3>
+        <p class="ax-body">
+          Según el <b>mapeo configurado</b>. Sin leer contenido ni consultar el sistema: misma
+          entrada, misma salida, determinista.
+        </p>
+        <div class="ax-rule"><b>Garantía:</b> <code>classify()</code> pura, sin I/O.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">A2</span>
+        <h3>Solo archivos regulares del nivel superior</h3>
+        <p class="ax-body">
+          Nunca directorios, ocultos (salvo <code>--include-hidden</code>) ni symlinks. Ni siquiera se
+          mueven los archivos de configuración cargados.
+        </p>
+        <div class="ax-rule"><b>Garantía:</b> filtros en <code>planMoves()</code>.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">A3</span>
+        <h3>Nunca sobrescribe ni pierde datos</h3>
+        <p class="ax-body">
+          Ante colisión, <b>sufijo</b> <code>name (1).ext</code>. El dry-run no realiza ninguna
+          escritura: plan y ejecución están separados.
+        </p>
+        <div class="ax-rule"><b>Garantía:</b> <code>resolveUniquePath()</code> + dry-run.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">A4</span>
+        <h3>Idempotencia</h3>
+        <p class="ax-body">
+          Ejecutar dos veces seguidas produce <b>cero movimientos</b> en la segunda: una corrida real
+          deja la carpeta lista.
+        </p>
+        <div class="ax-rule"><b>Garantía:</b> verificado por tests.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">A5</span>
+        <h3>Lo desconocido va a <code>Others</code> (o se omite), jamás se elimina</h3>
+        <p class="ax-body">
+          Toda extensión desconocida o archivo sin extensión termina en la carpeta miscelánea o se
+          reporta como omitido según configuración. Nada se borra.
+        </p>
+        <div class="ax-rule"><b>Garantía:</b> <code>miscFolder</code> / <code>omitMisc</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 08 · CHEATSHEET CLI ================= -->
+<section id="cheatsheet">
+  <div class="wrap">
+    <h2><span class="num">08</span> Cheatsheet del CLI</h2>
+    <p class="lede">
+      Ejecución nativa de TypeScript sin compilación (requiere <b>Node 26+</b>). El nombre público del
+      binario es <code>file-organizer</code>.
+    </p>
+
+    <div class="cmp-grid">
+      <div class="card">
+        <h3>Flags</h3>
+        <table class="keys">
+          <thead>
+            <tr><th>Flag</th><th>Qué hace</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="k"><code>--dry-run</code></td><td>muestra el plan sin escribir nada (ni <code>mkdir</code>)</td></tr>
+            <tr><td class="k"><code>--config &lt;ruta&gt;</code></td><td>archivo JSON de mayor precedencia (debe existir)</td></tr>
+            <tr><td class="k"><code>--include-hidden</code></td><td>procesa también archivos ocultos (punto inicial)</td></tr>
+            <tr><td class="k"><code>--help</code></td><td>muestra la ayuda y termina</td></tr>
+            <tr><td class="k"><code>--version</code></td><td>muestra la versión y termina</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Ejemplos</h3>
+        <div class="code-view" style="padding:12px 14px">
+          <div class="cm"># Ensayo: revisar el plan sin tocar nada</div>
+          <div class="tx">node --experimental-strip-types src/cli.ts --dry-run ~/Downloads</div>
+          <div class="cm" style="margin-top:6px"># Ejecución real (default: directorio actual)</div>
+          <div class="tx">node --experimental-strip-types src/cli.ts ~/Downloads</div>
+          <div class="cm" style="margin-top:6px"># Configuración personalizada</div>
+          <div class="tx">node --experimental-strip-types src/cli.ts --config ./mi-config.json ~/Downloads</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>Salida de ejemplo (stdout):</b>
+      <div class="code-view" style="margin-top:8px; padding:12px 14px">
+        <div class="tx">Moved: 3 | Skipped: 2 | Errors: 0</div>
+        <div class="tx">PDF/report.pdf ← report.pdf</div>
+        <div class="tx">Images/photo.png ← photo.png</div>
+        <div class="cm">skipped: .env (hidden)</div>
+        <div class="cm">skipped: data.bin (misc omitted)</div>
+      </div>
+      Los errores van a <b>stderr</b> y el código de salida es <code>1</code> si hubo algún error;
+      en caso contrario, <code>0</code>.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 09 · ARQUITECTURA ================= -->
+<section id="arquitectura">
+  <div class="wrap">
+    <h2><span class="num">09</span> Arquitectura: 4 módulos pequeños, cada uno con un trabajo</h2>
+    <p class="lede">
+      Sin frameworks ni capas innecesarias: cuatro módulos TypeScript, cero dependencias en runtime y
+      una frontera clara entre lo <b>puro</b> (clasificar, fusionar) y lo <b>impuro</b> (I/O).
+    </p>
+
+    <div class="arch-grid">
+      <div class="arch card">
+        <div class="arch-head"><span class="arch-name">config.ts</span><span class="tag good">config</span></div>
+        <p class="arch-desc">Mapeo por defecto, <b>validación JSON con type guards</b> (nunca <code>any</code>), precedencia en capas y fusión por extensión.</p>
+        <div class="arch-api"><code>DEFAULT_MAPPING</code> · <code>loadConfig()</code> · <code>mergeMapping()</code> · <code>parseFileConfig()</code></div>
+      </div>
+      <div class="arch card">
+        <div class="arch-head"><span class="arch-name">classify.ts</span><span class="tag info">puro</span></div>
+        <p class="arch-desc">Clasificación <b>pura</b> por extensión: aislada para que un futuro clasificador MIME la reemplace sin tocar el resto.</p>
+        <div class="arch-api"><code>extractExtension()</code> · <code>classify()</code></div>
+      </div>
+      <div class="arch card">
+        <div class="arch-head"><span class="arch-name">mover.ts</span><span class="tag warn">I/O</span></div>
+        <p class="arch-desc">Plan (scan + colisiones) separado de la ejecución (mkdir, <code>rename</code> con fallback EXDEV, dry-run). Errores por archivo sin detener el resto.</p>
+        <div class="arch-api"><code>planMoves()</code> · <code>executeMoves()</code> · <code>resolveUniquePath()</code> · <code>moveFile()</code></div>
+      </div>
+      <div class="arch card">
+        <div class="arch-head"><span class="arch-name">cli.ts</span><span class="tag info">orquesta</span></div>
+        <p class="arch-desc">Argumentos con <code>util.parseArgs</code> (estricto), orquestación config → plan → ejecución, reporte y códigos de salida.</p>
+        <div class="arch-api"><code>runCli()</code> · <code>formatReport()</code> · <code>main()</code></div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>La frontera pureza/I-O.</b> <code>classify</code> y <code>mergeMapping</code> son funciones
+      puras (deterministas, sin efectos). Toda la I/O vive en <code>config</code> (lectura de JSON) y
+      <code>mover</code> (disco). Esa separación hace que los tests de clasificación sean triviales y
+      que el dry-run sea gratis: no hay que «simular» nada, simplemente no se ejecuta la etapa de
+      escritura.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 10 · APRENDIZAJES ================= -->
+<section id="aprendizajes">
+  <div class="wrap">
+    <h2><span class="num">10</span> Aprendizajes del proyecto</h2>
+    <p class="lede">
+      Qué se llevó el proyecto de cada tema — y una nota honesta sobre cuándo importan realmente los
+      streams.
+    </p>
+
+    <div class="axiom-grid">
+      <div class="axiom">
+        <span class="ax-num">FS</span>
+        <h3>Filesystem</h3>
+        <p class="ax-body">
+          <code>readdir</code> con <code>withFileTypes</code> distingue archivos, directorios y
+          symlinks <b>sin un <code>stat</code> extra</b> por entrada. <code>rename</code> es una
+          operación atómica; <code>mkdir</code> recursivo crea la carpeta completa.
+        </p>
+        <div class="ax-rule"><b>Gotcha:</b> <code>ENOTDIR</code> ≠ <code>ENOENT</code> cuando un componente de la ruta es un archivo.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">ST</span>
+        <h3>Streams (cuándo importan, honestamente)</h3>
+        <p class="ax-body">
+          En el mismo filesystem, <code>rename</code> es instantáneo y no copia nada. Los streams solo
+          aparecen en el <b>fallback cross-device (EXDEV)</b>: mover entre discos exige copiar, y
+          <code>stream/promises.pipeline</code> copia <b>sin cargar el archivo completo en memoria</b>.
+        </p>
+        <div class="ax-rule"><b>Veredicto:</b> irrelevante para archivos chicos; decisivo para archivos de GB.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">CLI</span>
+        <h3>CLI</h3>
+        <p class="ax-body">
+          <code>util.parseArgs</code> en modo estricto con flags booleanos/string y posicionales;
+          <b>stdout = reporte, stderr = errores</b>; código de salida <code>0/1</code> y la regla de
+          oro: nunca llamar <code>process.exit</code>, solo fijar <code>process.exitCode</code>.
+        </p>
+        <div class="ax-rule"><b>Lección:</b> un CLI bien comportado es una API de terminal.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">CF</span>
+        <h3>Configuración declarativa</h3>
+        <p class="ax-body">
+          Precedencia en capas, <b>merge por extensión</b> (no reemplazo total) y validación con type
+          guards sobre <code>unknown</code>. Un error de configuración es <b>fatal y explícito</b>,
+          nunca un fallback silencioso.
+        </p>
+        <div class="ax-rule"><b>Regla:</b> fallar alto es más amable que adivinar.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">DS</span>
+        <h3>Diseño: plan vs. ejecución</h3>
+        <p class="ax-body">
+          Separar la <b>lectura pura</b> (plan) de la <b>escritura</b> (ejecución) habilita el dry-run
+          sin efectos y reportes deterministas. El conjunto de <b>reservas</b> del plan evita
+          sobrescribir entre movimientos del mismo plan.
+        </p>
+        <div class="ax-rule"><b>Patrón:</b> decidir todo primero, escribir después.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">TS</span>
+        <h3>TypeScript nativo + TDD</h3>
+        <p class="ax-body">
+          <code>node --experimental-strip-types</code> ejecuta TS sin paso de build; TS estricto con
+          <code>erasableSyntaxOnly</code> y <code>verbatimModuleSyntax</code>. TDD estricto con
+          <code>node:test</code>: RED → GREEN → triangulación, 50 tests en 3 suites.
+        </p>
+        <div class="ax-rule"><b>Evidencia:</b> 50/50 en verde + <code>tsc --noEmit</code> limpio.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="site-foot">
+  <div class="wrap">
+    <b>01 · File Organizer</b> — dashboard didáctico del proyecto rápido. Guía de usuario en
+    <code>docs/user-guide.md</code> · README introductorio en la raíz del proyecto. Hecho con
+    HTML/CSS/JS puro, sin CDN ni paso de build: se abre directo desde el navegador.
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

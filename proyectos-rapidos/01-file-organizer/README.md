@@ -4,6 +4,11 @@ Proyecto rápido de 1–3 días de la temporada 1. Documentación en Obsidian �
 
 Estado: ✅ Implementado (v1)
 
+## Documentación
+
+- **Guía de usuario** (`docs/user-guide.md`) — requisitos, instalación/ejecución, ejemplo paso a paso, flags, configuración JSON, mapeo por defecto, casos de uso y solución de problemas.
+- **Dashboard didáctico** (`docs/dashboard/index.html`) — explicación visual e interactiva del proyecto (clasificador por extensión, dry-run vs. real, colisiones, precedencia de configuración y los 5 axiomas). Se abre directo en el navegador, sin build.
+
 ## Qué hace
 
 Organiza automáticamente los archivos de un directorio (por ejemplo `Downloads`): escanea el nivel superior, clasifica cada archivo regular por su extensión y lo mueve a una subcarpeta de categoría (`PDF/`, `Images/`, `Videos/`, `Code/`, etc.). Es seguro: nunca sobrescribe, nunca borra, es idempotente y admite un modo de ensayo (`--dry-run`) que no escribe nada.

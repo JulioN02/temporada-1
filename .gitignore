@@ -1,0 +1,25 @@
+# Dependencias y builds
+node_modules/
+dist/
+build/
+
+# Datos locales
+pgdata/
+.env
+.env.*
+!.env.example
+
+# Repos anidados con remote propio (viven como repos independientes en GitHub)
+laboratorios-ingenieria/lab-01-race-condition/
+laboratorios-ingenieria/lab-02-idempotency/
+laboratorios-ingenieria/lab-03-query-performance/
+laboratorios-ingenieria/lab-04-rate-limiting/
+proyectos-profesionales/inventory-stock/
+
+# Sistemas
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
