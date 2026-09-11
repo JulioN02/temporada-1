@@ -1,0 +1,24 @@
+# Ayuda del CLI: documentación de uso, opciones y precedencia de configuración
+# comando: node --experimental-strip-types src/cli.ts --help
+file-organizer — organize a directory by file extension
+
+Usage:
+  node --experimental-strip-types src/cli.ts [options] [targetDir]
+
+Arguments:
+  targetDir               directory to organize (default: current directory)
+
+Options:
+  --dry-run               print the plan without writing anything (no mkdir)
+  --config <path>         highest-precedence JSON config file
+  --include-hidden        also process hidden (dot) files
+  --help                  show this help and exit
+  --version               print the version and exit
+
+Configuration precedence (lowest → highest):
+  embedded defaults < <cwd>/.file-organizer.json
+  < <target>/.file-organizer.json < --config <path>
+
+Config file shape:
+  { "mapping": { "pdf": "PDF", ... }, "miscFolder": "Others", "omitMisc": false }
+EXIT:0

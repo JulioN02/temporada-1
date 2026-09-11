@@ -1,0 +1,9 @@
+# Configuración por capas: <target>/.file-organizer.json se carga y gana sobre los valores por defecto
+# Escenario: mapping pdf -> 'Documentos' y miscFolder 'Otros'; report.pdf va a Documentos/ y datos.bin a Otros/
+# El propio .file-organizer.json se omite (archivo oculto / ignorado)
+# comando: node --experimental-strip-types src/cli.ts /tmp/opencode/evidence-07-eQLLCf
+Moved: 2 | Skipped: 1 | Errors: 0
+Otros/datos.bin ← datos.bin
+Documentos/report.pdf ← report.pdf
+skipped: .file-organizer.json (hidden)
+EXIT:0

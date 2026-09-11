@@ -1,0 +1,4 @@
+# Versión del CLI: leída de package.json en tiempo de ejecución (fuente única de verdad)
+# comando: node --experimental-strip-types src/cli.ts --version
+file-organizer 1.0.0
+EXIT:0

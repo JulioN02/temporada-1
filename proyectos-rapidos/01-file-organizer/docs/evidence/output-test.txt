@@ -1,0 +1,65 @@
+# Suite de tests: node --test (3 suites) - resumen final 50/50
+# comando: npm test
+
+> file-organizer@1.0.0 test
+> node --test
+
+✔ classify maps known extensions to their category (R2) (12.3795ms)
+✔ classify is case-insensitive (R3) (1.288706ms)
+✔ classify uses only the last extension (R3) (1.352645ms)
+✔ classify sends unknown extensions to misc (R4) (1.242829ms)
+✔ classify sends files without extension to misc (R4) (1.149067ms)
+✔ classify is deterministic: same input always yields same output (R1) (8.991066ms)
+✔ extractExtension returns lowercase extension or null (R3) (2.136248ms)
+✔ classify sends dotfiles to misc when the dot is leading (R7 partial) (3.291421ms)
+✔ classify returns skip for unknown/no-extension files when omitMisc is set (R5) (2.750233ms)
+✔ classify still returns categories when omitMisc is set (R5) (1.825828ms)
+✔ classify looks up the lowercase extension against the mapping keys (R3) (1.42988ms)
+✔ DEFAULT_MAPPING covers the 7 built-in categories (R2) (14.885781ms)
+✔ DEFAULT_MAPPING keys are normalized to lowercase without leading dots (5.206398ms)
+✔ mergeMapping overrides defaults per extension and keeps the rest (R6) (1.180449ms)
+✔ mergeMapping extends the mapping with new extensions (R6) (1.103881ms)
+✔ mergeMapping is pure: does not mutate the defaults (R6) (5.651053ms)
+✔ parseFileConfig rejects unknown top-level keys (R18) (3.872358ms)
+✔ parseFileConfig rejects non-string mapping values (R18) (4.266419ms)
+✔ parseFileConfig rejects mapping keys that become empty after normalization (R18) (1.591328ms)
+✔ parseFileConfig rejects miscFolder with path separators (R18) (1.55854ms)
+✔ parseFileConfig rejects miscFolder equal to "." or ".." (R18) (2.09972ms)
+✔ parseFileConfig rejects non-string miscFolder and non-boolean omitMisc (R18) (4.311607ms)
+✔ parseFileConfig normalizes mapping keys and passes through valid values (R18) (4.669629ms)
+✔ parseFileConfig accepts an empty mapping object (0.847216ms)
+✔ loadConfig throws ConfigError on malformed JSON (R18) (83.040769ms)
+✔ loadConfig throws ConfigError when --config path does not exist (R18) (10.892045ms)
+✔ loadConfig resolves precedence: defaults < cwd < target < --config (R17) (19.212136ms)
+✔ loadConfig applies --config as the highest layer (R17) (17.147831ms)
+✔ loadConfig: an upper layer wins only when it actually sets the value (R17) (16.89099ms)
+✔ loadConfig keeps defaults when no config files exist (R17) (9.029114ms)
+✔ loadConfig deduplicates configFilesLoaded when cwd === target (R9) (8.078966ms)
+✔ loadConfig records every loaded config file for the ignored list (R9) (16.279706ms)
+✔ planMoves maps known extensions to category folders (R2) (84.553334ms)
+✔ planMoves skips directories, symlinks and hidden files (R8) (24.624097ms)
+✔ planMoves never plans a loaded config file, even when json maps to Code (R9) (12.834846ms)
+✔ planMoves resolves a collision with a deterministic suffix (R11) (16.634444ms)
+✔ planMoves increments the suffix while the destination is taken (R11) (15.96685ms)
+✔ planMoves reserves intra-plan destinations so planned moves never collide (R11) (18.534672ms)
+✔ planMoves sends unknown extensions to the misc folder (R4) (7.683344ms)
+✔ planMoves uses a custom miscFolder when configured (R4) (7.503638ms)
+✔ planMoves marks misc files as skipped when omitMisc is set (R5) (8.146527ms)
+✔ executeMoves in dry-run performs zero writes: tree snapshot is identical (R10) (14.226483ms)
+✔ executeMoves creates category folders recursively and moves files (R12) (13.207491ms)
+✔ executeMoves reports a per-file error when a category folder is a file, and continues (R12) (11.643215ms)
+✔ executeMoves is idempotent: a second run moves zero files (R15) (12.896415ms)
+✔ executeMoves on an empty directory is a no-op (R22) (3.831135ms)
+✔ executeMoves reports ENOENT per-file and continues (TOCTOU, R14) (10.096137ms)
+✔ planMoves with includeHidden processes dotfiles into the misc folder (R7) (5.764126ms)
+✔ moveFile falls back to copy+unlink when rename fails with EXDEV (R13) (23.378061ms)
+✔ moveFile cleans up a partial copy and keeps the source when copy fails (R13) (8.902056ms)
+ℹ tests 50
+ℹ suites 0
+ℹ pass 50
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1288.00395
+EXIT:0

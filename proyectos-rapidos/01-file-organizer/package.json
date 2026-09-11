@@ -1,8 +1,25 @@
 {
   "name": "file-organizer",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
+  "description": "CLI para organizar archivos por extensión: clasificación, dry-run, colisiones seguras e idempotencia. Cero dependencias de runtime.",
+  "keywords": [
+    "file-organizer",
+    "cli",
+    "filesystem",
+    "organizer",
+    "typescript",
+    "node"
+  ],
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=26.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JulioN02/file-organizer.git"
+  },
   "scripts": {
     "start": "node --experimental-strip-types src/cli.ts",
     "test": "node --test",

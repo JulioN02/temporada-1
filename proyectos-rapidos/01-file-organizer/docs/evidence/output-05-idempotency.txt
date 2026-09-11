@@ -1,0 +1,10 @@
+# Idempotencia: segunda ejecución sobre el mismo directorio (ya organizado) no mueve nada
+# Las subcarpetas de categoría se reportan como directorios omitidos; exit 0
+# comando: node --experimental-strip-types src/cli.ts /tmp/opencode/evidence-03-qiid7g
+Moved: 0 | Skipped: 5 | Errors: 0
+skipped: Code (directory)
+skipped: Images (directory)
+skipped: Others (directory)
+skipped: PDF (directory)
+skipped: Videos (directory)
+EXIT:0

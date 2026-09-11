@@ -1,0 +1,11 @@
+# Dry-run: clasifica y muestra el plan sin escribir nada (ni siquiera crea carpetas)
+# Escenario: directorio temporal con report.pdf, foto.png, video.mp4, main.ts, datos.bin y LICENSE (sin extensión)
+# comando: node --experimental-strip-types src/cli.ts --dry-run /tmp/opencode/evidence-03-qiid7g
+[dry-run] Moved: 6 | Skipped: 0 | Errors: 0
+[dry-run] Others/LICENSE ← LICENSE
+[dry-run] Others/datos.bin ← datos.bin
+[dry-run] Images/foto.png ← foto.png
+[dry-run] Code/main.ts ← main.ts
+[dry-run] PDF/report.pdf ← report.pdf
+[dry-run] Videos/video.mp4 ← video.mp4
+EXIT:0

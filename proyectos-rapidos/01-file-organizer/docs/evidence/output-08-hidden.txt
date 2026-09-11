@@ -1,0 +1,11 @@
+# Archivos ocultos: por defecto se omiten; con --include-hidden se procesan (a la carpeta misc)
+# Escenario: .env en la raíz; primera corrida sin flag, segunda con --include-hidden -> Others/.env
+# comando: node --experimental-strip-types src/cli.ts /tmp/opencode/evidence-08-3b6AyZ
+Moved: 0 | Skipped: 1 | Errors: 0
+skipped: .env (hidden)
+EXIT:0
+
+# comando: node --experimental-strip-types src/cli.ts --include-hidden /tmp/opencode/evidence-08-3b6AyZ
+Moved: 1 | Skipped: 0 | Errors: 0
+Others/.env ← .env
+EXIT:0

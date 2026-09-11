@@ -1,0 +1,11 @@
+# Ejecución real: mueve cada archivo a su carpeta de categoría (reporte 'destino ← origen')
+# Mismo directorio temporal del dry-run; datos.bin y LICENSE no tienen categoría -> carpeta Others
+# comando: node --experimental-strip-types src/cli.ts /tmp/opencode/evidence-03-qiid7g
+Moved: 6 | Skipped: 0 | Errors: 0
+Others/LICENSE ← LICENSE
+Others/datos.bin ← datos.bin
+Images/foto.png ← foto.png
+Code/main.ts ← main.ts
+PDF/report.pdf ← report.pdf
+Videos/video.mp4 ← video.mp4
+EXIT:0

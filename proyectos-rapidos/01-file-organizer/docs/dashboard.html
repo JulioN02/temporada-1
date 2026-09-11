@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>01 · File Organizer — organiza tu carpeta automáticamente</title>
+  <style>
+/* ================= TOKENS =================
+   Design language heredado del patrón de dashboard de los laboratorios
+   (misma paleta y sistema visual). El contenido y los componentes son
+   propios del proyecto 01 · File Organizer. */
+:root {
+  --bg: #0f1115;
+  --bg-soft: #171a21;
+  --bg-card: #1b1e26;
+  --bg-code: #0b0d12;
+  --line: #262b36;
+  --line-strong: #333a48;
+
+  --tx: #e8eaf0;
+  --tx-dim: #a2a8b6;
+  --tx-faint: #6b7280;
+
+  --accent: #8b5cf6;
+  --accent-2: #22d3ee;
+
+  --good-ink: #34d399;
+  --good-bg: rgba(52, 211, 153, .12);
+  --bad-ink: #f87171;
+  --bad-bg: rgba(248, 113, 113, .12);
+  --warn-ink: #fbbf24;
+  --warn-bg: rgba(251, 191, 36, .12);
+  --info-ink: #38bdf8;
+  --info-bg: rgba(56, 189, 248, .12);
+
+  --radius: 12px;
+  --radius-2: 8px;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ================= BASE ================= */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 85% -10%, rgba(139, 92, 246, .12), transparent 60%),
+              radial-gradient(900px 500px at 8% -5%, rgba(34, 211, 238, .08), transparent 55%),
+              var(--bg);
+  color: var(--tx);
+  font-family: var(--font);
+  line-height: 1.55;
+}
+.wrap { max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+
+/* ================= HEADER ================= */
+.hero {
+  padding: 88px 0 56px;
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(700px 260px at 18% 8%, rgba(34, 211, 238, .10), transparent 65%),
+    radial-gradient(700px 300px at 80% 15%, rgba(139, 92, 246, .14), transparent 65%);
+}
+.hero h1 {
+  font-size: clamp(1.9rem, 4.4vw, 2.9rem);
+  margin: 22px 0 18px;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+}
+.hero .accent {
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero .tag {
+  font-size: .78rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  font-weight: 600;
+}
+.hero .sub { color: var(--tx-dim); max-width: 900px; font-size: 1.02rem; }
+.hero .sub b { color: var(--tx); }
+.hero .sub code { color: var(--accent-2); }
+.chips { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+.chip {
+  font-size: .8rem;
+  color: var(--tx-dim);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+.chip b { color: var(--tx); font-weight: 600; }
+
+/* ================= SECTION H2 / HEADINGS ================= */
+section { padding: 62px 0 20px; }
+section h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+  margin: 0 0 14px;
+  letter-spacing: -0.015em;
+}
+section h2 .num {
+  font-family: var(--mono);
+  font-size: .72em;
+  color: var(--accent-2);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 2px 9px;
+  background: var(--bg-card);
+}
+.lede { color: var(--tx-dim); max-width: 900px; margin: 4px 0 18px; }
+.lede b, .lede code { color: var(--tx); }
+.lede code, table code, li code {
+  font-family: var(--mono);
+  font-size: .86em;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+a { color: var(--accent-2); }
+a code { color: var(--accent-2); }
+
+/* ================= CARDS ================= */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+}
+.card h3 { margin: 0 0 12px; font-size: 1.02rem; letter-spacing: -0.01em; }
+.req-list { margin: 4px 0 0; padding-left: 18px; color: var(--tx-dim); font-size: .9rem; }
+.req-list li { margin-bottom: 8px; }
+.req-list b { color: var(--tx); font-family: var(--mono); font-size: .82em; }
+.req-list code { color: var(--accent-2); }
+.cmp-grid { display: grid; gap: 22px; grid-template-columns: 1fr 1fr; }
+
+@media (max-width: 900px) {
+  .cmp-grid { grid-template-columns: 1fr; }
+}
+
+/* ================= GROWTH (desorden → manual) ================= */
+.growth { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0 6px; }
+.gch {
+  flex: 1;
+  min-width: 160px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  padding: 12px 14px;
+  text-align: center;
+}
+.gch .k { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--tx-faint); }
+.gch .v { font-family: var(--mono); font-size: 1.2rem; font-weight: 700; margin-top: 3px; }
+.gch .d { font-size: .74rem; color: var(--tx-dim); margin-top: 3px; }
+.gch.g1 .v { color: var(--good-ink); }
+.gch.g2 .v { color: var(--warn-ink); }
+.gch.g3 .v { color: var(--bad-ink); }
+
+/* ================= STEP FLOW ================= */
+.step-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.flow-big { gap: 12px; margin: 10px 0 0; }
+.flow-big .step { font-size: .86rem; padding: 6px 14px; font-weight: 600; }
+.flow-big .arrow { font-size: 1.1rem; }
+.step {
+  font-size: .76rem;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  color: var(--tx-dim);
+  background: var(--bg-soft);
+}
+.step.conflict { color: var(--bad-ink); border-color: rgba(248,113,113,.45); background: var(--bad-bg); }
+.step.win      { color: var(--good-ink); border-color: rgba(52,211,153,.45); background: var(--good-bg); }
+.step.replay   { color: var(--info-ink); border-color: rgba(56,189,248,.45); background: var(--info-bg); }
+.step.block    { color: var(--warn-ink); border-color: rgba(251,191,36,.45); background: var(--warn-bg); }
+.step.info     { color: var(--info-ink); border-color: rgba(56,189,248,.45); background: var(--info-bg); }
+.arrow { color: var(--tx-faint); }
+
+/* ================= CODE ================= */
+.code-view {
+  font-family: var(--mono);
+  font-size: .8rem;
+  line-height: 1.65;
+  background: var(--bg-code);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  overflow-x: auto;
+  padding: 8px 0;
+}
+.code-view .cm { color: var(--tx-faint); }
+.code-view .tx { color: var(--tx-dim); white-space: pre-wrap; }
+.tab-btn {
+  font-size: .76rem;
+  font-family: var(--mono);
+  color: var(--tx-dim);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  padding: 5px 11px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.tab-btn:hover { color: var(--tx); border-color: var(--line-strong); }
+.tab-btn.active {
+  color: var(--accent-2);
+  background: rgba(34, 211, 238, .08);
+  border-color: rgba(34, 211, 238, .35);
+}
+.cline {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  padding: 1px 14px;
+}
+.cline .ln { color: var(--tx-faint); text-align: right; user-select: none; padding-right: 12px; font-size: .74rem; line-height: 1.7; }
+.cline .tx { color: var(--tx-dim); white-space: pre-wrap; }
+.cline .cm { color: var(--tx-faint); }
+.cline.run { background: rgba(139, 92, 246, .10); outline: 1px solid rgba(139, 92, 246, .35); border-radius: 4px; }
+.cline.run .tx, .cline.run .cm { color: var(--tx); }
+.cline.win  { background: rgba(52, 211, 153, .10); }
+.cline.win .tx { color: var(--good-ink); }
+.cline.lose .tx { color: var(--bad-ink); }
+
+/* ================= CLASSIFIER (sección 03) ================= */
+.classifier { margin-top: 4px; }
+.classifier-input label {
+  display: block;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--tx-faint);
+  margin-bottom: 6px;
+}
+.classifier-input input {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  color: var(--tx);
+  background: var(--bg-code);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-2);
+  padding: 12px 14px;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.classifier-input input:focus {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, .12);
+}
+.classifier-examples {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0 16px;
+}
+.chip-btn {
+  font-family: var(--mono);
+  font-size: .76rem;
+  color: var(--tx-dim);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 11px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.chip-btn:hover { color: var(--accent-2); border-color: rgba(34, 211, 238, .4); }
+.classifier-out { display: flex; gap: 10px; flex-wrap: wrap; }
+.classifier-out .stat { flex: 1; min-width: 140px; }
+.classifier-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-2);
+  font-size: .86rem;
+  border: 1px solid rgba(251, 191, 36, .4);
+  background: var(--warn-bg);
+  color: var(--tx-dim);
+}
+.classifier-note b { color: var(--warn-ink); }
+.classifier-rule {
+  margin-top: 14px;
+  padding: 11px 14px;
+  border-left: 3px solid var(--accent-2);
+  border-radius: var(--radius-2);
+  background: var(--bg-soft);
+  color: var(--tx-dim);
+  font-size: .88rem;
+}
+.classifier-rule b { color: var(--tx); }
+.classifier-rule code { color: var(--accent-2); font-family: var(--mono); font-size: .86em; }
+
+/* ================= TERMINAL (sección 04) ================= */
+.sim-run-host {
+  margin-top: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  padding: 16px;
+}
+.sim-run-tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.terminal {
+  font-family: var(--mono);
+  font-size: .8rem;
+  line-height: 1.7;
+  background: var(--bg-code);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  min-height: 150px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin-bottom: 12px;
+}
+.term-line { white-space: pre; }
+.term-line .t-cmd { color: var(--info-ink); }
+.term-line .t-move { color: var(--tx); }
+.term-line .t-skip { color: var(--tx-faint); }
+.term-line .t-ok { color: var(--good-ink); }
+.term-line .t-dry { color: var(--warn-ink); }
+.term-line .t-dim { color: var(--tx-faint); }
+.term-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: var(--accent-2);
+  vertical-align: -2px;
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ================= COLLISION (sección 05) ================= */
+.collision { margin-top: 18px; }
+.collision-top { font-size: .9rem; color: var(--tx-dim); margin-bottom: 14px; }
+.collision-top b { color: var(--tx); }
+.collision-fs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.fs-box {
+  flex: 1;
+  min-width: 210px;
+  background: var(--bg-code);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: .76rem;
+}
+.fs-box .fs-title { color: var(--tx-faint); text-transform: uppercase; letter-spacing: .08em; font-size: .64rem; margin-bottom: 6px; }
+.fs-item { display: flex; align-items: center; gap: 6px; padding: 2px 0; color: var(--tx-dim); }
+.fs-item .dot { width: 8px; height: 8px; border-radius: 2px; }
+.fs-item.same .dot { background: var(--bad-ink); }
+.fs-item.new .dot { background: var(--info-ink); }
+.fs-item.free .dot { background: var(--good-ink); }
+.collision-steps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.coll-step {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  background: var(--bg-soft);
+  padding: 9px 13px;
+  font-size: .82rem;
+  color: var(--tx-dim);
+  font-family: var(--mono);
+}
+.coll-step.pending { opacity: .45; }
+.coll-step.active { border-color: rgba(34, 211, 238, .5); background: rgba(34, 211, 238, .07); }
+.coll-step.done { border-color: rgba(52, 211, 153, .4); background: var(--good-bg); color: var(--good-ink); }
+.coll-step b { color: var(--tx); }
+.coll-step .ok { color: var(--good-ink); }
+.coll-step .suf { color: var(--warn-ink); font-weight: 700; }
+.coll-step .reserved { color: var(--bad-ink); }
+
+/* ================= PRECEDENCIA (sección 06) ================= */
+.prec-chain { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 18px; }
+.prec-layer {
+  display: grid;
+  grid-template-columns: 34px 220px 1fr;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  padding: 10px 14px;
+  background: var(--bg-card);
+  font-size: .86rem;
+}
+.prec-layer b { font-family: var(--mono); font-size: .86em; }
+.prec-layer code { color: var(--accent-2); font-family: var(--mono); font-size: .86em; }
+.prec-pos {
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 7px;
+  font-family: var(--mono);
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--tx);
+  background: var(--bg-soft);
+  border: 1px solid var(--line-strong);
+}
+.prec-layer.high .prec-pos { color: var(--accent); border-color: rgba(139,92,246,.45); background: rgba(139,92,246,.12); }
+.prec-layer.mid .prec-pos { color: var(--info-ink); border-color: rgba(56,189,248,.4); background: rgba(56,189,248,.10); }
+.prec-layer.base .prec-pos { color: var(--good-ink); border-color: rgba(52,211,153,.4); background: rgba(52,211,153,.10); }
+.prec-desc { color: var(--tx-faint); font-size: .76rem; }
+.prec-desc code { color: var(--tx-dim); font-family: var(--mono); font-size: .9em; }
+@media (max-width: 640px) {
+  .prec-layer { grid-template-columns: 34px 1fr; }
+  .prec-desc { grid-column: 2; }
+}
+.prec-demo h3 { margin-bottom: 4px; }
+.prec-toggles { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 16px; }
+.prec-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .84rem;
+  color: var(--tx-dim);
+  cursor: pointer;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  background: var(--bg-soft);
+  transition: border-color .15s;
+}
+.prec-toggle:has(input:checked) { border-color: rgba(34, 211, 238, .45); }
+.prec-toggle code { font-family: var(--mono); font-size: .82em; }
+.prec-toggle input { accent-color: var(--accent-2); }
+.prec-result { display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-start; }
+.prec-result .stat { min-width: 190px; }
+.prec-merge { flex: 1; min-width: 280px; }
+.prec-merge b { font-size: .8rem; color: var(--tx-dim); }
+.prec-json {
+  font-family: var(--mono);
+  font-size: .76rem;
+  background: var(--bg-code);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  padding: 10px 12px;
+  color: var(--tx-dim);
+  overflow-x: auto;
+  margin: 6px 0 0;
+}
+.prec-json .k { color: var(--accent-2); }
+.prec-json .ov { color: var(--warn-ink); }
+.prec-note {
+  margin-top: 16px;
+  padding: 11px 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-2);
+  background: linear-gradient(180deg, rgba(139, 92, 246, .08), transparent), var(--bg-card);
+  color: var(--tx-dim);
+  font-size: .86rem;
+}
+.prec-note b { color: var(--accent-2); }
+.prec-note code { font-family: var(--mono); font-size: .86em; color: var(--tx); }
+
+/* ================= STATS ================= */
+.stat {
+  background: var(--bg-code);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.stat .k { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--tx-faint); }
+.stat .v {
+  font-family: var(--mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.v.good { color: var(--good-ink); }
+.v.bad  { color: var(--bad-ink); }
+.v.info { color: var(--info-ink); }
+.v.warn { color: var(--warn-ink); }
+
+/* ================= BUTTONS ================= */
+.btn-play {
+  width: 100%;
+  padding: 10px 14px;
+  font-family: var(--font);
+  font-size: .86rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(90deg, var(--accent), #7c3aed);
+  border: 1px solid rgba(139, 92, 246, .5);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: filter .15s, transform .05s;
+}
+.btn-play:hover { filter: brightness(1.12); }
+.btn-play:active { transform: translateY(1px); }
+.btn-play:disabled { opacity: .5; cursor: default; }
+
+/* ================= TABLES ================= */
+table.keys {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .8rem;
+  font-family: var(--mono);
+}
+table.keys th {
+  text-align: left;
+  color: var(--tx-faint);
+  font-weight: 600;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  border-bottom: 1px solid var(--line-strong);
+  padding: 7px 9px;
+}
+table.keys td {
+  border-bottom: 1px solid var(--line);
+  padding: 9px;
+  color: var(--tx-dim);
+}
+table.keys td.k { color: var(--accent-2); }
+table.keys td.num { text-align: right; white-space: nowrap; }
+table.keys tr:last-child td { border-bottom: none; }
+
+/* ================= TAGS ================= */
+.tag {
+  font-size: .7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--good-bg);
+  color: var(--good-ink);
+  border: 1px solid rgba(52,211,153,.3);
+  white-space: nowrap;
+}
+.tag.good  { color: var(--good-ink); background: var(--good-bg);  border-color: rgba(52,211,153,.3); }
+.tag.bad   { color: var(--bad-ink);  background: var(--bad-bg);   border-color: rgba(248,113,113,.3); }
+.tag.warn  { color: var(--warn-ink); background: var(--warn-bg);  border-color: rgba(251,191,36,.3); }
+.tag.info  { color: var(--info-ink); background: var(--info-bg);  border-color: rgba(56,189,248,.3); }
+
+/* ================= AXIOM GRID ================= */
+.axiom-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 8px; }
+.axiom {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 20px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.axiom .ax-num {
+  position: absolute;
+  top: -12px; left: 16px;
+  font-family: var(--mono);
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--accent-2);
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 2px 10px;
+}
+.axiom h3 { margin: 6px 0 0; font-size: .98rem; letter-spacing: -0.01em; }
+.axiom .ax-body { color: var(--tx-dim); font-size: .85rem; margin: 0; flex: 1; }
+.axiom .ax-body code { color: var(--tx); }
+.axiom .ax-rule {
+  font-size: .72rem;
+  color: var(--tx);
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.axiom .ax-rule b { color: var(--accent); }
+.axiom .ax-rule code { font-family: var(--mono); font-size: .92em; color: var(--accent-2); }
+@media (max-width: 900px) { .axiom-grid { grid-template-columns: 1fr; } }
+
+/* ================= ARQUITECTURA (sección 09) ================= */
+.arch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 8px; }
+.arch { display: flex; flex-direction: column; gap: 8px; }
+.arch-head { display: flex; align-items: center; gap: 10px; }
+.arch-name { font-family: var(--mono); font-size: 1rem; font-weight: 700; color: var(--tx); letter-spacing: -0.01em; }
+.arch-desc { color: var(--tx-dim); font-size: .88rem; margin: 0; flex: 1; }
+.arch-desc code { color: var(--tx); }
+.arch-api {
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--tx-faint);
+  background: var(--bg-code);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.arch-api code { color: var(--accent-2); }
+@media (max-width: 760px) { .arch-grid { grid-template-columns: 1fr; } }
+
+/* ================= CALLOUT / INSIGHT ================= */
+.callout, .insight {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-2);
+  padding: 13px 16px;
+  margin: 16px 0 4px;
+  font-size: .92rem;
+  color: var(--tx-dim);
+  background: var(--bg-card);
+}
+.callout { border-left: 3px solid var(--accent-2); }
+.callout b, .callout code { color: var(--tx); }
+.callout a b { color: var(--accent-2); }
+.insight { border-left: 3px solid var(--accent); }
+.insight b { color: var(--accent-2); }
+.insight .insight-tag {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 5px;
+}
+
+/* ================= FOOTER ================= */
+.site-foot {
+  margin-top: 70px;
+  border-top: 1px solid var(--line);
+  padding: 22px 0;
+  color: var(--tx-faint);
+  font-size: .82rem;
+}
+.site-foot b { color: var(--tx-dim); }
+.site-foot code { color: var(--tx); font-family: var(--mono); font-size: .86em; }
+  </style>
+</head>
+<body><!-- ================= HEADER ================= -->
+<header class="hero">
+  <div class="wrap">
+    <span class="tag">● Proyecto rápido · Temporada 1</span>
+    <h1>01 · <span class="accent">File Organizer</span> — una carpeta ordenada en un comando</h1>
+    <p class="sub">
+      La carpeta de descargas acumula archivos desordenados: <b>PDFs, imágenes, scripts,
+      instaladores y datos</b> mezclados en un solo nivel. Encontrar algo se vuelve lento y ordenar a
+      mano es tedioso. Este proyecto es un <b>CLI de Node/TypeScript</b> que automatiza esa tarea con
+      una regla simple: <b>clasificar cada archivo por su extensión</b> y moverlo a su carpeta de
+      categoría (<code>PDF/</code>, <code>Images/</code>, <code>Videos/</code>, <code>Code/</code>,
+      …). Es seguro por diseño: <b>nunca sobrescribe, nunca borra</b>, es idempotente y admite un modo
+      de ensayo (<code>--dry-run</code>) que no escribe nada. Este dashboard explica cómo funciona y
+      por qué es confiable.
+    </p>
+    <div class="chips">
+      <span class="chip">Stack: <b>Node 26 · TypeScript nativo (sin build)</b></span>
+      <span class="chip">Dependencias: <b>0 en runtime</b></span>
+      <span class="chip">Clasificación: <b>por extensión (función pura)</b></span>
+      <span class="chip">Seguridad: <b>nunca sobrescribe · dry-run sin escrituras</b></span>
+      <span class="chip">Evidencia: <b>50/50 tests · typecheck limpio</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- ================= 01 · EL PROBLEMA ================= -->
+<section id="problema">
+  <div class="wrap">
+    <h2><span class="num">01</span> El problema: una carpeta que nadie ordenó</h2>
+    <p class="lede">
+      Cada descarga, captura y archivo suelto termina en el mismo lugar: la carpeta de descargas.
+      Con el tiempo conviven documentos, imágenes, ejecutables y basura sin ningún orden, y el costo
+      aparece en cada búsqueda.
+    </p>
+
+    <div class="growth">
+      <div class="gch g1"><div class="k">Archivos sueltos</div><div class="v">mezcla</div><div class="d">PDFs, imágenes, scripts, instaladores en un solo nivel</div></div>
+      <div class="gch g2"><div class="k">Búsqueda lenta</div><div class="v">tiempo</div><div class="d">localizar un archivo exige revisar nombres uno por uno</div></div>
+      <div class="gch g3"><div class="k">Orden manual</div><div class="v">tedio</div><div class="d">crear carpetas y arrastrar archivos es repetitivo y propenso a errores</div></div>
+    </div>
+
+    <div class="cmp-grid" style="margin-top:22px">
+      <div class="card">
+        <h3>El costo de no ordenar</h3>
+        <ul class="req-list">
+          <li><b>Reporte.pdf</b> — un documento que necesitas para una reunión, enterrado entre decenas de nombres.</li>
+          <li><b>foto.png</b> — una captura que querías adjuntar y no recuerdas el nombre exacto.</li>
+          <li><b>setup.exe</b> — un instalador que ya no usas, ocupando espacio sin que sepas.</li>
+          <li><b>notas.md</b> — tu propio archivo, confundido con el resto del desorden.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Lo que se quiere</h3>
+        <div class="step-flow">
+          <span class="step conflict">1 · descargas caóticas</span><span class="arrow">→</span>
+          <span class="step win">2 · un comando</span><span class="arrow">→</span>
+          <span class="step win">3 · carpetas por categoría</span><span class="arrow">→</span>
+          <span class="step block">4 · búsqueda inmediata</span>
+        </div>
+        <p class="lede" style="margin-top:10px; margin-bottom:0">
+          La idea: <b>una regla simple y determinista</b> — la categoría de un archivo se deriva de su
+          extensión — aplicada por un CLI con modo de ensayo. Nada se pierde, nada se sobrescribe y el
+          resultado se puede revisar antes de escribir.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout">
+      La pregunta del proyecto: <i>"¿puedo automatizar el orden de una carpeta con una regla simple,
+      sin arriesgar mis archivos?"</i>. La respuesta vive en cinco invariantes (los
+      <a href="#axiomas"><b>axiomas</b></a>) que el organizador respeta siempre.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 · CÓMO FUNCIONA ================= -->
+<section id="flujo">
+  <div class="wrap">
+    <h2><span class="num">02</span> Cómo funciona: un flujo de 4 pasos</h2>
+    <p class="lede">
+      El organizador separa <b>leer y decidir</b> (plan) de <b>escribir</b> (ejecución). Esa
+      separación es la clave: permite ensayar sin efectos y reportar con determinismo.
+    </p>
+
+    <div class="step-flow flow-big">
+      <span class="step win">1 · scan</span><span class="arrow">→</span>
+      <span class="step info">2 · classify</span><span class="arrow">→</span>
+      <span class="step replay">3 · plan</span><span class="arrow">→</span>
+      <span class="step block">4 · move</span>
+    </div>
+
+    <div class="cmp-grid" style="margin-top:22px">
+      <div class="card">
+        <h3>scan · <code>mover.ts</code></h3>
+        <ul class="req-list">
+          <li><code>readdir</code> con <code>withFileTypes</code>: distingue archivos, directorios y symlinks <b>sin un <code>stat</code> extra</b>.</li>
+          <li>Solo procesa <b>archivos regulares del nivel superior</b>; filtra directorios, ocultos, symlinks y los archivos de configuración cargados.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>classify · <code>classify.ts</code></h3>
+        <ul class="req-list">
+          <li>Función <b>pura</b> por extensión: mismo nombre, mismo resultado. Sin I/O, sin estado global.</li>
+          <li>Extensión desconocida o archivo sin extensión → carpeta miscelánea (<code>Others</code> por defecto) o se omite.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>plan · <code>mover.ts</code></h3>
+        <ul class="req-list">
+          <li>Resuelve <b>destinos y colisiones antes de escribir</b> (conjunto de reservas intra-plan).</li>
+          <li>Orden lexicográfico por nombre: reporte estable y determinista.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>move · <code>mover.ts</code> + <code>cli.ts</code></h3>
+        <ul class="req-list">
+          <li><code>mkdir</code> recursivo de la carpeta destino + <code>rename</code> (atómico), con <b>fallback cross-device (EXDEV)</b>.</li>
+          <li>En <code>--dry-run</code> esta etapa no ejecuta <b>ninguna escritura</b> (ni siquiera <code>mkdir</code>).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>Plan ≠ ejecución.</b> Escanear y clasificar es <b>lectura pura</b>: se puede ejecutar mil veces
+      sin cambiar nada. Solo la última etapa escribe, y solo si no estás en modo de ensayo. Por eso el
+      reporte del dry-run es <b>idéntico</b> al plan real.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 03 · CLASIFICACIÓN INTERACTIVA ================= -->
+<section id="clasificador">
+  <div class="wrap">
+    <h2><span class="num">03</span> Probalo: ¿a qué categoría va cada archivo?</h2>
+    <p class="lede">
+      Escribí un nombre de archivo (o elegí un ejemplo) y observá la clasificación con el <b>mapeo
+      por defecto real</b> del proyecto — la misma lógica de <code>classify()</code> traducida a
+      JavaScript.
+    </p>
+
+    <div class="classifier card">
+      <div class="classifier-input">
+        <label for="classify-input">Nombre de archivo</label>
+        <input id="classify-input" type="text" placeholder="p. ej. report.pdf, foto.png, datos.bin" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="classifier-examples">
+        <button class="chip-btn" data-file="report.pdf">report.pdf</button>
+        <button class="chip-btn" data-file="foto.png">foto.png</button>
+        <button class="chip-btn" data-file="movie.mkv">movie.mkv</button>
+        <button class="chip-btn" data-file="playlist.mp3">playlist.mp3</button>
+        <button class="chip-btn" data-file="script.py">script.py</button>
+        <button class="chip-btn" data-file="archive.tar.gz">archive.tar.gz</button>
+        <button class="chip-btn" data-file="datos.bin">datos.bin</button>
+        <button class="chip-btn" data-file="LICENSE">LICENSE</button>
+        <button class="chip-btn" data-file=".env">.env</button>
+      </div>
+
+      <div class="classifier-out">
+        <div class="stat"><div class="k">Extensión</div><div class="v info class-ext">—</div></div>
+        <div class="stat"><div class="k">Categoría</div><div class="v good class-cat">—</div></div>
+        <div class="stat"><div class="k">Destino</div><div class="v warn class-dest">—</div></div>
+      </div>
+      <div class="classifier-note" hidden></div>
+
+      <div class="classifier-rule">
+        <b>La regla:</b> solo se mira la <b>última extensión</b> (<code>archive.tar.gz</code> → <code>gz</code>);
+        un nombre sin punto (<code>LICENSE</code>) o con punto inicial (<code>.env</code>) no tiene
+        extensión → <b>carpeta miscelánea</b> (o se omite si la configuración lo pide). Un archivo que
+        empieza con <code>.</code> además es <b>oculto</b>: por defecto ni siquiera se escanea.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 04 · DRY-RUN VS REAL ================= -->
+<section id="dryrun">
+  <div class="wrap">
+    <h2><span class="num">04</span> Dry-run vs. ejecución real: ensayar sin tocar nada</h2>
+    <p class="lede">
+      El modo de ensayo muestra el plan <b>sin escribir una sola letra</b>: ni mueve archivos, ni crea
+      carpetas. Es la salvaguarda para revisar el resultado antes de comprometerte. La única diferencia
+      con la ejecución real es… que no ejecuta.
+    </p>
+
+    <div class="cmp-grid">
+      <div class="card">
+        <h3><code>--dry-run</code> · modo ensayo</h3>
+        <ul class="req-list">
+          <li>Imprime el plan con el prefijo <code>[dry-run]</code> en cada línea.</li>
+          <li><b>Cero escrituras</b>: ni <code>rename</code>, ni <code>mkdir</code>, ni <code>unlink</code>.</li>
+          <li>Perfecto para revisar antes de una corrida real.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Ejecución real · modo normal</h3>
+        <ul class="req-list">
+          <li>Crea las carpetas de categoría y mueve cada archivo con <code>rename</code>.</li>
+          <li>Reporta el mismo formato en stdout; los errores van a stderr y el código de salida es <code>1</code> si algo falló.</li>
+          <li>Idempotente: una segunda corrida produce <b>0 movimientos</b>.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sim-run-host">
+      <div class="sim-run-tabs">
+        <button class="tab-btn active" data-mode="dry">Ensayo · <code>--dry-run</code></button>
+        <button class="tab-btn" data-mode="real">Real · sin flags</button>
+      </div>
+      <div class="terminal" id="terminal"></div>
+      <button class="btn-play sim-run" id="term-run">▶ Ejecutar simulación</button>
+    </div>
+
+    <div class="callout" style="margin-top:18px">
+      En <code>--dry-run</code> el reporte del plan se muestra <b>tal cual</b> se ejecutaría: el mismo
+      orden, los mismos destinos, el mismo conteo <code>Moved: n | Skipped: n | Errors: n</code>. La
+      diferencia es que no pasa nada en disco.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 05 · COLISIONES ================= -->
+<section id="colisiones">
+  <div class="wrap">
+    <h2><span class="num">05</span> Colisiones: por qué nunca se pierde un archivo</h2>
+    <p class="lede">
+      ¿Qué pasa si la carpeta destino ya tiene un archivo con el mismo nombre? La respuesta: <b>nunca
+      sobrescribir</b>. El organizador añade un sufijo determinista — <code>name (1).ext</code>,
+      <code>name (2).ext</code>, … — comprobando el disco <b>y</b> las reservas del mismo plan.
+    </p>
+
+    <div class="cmp-grid">
+      <div class="card">
+        <h3>La regla de oro</h3>
+        <ul class="req-list">
+          <li>Si <code>PDF/report.pdf</code> ya existe → el nuevo se llama <code>report (1).pdf</code>.</li>
+          <li>Si <code>report (1).pdf</code> también existe (o fue reservado por otro movimiento del plan) → <code>report (2).pdf</code>.</li>
+          <li>El sufijo es <b>determinista</b>: misma entrada, mismo resultado.</li>
+          <li>Nunca se borra ni se reemplaza un archivo existente (axioma 3).</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>El caso sutil: reservas intra-plan</h3>
+        <p class="lede" style="margin:0">
+          Dos archivos de la raíz pueden terminar queriendo el <b>mismo destino</b> dentro del plan.
+          El conjunto de <b>reservas</b> lo impide: el primer movimiento «reserva» su nombre y el
+          segundo elige otro. Probalo abajo.
+        </p>
+      </div>
+    </div>
+
+    <div class="collision card" style="margin-top:18px">
+      <div class="collision-top">
+        <div>
+          <b>Escenario</b> — la carpeta <code>PDF/</code> ya contiene <code>report.pdf</code> de una
+          corrida anterior, y en la raíz hay <code>report.pdf</code> y <code>report (1).pdf</code>.
+        </div>
+        <div class="collision-fs" id="collision-fs"></div>
+      </div>
+      <div class="collision-steps" id="collision-steps"></div>
+      <button class="btn-play sim-run" id="collision-run">▶ Resolver colisiones</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 06 · PRECEDENCIA ================= -->
+<section id="precedencia">
+  <div class="wrap">
+    <h2><span class="num">06</span> Precedencia de configuración: 5 capas, gana la superior</h2>
+    <p class="lede">
+      La configuración activa se resuelve de menor a mayor precedencia. Ante un conflicto, <b>la capa
+      superior gana</b>, y el mapeo se <b>fusiona por extensión</b> (una clave presente sobrescribe o
+      extiende; las demás conservan su valor por defecto — no es un reemplazo total).
+    </p>
+
+    <div class="prec-chain">
+      <div class="prec-layer high"><span class="prec-pos">5</span><b>Flags del CLI</b><span class="prec-desc"><code>--dry-run</code> · <code>--include-hidden</code> · <code>--config</code> — gobiernan la ejecución</span></div>
+      <div class="prec-layer high"><span class="prec-pos">4</span><b><code>--config &lt;ruta&gt;</code></b><span class="prec-desc">archivo explícito · <b>debe existir</b> (error fatal si no)</span></div>
+      <div class="prec-layer mid"><span class="prec-pos">3</span><b><code>&lt;target&gt;/.file-organizer.json</code></b><span class="prec-desc">configuración local del directorio a organizar (opcional)</span></div>
+      <div class="prec-layer mid"><span class="prec-pos">2</span><b><code>&lt;cwd&gt;/.file-organizer.json</code></b><span class="prec-desc">configuración del directorio actual (opcional)</span></div>
+      <div class="prec-layer base"><span class="prec-pos">1</span><b>Valores por defecto embebidos</b><span class="prec-desc">mapeo completo + <code>miscFolder: "Others"</code> + <code>omitMisc: false</code></span></div>
+    </div>
+
+    <div class="card prec-demo">
+      <h3>Demo: ¿qué <code>miscFolder</code> queda activo?</h3>
+      <p class="lede" style="margin:4px 0 14px">
+        Activá o desactivá cada capa opcional y observá cuál gana. Las capas ausentes simplemente se
+        saltan.
+      </p>
+      <div class="prec-toggles">
+        <label class="prec-toggle"><input type="checkbox" id="prec-cwd" /> <code>&lt;cwd&gt;/.file-organizer.json</code> · <code>miscFolder: "Otros"</code></label>
+        <label class="prec-toggle"><input type="checkbox" id="prec-target" /> <code>&lt;target&gt;/.file-organizer.json</code> · <code>miscFolder: "Varios"</code></label>
+        <label class="prec-toggle"><input type="checkbox" id="prec-config" /> <code>--config ./mi-config.json</code> · <code>miscFolder: "Mezclados"</code></label>
+      </div>
+      <div class="prec-result">
+        <div class="stat"><div class="k">miscFolder activo</div><div class="v good prec-misc">Others</div></div>
+        <div class="prec-merge">
+          <b>Fusión del mapping (por extensión):</b>
+          <pre class="prec-json" id="prec-json"></pre>
+        </div>
+      </div>
+      <div class="prec-note">
+        Reglas: el <code>mapping</code> se fusiona en cada capa (claves nuevas se añaden, claves
+        repetidas se sobrescriben); los archivos de configuración cargados entran a la <b>lista de
+        ignorados</b> (nunca se mueven); un JSON malformado o con claves desconocidas es <b>error
+        fatal</b> con código de salida <code>1</code> — nunca un fallback silencioso.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 07 · AXIOMAS ================= -->
+<section id="axiomas">
+  <div class="wrap">
+    <h2><span class="num">07</span> Los 5 axiomas del organizador</h2>
+    <p class="lede">
+      Invariantes que el código respeta siempre. Son el «contrato» de seguridad del proyecto: si un
+      cambio futuro los violara, los tests lo detectarían.
+    </p>
+    <div class="axiom-grid">
+      <div class="axiom">
+        <span class="ax-num">A1</span>
+        <h3>La categoría se deriva solo de la extensión</h3>
+        <p class="ax-body">
+          Según el <b>mapeo configurado</b>. Sin leer contenido ni consultar el sistema: misma
+          entrada, misma salida, determinista.
+        </p>
+        <div class="ax-rule"><b>Garantía:</b> <code>classify()</code> pura, sin I/O.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">A2</span>
+        <h3>Solo archivos regulares del nivel superior</h3>
+        <p class="ax-body">
+          Nunca directorios, ocultos (salvo <code>--include-hidden</code>) ni symlinks. Ni siquiera se
+          mueven los archivos de configuración cargados.
+        </p>
+        <div class="ax-rule"><b>Garantía:</b> filtros en <code>planMoves()</code>.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">A3</span>
+        <h3>Nunca sobrescribe ni pierde datos</h3>
+        <p class="ax-body">
+          Ante colisión, <b>sufijo</b> <code>name (1).ext</code>. El dry-run no realiza ninguna
+          escritura: plan y ejecución están separados.
+        </p>
+        <div class="ax-rule"><b>Garantía:</b> <code>resolveUniquePath()</code> + dry-run.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">A4</span>
+        <h3>Idempotencia</h3>
+        <p class="ax-body">
+          Ejecutar dos veces seguidas produce <b>cero movimientos</b> en la segunda: una corrida real
+          deja la carpeta lista.
+        </p>
+        <div class="ax-rule"><b>Garantía:</b> verificado por tests.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">A5</span>
+        <h3>Lo desconocido va a <code>Others</code> (o se omite), jamás se elimina</h3>
+        <p class="ax-body">
+          Toda extensión desconocida o archivo sin extensión termina en la carpeta miscelánea o se
+          reporta como omitido según configuración. Nada se borra.
+        </p>
+        <div class="ax-rule"><b>Garantía:</b> <code>miscFolder</code> / <code>omitMisc</code>.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 08 · CHEATSHEET CLI ================= -->
+<section id="cheatsheet">
+  <div class="wrap">
+    <h2><span class="num">08</span> Cheatsheet del CLI</h2>
+    <p class="lede">
+      Ejecución nativa de TypeScript sin compilación (requiere <b>Node 26+</b>). El nombre público del
+      binario es <code>file-organizer</code>.
+    </p>
+
+    <div class="cmp-grid">
+      <div class="card">
+        <h3>Flags</h3>
+        <table class="keys">
+          <thead>
+            <tr><th>Flag</th><th>Qué hace</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="k"><code>--dry-run</code></td><td>muestra el plan sin escribir nada (ni <code>mkdir</code>)</td></tr>
+            <tr><td class="k"><code>--config &lt;ruta&gt;</code></td><td>archivo JSON de mayor precedencia (debe existir)</td></tr>
+            <tr><td class="k"><code>--include-hidden</code></td><td>procesa también archivos ocultos (punto inicial)</td></tr>
+            <tr><td class="k"><code>--help</code></td><td>muestra la ayuda y termina</td></tr>
+            <tr><td class="k"><code>--version</code></td><td>muestra la versión y termina</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>Ejemplos</h3>
+        <div class="code-view" style="padding:12px 14px">
+          <div class="cm"># Ensayo: revisar el plan sin tocar nada</div>
+          <div class="tx">node --experimental-strip-types src/cli.ts --dry-run ~/Downloads</div>
+          <div class="cm" style="margin-top:6px"># Ejecución real (default: directorio actual)</div>
+          <div class="tx">node --experimental-strip-types src/cli.ts ~/Downloads</div>
+          <div class="cm" style="margin-top:6px"># Configuración personalizada</div>
+          <div class="tx">node --experimental-strip-types src/cli.ts --config ./mi-config.json ~/Downloads</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>Salida de ejemplo (stdout):</b>
+      <div class="code-view" style="margin-top:8px; padding:12px 14px">
+        <div class="tx">Moved: 3 | Skipped: 2 | Errors: 0</div>
+        <div class="tx">PDF/report.pdf ← report.pdf</div>
+        <div class="tx">Images/photo.png ← photo.png</div>
+        <div class="cm">skipped: .env (hidden)</div>
+        <div class="cm">skipped: data.bin (misc omitted)</div>
+      </div>
+      Los errores van a <b>stderr</b> y el código de salida es <code>1</code> si hubo algún error;
+      en caso contrario, <code>0</code>.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 09 · ARQUITECTURA ================= -->
+<section id="arquitectura">
+  <div class="wrap">
+    <h2><span class="num">09</span> Arquitectura: 4 módulos pequeños, cada uno con un trabajo</h2>
+    <p class="lede">
+      Sin frameworks ni capas innecesarias: cuatro módulos TypeScript, cero dependencias en runtime y
+      una frontera clara entre lo <b>puro</b> (clasificar, fusionar) y lo <b>impuro</b> (I/O).
+    </p>
+
+    <div class="arch-grid">
+      <div class="arch card">
+        <div class="arch-head"><span class="arch-name">config.ts</span><span class="tag good">config</span></div>
+        <p class="arch-desc">Mapeo por defecto, <b>validación JSON con type guards</b> (nunca <code>any</code>), precedencia en capas y fusión por extensión.</p>
+        <div class="arch-api"><code>DEFAULT_MAPPING</code> · <code>loadConfig()</code> · <code>mergeMapping()</code> · <code>parseFileConfig()</code></div>
+      </div>
+      <div class="arch card">
+        <div class="arch-head"><span class="arch-name">classify.ts</span><span class="tag info">puro</span></div>
+        <p class="arch-desc">Clasificación <b>pura</b> por extensión: aislada para que un futuro clasificador MIME la reemplace sin tocar el resto.</p>
+        <div class="arch-api"><code>extractExtension()</code> · <code>classify()</code></div>
+      </div>
+      <div class="arch card">
+        <div class="arch-head"><span class="arch-name">mover.ts</span><span class="tag warn">I/O</span></div>
+        <p class="arch-desc">Plan (scan + colisiones) separado de la ejecución (mkdir, <code>rename</code> con fallback EXDEV, dry-run). Errores por archivo sin detener el resto.</p>
+        <div class="arch-api"><code>planMoves()</code> · <code>executeMoves()</code> · <code>resolveUniquePath()</code> · <code>moveFile()</code></div>
+      </div>
+      <div class="arch card">
+        <div class="arch-head"><span class="arch-name">cli.ts</span><span class="tag info">orquesta</span></div>
+        <p class="arch-desc">Argumentos con <code>util.parseArgs</code> (estricto), orquestación config → plan → ejecución, reporte y códigos de salida.</p>
+        <div class="arch-api"><code>runCli()</code> · <code>formatReport()</code> · <code>main()</code></div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>La frontera pureza/I-O.</b> <code>classify</code> y <code>mergeMapping</code> son funciones
+      puras (deterministas, sin efectos). Toda la I/O vive en <code>config</code> (lectura de JSON) y
+      <code>mover</code> (disco). Esa separación hace que los tests de clasificación sean triviales y
+      que el dry-run sea gratis: no hay que «simular» nada, simplemente no se ejecuta la etapa de
+      escritura.
+    </div>
+  </div>
+</section>
+
+<!-- ================= 10 · APRENDIZAJES ================= -->
+<section id="aprendizajes">
+  <div class="wrap">
+    <h2><span class="num">10</span> Aprendizajes del proyecto</h2>
+    <p class="lede">
+      Qué se llevó el proyecto de cada tema — y una nota honesta sobre cuándo importan realmente los
+      streams.
+    </p>
+
+    <div class="axiom-grid">
+      <div class="axiom">
+        <span class="ax-num">FS</span>
+        <h3>Filesystem</h3>
+        <p class="ax-body">
+          <code>readdir</code> con <code>withFileTypes</code> distingue archivos, directorios y
+          symlinks <b>sin un <code>stat</code> extra</b> por entrada. <code>rename</code> es una
+          operación atómica; <code>mkdir</code> recursivo crea la carpeta completa.
+        </p>
+        <div class="ax-rule"><b>Gotcha:</b> <code>ENOTDIR</code> ≠ <code>ENOENT</code> cuando un componente de la ruta es un archivo.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">ST</span>
+        <h3>Streams (cuándo importan, honestamente)</h3>
+        <p class="ax-body">
+          En el mismo filesystem, <code>rename</code> es instantáneo y no copia nada. Los streams solo
+          aparecen en el <b>fallback cross-device (EXDEV)</b>: mover entre discos exige copiar, y
+          <code>stream/promises.pipeline</code> copia <b>sin cargar el archivo completo en memoria</b>.
+        </p>
+        <div class="ax-rule"><b>Veredicto:</b> irrelevante para archivos chicos; decisivo para archivos de GB.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">CLI</span>
+        <h3>CLI</h3>
+        <p class="ax-body">
+          <code>util.parseArgs</code> en modo estricto con flags booleanos/string y posicionales;
+          <b>stdout = reporte, stderr = errores</b>; código de salida <code>0/1</code> y la regla de
+          oro: nunca llamar <code>process.exit</code>, solo fijar <code>process.exitCode</code>.
+        </p>
+        <div class="ax-rule"><b>Lección:</b> un CLI bien comportado es una API de terminal.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">CF</span>
+        <h3>Configuración declarativa</h3>
+        <p class="ax-body">
+          Precedencia en capas, <b>merge por extensión</b> (no reemplazo total) y validación con type
+          guards sobre <code>unknown</code>. Un error de configuración es <b>fatal y explícito</b>,
+          nunca un fallback silencioso.
+        </p>
+        <div class="ax-rule"><b>Regla:</b> fallar alto es más amable que adivinar.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">DS</span>
+        <h3>Diseño: plan vs. ejecución</h3>
+        <p class="ax-body">
+          Separar la <b>lectura pura</b> (plan) de la <b>escritura</b> (ejecución) habilita el dry-run
+          sin efectos y reportes deterministas. El conjunto de <b>reservas</b> del plan evita
+          sobrescribir entre movimientos del mismo plan.
+        </p>
+        <div class="ax-rule"><b>Patrón:</b> decidir todo primero, escribir después.</div>
+      </div>
+      <div class="axiom">
+        <span class="ax-num">TS</span>
+        <h3>TypeScript nativo + TDD</h3>
+        <p class="ax-body">
+          <code>node --experimental-strip-types</code> ejecuta TS sin paso de build; TS estricto con
+          <code>erasableSyntaxOnly</code> y <code>verbatimModuleSyntax</code>. TDD estricto con
+          <code>node:test</code>: RED → GREEN → triangulación, 50 tests en 3 suites.
+        </p>
+        <div class="ax-rule"><b>Evidencia:</b> 50/50 en verde + <code>tsc --noEmit</code> limpio.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer class="site-foot">
+  <div class="wrap">
+    <b>01 · File Organizer</b> — dashboard didáctico del proyecto rápido. Guía de usuario en
+    <code>docs/user-guide.md</code> · README introductorio en la raíz del proyecto. Hecho con
+    HTML/CSS/JS puro, sin CDN ni paso de build: se abre directo desde el navegador.
+  </div>
+</footer>
+
+<script>
+/* ================= 01 · File Organizer — app.js =================
+   Interactive logic for the didactic dashboard:
+     classifier  (03) live extension→category resolution (ported classify())
+     terminal    (04) animated dry-run vs real execution comparison
+     collision   (05) step-by-step destination resolution with reservation set
+     precedence  (06) live config layer resolution (miscFolder + per-extension merge)
+   Convention: visible UI text in neutral Spanish; comments/identifiers in English.
+   No external requests, no build step — works from file://.
+============================================================================ */
+
+/* ================= helpers ================= */
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $ = (sel, root) => [...(root || document).querySelectorAll(sel)];
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/* ================= default mapping (mirrors src/config.ts) ================= */
+const DEFAULT_MAPPING = {
+  pdf: "PDF",
+  jpg: "Images", jpeg: "Images", png: "Images", gif: "Images", webp: "Images",
+  svg: "Images", bmp: "Images", ico: "Images", avif: "Images",
+  mp4: "Videos", mkv: "Videos", avi: "Videos", mov: "Videos", webm: "Videos", m4v: "Videos",
+  mp3: "Audio", wav: "Audio", flac: "Audio", ogg: "Audio", m4a: "Audio", aac: "Audio", opus: "Audio",
+  ts: "Code", js: "Code", tsx: "Code", jsx: "Code", py: "Code", rs: "Code", go: "Code",
+  java: "Code", c: "Code", cpp: "Code", h: "Code", hpp: "Code", sh: "Code", json: "Code",
+  yml: "Code", yaml: "Code", toml: "Code", html: "Code", css: "Code", scss: "Code",
+  doc: "Documents", docx: "Documents", xls: "Documents", xlsx: "Documents",
+  ppt: "Documents", pptx: "Documents", odt: "Documents", ods: "Documents",
+  txt: "Documents", md: "Documents", rtf: "Documents", csv: "Documents",
+  zip: "Archives", tar: "Archives", gz: "Archives", bz2: "Archives", xz: "Archives",
+  "7z": "Archives", rar: "Archives", tgz: "Archives", deb: "Archives", rpm: "Archives", iso: "Archives",
+};
+
+/* —— ported classify() from src/classify.ts (same semantics) —— */
+function extractExtension(filename) {
+  const base = String(filename).split(/[\\/]/).pop() || "";
+  const idx = base.lastIndexOf(".");
+  if (idx <= 0) return null; // no dot, or leading dot (dotfile) → no extension
+  return base.slice(idx + 1).toLowerCase(); // only the last extension matters
+}
+function classify(filename) {
+  const ext = extractExtension(filename);
+  if (ext === null || !Object.prototype.hasOwnProperty.call(DEFAULT_MAPPING, ext)) {
+    return { kind: "misc" };
+  }
+  return { kind: "category", category: DEFAULT_MAPPING[ext] };
+}
+
+/* ================= 03 · CLASSIFIER ================= */
+function renderClassifier(filename) {
+  const name = filename.trim();
+  const extEl = $(".class-ext");
+  const catEl = $(".class-cat");
+  const destEl = $(".class-dest");
+  const note = $(".classifier-note");
+  const base = name.split(/[\\/]/).pop() || "";
+
+  if (name === "") {
+    extEl.textContent = "—";
+    extEl.className = "v info class-ext";
+    catEl.textContent = "—";
+    catEl.className = "v good class-cat";
+    destEl.textContent = "—";
+    destEl.className = "v warn class-dest";
+    note.hidden = true;
+    return;
+  }
+
+  const ext = extractExtension(name);
+  const result = classify(name);
+  const isDot = base.startsWith(".");
+
+  extEl.textContent = ext === null ? "ninguna" : `.${ext}`;
+  extEl.className = "v info class-ext";
+
+  const notes = [];
+  if (isDot) {
+    catEl.textContent = "—";
+    catEl.className = "v info class-cat";
+    destEl.textContent = "no se escanea";
+    destEl.className = "v warn class-dest";
+    notes.push(
+      `<b>Archivo oculto:</b> por defecto no se escanea. Con <code>--include-hidden</code> entraría al ` +
+      `flujo y, sin extensión, caería en la carpeta miscelánea (<code>${isDot ? "Others" : ""}</code>).`
+    );
+  } else if (result.kind === "category") {
+    catEl.textContent = result.category;
+    catEl.className = "v good class-cat";
+    destEl.textContent = `${result.category}/${base}`;
+    destEl.className = "v warn class-dest";
+  } else {
+    catEl.textContent = "Miscelánea";
+    catEl.className = "v info class-cat";
+    destEl.textContent = `Others/${base}`;
+    destEl.className = "v warn class-dest";
+    notes.push(
+      ext === null
+        ? `<b>Sin extensión:</b> no hay punto, o el punto está al inicio. Termina en la carpeta miscelánea (o se omite con <code>omitMisc: true</code>).`
+        : `<b>Extensión <code>.${ext}</code> no mapeada:</b> no figura en el mapeo configurado. Termina en la carpeta miscelánea (o se omite).`
+    );
+  }
+
+  note.innerHTML = notes.join(" ");
+  note.hidden = notes.length === 0;
+}
+
+function bindClassifier() {
+  const input = $("#classify-input");
+  const examples = $(".chip-btn");
+  input.addEventListener("input", () => renderClassifier(input.value));
+  examples.forEach((btn) =>
+    btn.addEventListener("click", () => {
+      input.value = btn.dataset.file;
+      renderClassifier(input.value);
+      input.focus();
+    })
+  );
+  renderClassifier(input.value); // initial state
+}
+
+/* ================= 04 · TERMINAL (dry-run vs real) ================= */
+const TERM_MODE = { mode: "dry" };
+const TERM_FILES = [
+  { name: "README.md", dest: "Documents/README.md" },
+  { name: "photo.png", dest: "Images/photo.png" },
+  { name: "report.pdf", dest: "PDF/report.pdf" },
+  { name: "setup.exe", dest: "Others/setup.exe" },
+];
+
+function appendTermLine(term, cls, text) {
+  const line = document.createElement("div");
+  line.className = "term-line " + (cls || "");
+  line.innerHTML = text;
+  term.appendChild(line);
+}
+
+async function runTerminal() {
+  const term = $("#terminal");
+  const btn = $("#term-run");
+  btn.disabled = true;
+  term.innerHTML = "";
+
+  const dry = TERM_MODE.mode === "dry";
+  const prefix = dry ? '<span class="t-dry">[dry-run] </span>' : "";
+  const cmd = dry
+    ? "$ node --experimental-strip-types src/cli.ts --dry-run"
+    : "$ node --experimental-strip-types src/cli.ts";
+
+  appendTermLine(term, "t-cmd", cmd + '<span class="term-cursor"></span>');
+  await sleep(450);
+
+  // summary line
+  appendTermLine(term, "t-ok", prefix + "Moved: 4 | Skipped: 1 | Errors: 0");
+  await sleep(350);
+
+  // per-file plan (sorted lexicographically, matches report order)
+  for (const f of TERM_FILES) {
+    const destRel = f.dest;
+    appendTermLine(term, "t-move", prefix + `${destRel} ← ${f.name}`);
+    await sleep(260);
+  }
+  appendTermLine(term, "t-skip", prefix + "skipped: .env (hidden)");
+  await sleep(350);
+
+  if (dry) {
+    appendTermLine(term, "t-dim", prefix + "0 escrituras — ni un mkdir, ni un rename, ni un unlink.");
+    await sleep(350);
+    appendTermLine(term, "t-ok", "✔ El plan se imprimió tal cual se ejecutaría; nada cambió en disco.");
+  } else {
+    appendTermLine(term, "t-dim", "[create] PDF/ · Images/ · Documents/ · Others/");
+    await sleep(320);
+    for (const f of TERM_FILES) {
+      const from = f.name;
+      appendTermLine(term, "t-move", `[rename] ${from} → ${f.dest}`);
+      await sleep(200);
+    }
+    await sleep(300);
+    appendTermLine(term, "t-ok", "✔ 4 movimientos reales. Una segunda corrida reportaría 0 movimientos (idempotencia).");
+  }
+
+  btn.disabled = false;
+}
+
+function bindTerminal() {
+  const tabs = $(".sim-run-tabs .tab-btn");
+  tabs.forEach((tab) =>
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      TERM_MODE.mode = tab.dataset.mode;
+      const term = $("#terminal");
+      term.innerHTML = "";
+      appendTermLine(term, "t-dim", "Preparado · seleccioná «▶ Ejecutar simulación».");
+    })
+  );
+  $("#term-run").addEventListener("click", runTerminal);
+  appendTermLine($("#terminal"), "t-dim", "Preparado · seleccioná «▶ Ejecutar simulación».");
+}
+
+/* ================= 05 · COLLISION SIM =================
+   Scenario: PDF/ already contains report.pdf; root has foto.jpg, report (1).pdf, report.pdf.
+   Plan (lexicographic): foto.jpg → Images; report (1).pdf → PDF; report.pdf → PDF (collides:
+   PDF/report.pdf exists on disk AND PDF/report (1).pdf is already reserved by step 2). */
+const COLLISION_STEPS = [
+  {
+    file: "foto.jpg",
+    label: "<b>foto.jpg</b> → <span class='ok'>Images/foto.jpg</span>",
+    note: "no existe en disco ni está reservado → se mueve tal cual.",
+    reserved: "Images/foto.jpg",
+  },
+  {
+    file: "report (1).pdf",
+    label: "<b>report (1).pdf</b> → <span class='ok'>PDF/report (1).pdf</span>",
+    note: "<code>PDF/</code> solo contiene <code>report.pdf</code> → el nombre está libre.",
+    reserved: "PDF/report (1).pdf",
+  },
+  {
+    file: "report.pdf",
+    label:
+      "<b>report.pdf</b> → <code>PDF/report.pdf</code> <span class='suf'>ya existe en disco</span> → " +
+      "probar <code>PDF/report (1).pdf</code>… <span class='reserved'>reservado por el paso 2</span> → " +
+      "probar <code>PDF/report (2).pdf</code> → <span class='ok'>libre → report (2).pdf</span>",
+    note:
+      "Sin el conjunto de reservas, este paso habría sobrescrito el destino del paso 2. " +
+      "Axioma 3: nunca sobrescribir.",
+    reserved: "PDF/report (2).pdf",
+  },
+];
+
+function buildCollisionFS() {
+  const host = $("#collision-fs");
+  const root = document.createElement("div");
+  root.className = "fs-box";
+  root.innerHTML =
+    `<div class="fs-title">Raíz (a organizar)</div>` +
+    `<div class="fs-item new"><span class="dot"></span>foto.jpg</div>` +
+    `<div class="fs-item new"><span class="dot"></span>report (1).pdf</div>` +
+    `<div class="fs-item new"><span class="dot"></span>report.pdf</div>`;
+  const pdf = document.createElement("div");
+  pdf.className = "fs-box";
+  pdf.innerHTML =
+    `<div class="fs-title">PDF/ (ya existe)</div>` +
+    `<div class="fs-item same"><span class="dot"></span>report.pdf <span style="color:var(--tx-faint)">← de una corrida anterior</span></div>`;
+  const img = document.createElement("div");
+  img.className = "fs-box";
+  img.innerHTML = `<div class="fs-title">Images/ (vacía)</div><div class="fs-item free"><span class="dot"></span>—</div>`;
+  host.append(root, pdf, img);
+}
+
+async function runCollision() {
+  const wrap = $("#collision-steps");
+  const btn = $("#collision-run");
+  btn.disabled = true;
+  wrap.innerHTML = "";
+
+  const els = COLLISION_STEPS.map((step) => {
+    const el = document.createElement("div");
+    el.className = "coll-step pending";
+    el.innerHTML = step.label + " <span class='t-dim'>— " + step.note + "</span>";
+    wrap.appendChild(el);
+    return el;
+  });
+
+  for (let i = 0; i < els.length; i++) {
+    els[i].className = "coll-step active";
+    await sleep(650);
+    els[i].className = "coll-step done";
+    if (COLLISION_STEPS[i].reserved) {
+      const tag = document.createElement("div");
+      tag.className = "t-dim";
+      tag.style.fontSize = ".72rem";
+      tag.textContent = "reserva añadida al conjunto: " + COLLISION_STEPS[i].reserved;
+      els[i].appendChild(tag);
+    }
+    await sleep(250);
+  }
+
+  btn.disabled = false;
+}
+
+function bindCollision() {
+  buildCollisionFS();
+  $("#collision-run").addEventListener("click", runCollision);
+}
+
+/* ================= 06 · PRECEDENCE RESOLVER ================= */
+const PREC_LAYERS = [
+  { id: "prec-cwd", name: "<cwd>", misc: "Otros", map: { py: "Python" } },
+  { id: "prec-target", name: "<target>", misc: "Varios", map: { pdf: "Documentos" } },
+  { id: "prec-config", name: "--config", misc: "Mezclados", map: { png: "Pictures" } },
+];
+const PREC_DEFAULTS = { misc: "Others", map: { pdf: "PDF", png: "Images" } };
+
+function renderPrecedence() {
+  const present = PREC_LAYERS.filter((l) => $(l.id).checked);
+
+  // miscFolder: upper (last) present layer wins, else default
+  const misc = present.reduce((acc, l) => l.misc, PREC_DEFAULTS.misc);
+  const miscEl = $(".prec-misc");
+  miscEl.textContent = misc;
+  miscEl.className = "v good prec-misc";
+
+  // mapping: per-extension merge (defaults ← layers, upper wins per key)
+  const map = { ...PREC_DEFAULTS.map };
+  const origins = {};
+  for (const l of present) {
+    for (const [k, v] of Object.entries(l.map)) {
+      const existed = Object.prototype.hasOwnProperty.call(map, k);
+      map[k] = v;
+      origins[k] = { from: l.name, added: !existed };
+    }
+  }
+
+  const json = $(".prec-json");
+  const keys = Object.keys(map);
+  json.innerHTML =
+    keys
+      .map((k) => {
+        const ov = origins[k];
+        const comment = ov
+          ? ov.added
+            ? ` <span class="ov">// añadido por ${ov.from}</span>`
+            : ` <span class="ov">// sobrescrito por ${ov.from}</span>`
+          : "";
+        return `<span class="k">"${k}"</span>: <span class="k">"${map[k]}"</span>${comment}`;
+      })
+      .join("\n") + "\n}";
+}
+
+function bindPrecedence() {
+  PREC_LAYERS.forEach((l) => {
+    $(l.id).addEventListener("change", renderPrecedence);
+  });
+  renderPrecedence();
+}
+
+/* ================= init ================= */
+bindClassifier();
+bindTerminal();
+bindCollision();
+bindPrecedence();
+</script>
+</body>
+</html>

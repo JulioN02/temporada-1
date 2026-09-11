@@ -1,46 +1,47 @@
 # 01 · File Organizer
 
-Proyecto rápido de 1–3 días de la temporada 1. Documentación en Obsidian → `Proyectos rápidos/Proyectos Rápidos.md`.
+Un CLI para ordenar el nivel superior de un directorio por extensión de archivo: clasificación, `--dry-run`, colisiones seguras e idempotencia — con cero dependencias de runtime.
 
-Estado: ✅ Implementado (v1)
+Estado: ✅ Entregado · 50/50 tests · typecheck limpio · cero dependencias
 
-## Documentación
+Proyecto rápido de la temporada 1 (sección **Proyectos**). Documentación en Obsidian → `Temporada 1/Proyectos rápidos/01 File Organizer.md` (nota general) y `01 File Organizer — Ficha Técnica.md` (ficha técnica).
 
-- **Guía de usuario** (`docs/user-guide.md`) — requisitos, instalación/ejecución, ejemplo paso a paso, flags, configuración JSON, mapeo por defecto, casos de uso y solución de problemas.
-- **Dashboard didáctico** (`docs/dashboard/index.html`) — explicación visual e interactiva del proyecto (clasificador por extensión, dry-run vs. real, colisiones, precedencia de configuración y los 5 axiomas). Se abre directo en el navegador, sin build.
+## El problema
 
-## Qué hace
+La carpeta de descargas acumula archivos desordenados y encontrarlos se vuelve lento. Una regla simple de clasificación por extensión lo automatiza: un comando escanea el nivel superior, clasifica cada archivo regular por su extensión y lo mueve a una subcarpeta de categoría (`PDF/`, `Images/`, `Videos/`, `Code/`, …).
 
-Organiza automáticamente los archivos de un directorio (por ejemplo `Downloads`): escanea el nivel superior, clasifica cada archivo regular por su extensión y lo mueve a una subcarpeta de categoría (`PDF/`, `Images/`, `Videos/`, `Code/`, etc.). Es seguro: nunca sobrescribe, nunca borra, es idempotente y admite un modo de ensayo (`--dry-run`) que no escribe nada.
+La solución es **segura por diseño**: nunca sobrescribe, nunca borra, es idempotente y admite un modo de ensayo (`--dry-run`) que no escribe nada.
 
-## Uso
+## Instalación y ejecución
 
-Ejecución nativa de TypeScript sin compilación (requiere Node 26+):
+Requisito: **Node.js >= 26** (por la ejecución nativa de TypeScript con `--experimental-strip-types`, sin paso de build).
+
+```bash
+npm install          # solo devDependencies (@types/node, typescript)
+npm test             # 50/50 tests (node --test, 3 suites)
+npm run typecheck    # tsc --noEmit
+```
+
+Ejecución directa desde el código fuente:
 
 ```bash
 node --experimental-strip-types src/cli.ts [opciones] [directorio]
 ```
 
-| Opción | Descripción |
-|---|---|
-| `--dry-run` | Muestra el plan sin escribir nada (ni siquiera crea carpetas) |
-| `--config <ruta>` | Archivo de configuración de mayor precedencia |
-| `--include-hidden` | Procesa también los archivos ocultos (punto inicial) |
-| `--help` | Muestra la ayuda y termina |
-| `--version` | Muestra la versión y termina |
-
 Si no se indica directorio, se usa el directorio actual. El nombre público del binario es `file-organizer` (para `--version` y esta documentación); en v1 no se publica un `bin` porque la ejecución usa el flag nativo de Node.
 
-### Ejemplos
+## Uso
+
+### Ejemplo real
 
 ```bash
-# Ensayo: muestra el plan sin escribir nada
+# 1. Ensayo: muestra el plan sin escribir nada
 node --experimental-strip-types src/cli.ts --dry-run ~/Downloads
 
-# Ejecución real
+# 2. Ejecución real
 node --experimental-strip-types src/cli.ts ~/Downloads
 
-# Configuración personalizada
+# 3. Configuración personalizada
 node --experimental-strip-types src/cli.ts --config ./mi-config.json ~/Downloads
 ```
 
@@ -55,6 +56,16 @@ skipped: data.bin (misc omitted)
 ```
 
 En modo `--dry-run` todas las líneas de stdout llevan el prefijo `[dry-run]`. Los errores se escriben en stderr y el código de salida es `1` si hubo algún error; en caso contrario, `0`.
+
+### Tabla de opciones
+
+| Opción | Descripción |
+|---|---|
+| `--dry-run` | Muestra el plan sin escribir nada (ni siquiera crea carpetas) |
+| `--config <ruta>` | Archivo de configuración de mayor precedencia |
+| `--include-hidden` | Procesa también los archivos ocultos (punto inicial) |
+| `--help` | Muestra la ayuda y termina |
+| `--version` | Muestra la versión y termina |
 
 ## Configuración
 
@@ -87,13 +98,15 @@ La capa superior gana en caso de conflicto y el `mapping` se fusiona por extensi
 
 Todos los archivos de configuración cargados en la ejecución (el de `--config` y los `.file-organizer.json` del directorio y del cwd) se añaden a la lista de ignorados: nunca se mueven, aunque su extensión tenga categoría. Los directorios, los archivos ocultos (salvo con `--include-hidden`) y los enlaces simbólicos tampoco se procesan. Ejecutar el organizador dos veces seguidas produce cero movimientos en la segunda ejecución (idempotencia).
 
-## Cómo funciona por dentro
+## Módulos / arquitectura
 
-- `src/classify.ts` — clasificación pura por extensión (sin I/O, determinista)
-- `src/config.ts` — mapeo por defecto, validación JSON con type guards, precedencia y fusión
-- `src/mover.ts` — plan (escaneo + colisiones con sufijo) y ejecución (mkdir, `rename` con fallback EXDEV, dry-run, errores por archivo)
-- `src/cli.ts` — argumentos con `util.parseArgs`, orquestación, reporte y códigos de salida
-- `tests/` — tres suites `node:test` (50 tests)
+| Módulo | Rol |
+|---|---|
+| `src/classify.ts` | Clasificación pura por extensión (sin I/O, determinista) |
+| `src/config.ts` | Mapeo por defecto, validación JSON con type guards, precedencia y fusión |
+| `src/mover.ts` | Plan (escaneo + colisiones con sufijo) y ejecución (mkdir, `rename` con fallback EXDEV, dry-run, errores por archivo) |
+| `src/cli.ts` | Argumentos con `util.parseArgs`, orquestación, reporte y códigos de salida |
+| `tests/` | Tres suites `node:test` (50 tests) |
 
 Comandos de desarrollo:
 
@@ -101,6 +114,27 @@ Comandos de desarrollo:
 npm test          # node --test (3 suites)
 npm run typecheck # tsc --noEmit
 ```
+
+## Axiomas
+
+1. **Categoría solo desde la extensión** — la clasificación depende únicamente del nombre y el mapeo activo; misma entrada, misma salida.
+2. **Solo archivos regulares del nivel superior** — nunca se mueven directorios, archivos ocultos (salvo `--include-hidden`) ni enlaces simbólicos.
+3. **Nunca se sobrescribe ni se pierde data** — las colisiones se resuelven con sufijo determinista; un destino que no puede verificarse se asume ocupado.
+4. **Idempotencia** — ejecutar dos veces seguidas mueve cero archivos en la segunda pasada.
+5. **Desconocido o sin extensión → `Others` u omitir, nunca borrar** — con `omitMisc: true` se reportan como omitidos, jamás se eliminan.
+
+## Evidencia
+
+- **Tests:** 50/50 en verde (`node --test`, suites classify / config / mover).
+- **Typecheck:** `tsc --noEmit` limpio.
+- **Capturas reales del CLI:** `docs/evidence/` — cada archivo es la salida capturada del comando real contra directorios temporales (help, versión, dry-run, ejecución real, idempotencia, colisiones, configuración por capas, archivos ocultos, errores y suite de tests).
+
+## Documentación
+
+- **Guía de usuario** (`docs/user-guide.md`) — requisitos, instalación/ejecución, ejemplo paso a paso, flags, configuración JSON, mapeo por defecto, casos de uso y solución de problemas.
+- **Dashboard didáctico** (`docs/dashboard.html`) — explicación visual e interactiva del proyecto en un solo archivo autónomo (CSS/JS inline, sin dependencias externas; ≤ 1MB). Se abre directo en el navegador, sin build. Fuente editable: `docs/dashboard/` (index.html + app.js + style.css).
+- **Ficha de portafolio** (`docs/PORTFOLIO.md`) — versión divulgativa para la sección Proyectos (por qué CLI, diseño de ingeniería, evidencia, links).
+- **Obsidian:** nota general `Temporada 1/Proyectos rápidos/01 File Organizer.md` · ficha técnica `01 File Organizer — Ficha Técnica.md`.
 
 ## Preguntas guía
 
@@ -130,3 +164,7 @@ La carpeta de descargas acumula archivos desordenados y encontrarlos se vuelve l
 - El `miscFolder` podría aceptar rutas anidadas (hoy solo un nombre de carpeta).
 - Una suite dedicada para el CLI (hoy se verifica con secuencias de smoke documentadas) usando `spawn` real.
 - Publicaría un `bin` cuando la ejecución nativa de TypeScript se estabilice sin flags experimentales.
+
+## Licencia
+
+[Apache-2.0](LICENSE) — © 2026 JulioN02. Puedes usar, copiar, modificar y distribuir el proyecto libremente, siempre que conserves el aviso de licencia y atribución del autor original.

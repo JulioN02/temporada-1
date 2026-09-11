@@ -1,0 +1,10 @@
+# Manejo de errores: stderr + exit 1 (nunca fallback silencioso ni exit 0)
+# Escenario A: flag desconocido (parseArgs estricto)
+# comando: node --experimental-strip-types src/cli.ts --flag-invalido
+error: Unknown option '--flag-invalido'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- "--flag-invalido"
+EXIT:1
+
+# Escenario B: directorio objetivo inexistente
+# comando: node --experimental-strip-types src/cli.ts /tmp/opencode/evidencia-no-existe-xyz
+error: cannot access target directory /tmp/opencode/evidencia-no-existe-xyz: ENOENT: no such file or directory, stat '/tmp/opencode/evidencia-no-existe-xyz'
+EXIT:1

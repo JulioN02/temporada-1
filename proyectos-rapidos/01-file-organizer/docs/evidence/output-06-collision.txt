@@ -1,0 +1,7 @@
+# Colisión: el destino PDF/report.pdf ya existe -> sufijo determinista 'report (1).pdf'
+# Escenario: se pre-crea PDF/report.pdf y luego se organiza un report.pdf en la raíz
+# comando: node --experimental-strip-types src/cli.ts /tmp/opencode/evidence-06-qUpmuX
+Moved: 1 | Skipped: 1 | Errors: 0
+PDF/report (1).pdf ← report.pdf
+skipped: PDF (directory)
+EXIT:0
