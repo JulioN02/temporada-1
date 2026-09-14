@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXP-02 · Mini ORM — Dashboard de evidencia</title>
+<style>
+  :root {
+    --bg: #0b1120;
+    --bg-soft: #0f172a;
+    --card: #111827;
+    --card-2: #0d1526;
+    --border: #1e293b;
+    --border-strong: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #2dd4bf;
+    --accent-2: #f59e0b;
+    --green: #4ade80;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --mono: "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.55;
+    padding: 24px 28px 60px;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: var(--mono); }
+  .wrap { max-width: 1560px; margin: 0 auto; }
+
+  /* ---------- Header ---------- */
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 20px; flex-wrap: wrap;
+    padding: 22px 26px;
+    background: linear-gradient(135deg, #0f1d2e 0%, #0d1526 60%, #10251f 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    margin-bottom: 22px;
+  }
+  header.top h1 {
+    font-size: 26px; font-weight: 700; letter-spacing: .5px;
+  }
+  header.top h1 .tag { color: var(--accent); }
+  header.top p.sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; letter-spacing: .3px;
+    padding: 4px 10px; border-radius: 999px;
+    background: rgba(45, 212, 191, .12);
+    color: var(--accent);
+    border: 1px solid rgba(45, 212, 191, .35);
+    white-space: nowrap;
+  }
+  .badge.green { background: rgba(74, 222, 128, .12); color: var(--green); border-color: rgba(74,222,128,.35); }
+  .badge.amber { background: rgba(245, 158, 11, .12); color: var(--accent-2); border-color: rgba(245,158,11,.35); }
+  .badge.blue { background: rgba(96, 165, 250, .12); color: var(--blue); border-color: rgba(96,165,250,.35); }
+  .badge.neutral { background: rgba(148, 163, 184, .12); color: var(--muted); border-color: rgba(148,163,184,.3); }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+
+  /* ---------- Cards / layout ---------- */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin-bottom: 22px;
+  }
+  .card h2 {
+    font-size: 18px; font-weight: 700; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card h2 .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 8px;
+    background: rgba(45, 212, 191, .15); color: var(--accent);
+    font-size: 13px; font-weight: 700;
+  }
+  .card h3 { font-size: 15px; font-weight: 600; margin: 14px 0 8px; color: var(--text); }
+  .card p, .card li { color: var(--muted); font-size: 14px; }
+  .card p + p { margin-top: 8px; }
+  ul.clean { list-style: none; }
+  ul.clean li { padding: 4px 0 4px 20px; position: relative; }
+  ul.clean li::before { content: "▸"; position: absolute; left: 0; color: var(--accent); }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+  .strong { color: var(--text); }
+
+  /* ---------- Module diagram ---------- */
+  .arch-diagram { display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+  .module {
+    flex: 1; min-width: 150px;
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    padding: 14px 12px;
+    text-align: center;
+    position: relative;
+  }
+  .module .mname { font-weight: 700; font-family: var(--mono); font-size: 13px; color: var(--accent); }
+  .module .mdesc { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .module.tests { border-color: rgba(74,222,128,.4); }
+  .module.tests .mname { color: var(--green); }
+  .arrow {
+    align-self: center; color: var(--border-strong); font-size: 20px; flex: 0 0 auto;
+  }
+  .steps { counter-reset: step; list-style: none; }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 8px 0 8px 42px;
+    color: var(--muted); font-size: 14px;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 8px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(45, 212, 191, .15); color: var(--accent);
+    font-weight: 700; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps code { color: var(--text); font-size: 13px; }
+
+  /* ---------- API table ---------- */
+  table.api { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  table.api th, table.api td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.api th { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  table.api td code { color: var(--text); font-size: 12.5px; background: rgba(148,163,184,.1); padding: 2px 6px; border-radius: 5px; }
+  table.api tr:hover td { background: rgba(45,212,191,.04); }
+
+  /* ---------- GUI ---------- */
+  .gui { display: grid; grid-template-columns: 340px 1fr; gap: 18px; }
+  .gui-controls { display: flex; flex-direction: column; gap: 12px; }
+  .gui-controls label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .gui-controls select, .gui-controls input, .gui-controls textarea {
+    width: 100%;
+    background: var(--card-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+  .gui-controls textarea { resize: vertical; min-height: 58px; }
+  .gui-controls input:focus, .gui-controls textarea:focus, .gui-controls select:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(45,212,191,.15);
+  }
+  .gui-controls .field { display: none; }
+  .gui-controls .field.visible { display: block; }
+  .btn {
+    font-family: var(--sans); font-weight: 600; font-size: 13px;
+    border: 1px solid var(--border-strong); border-radius: 8px;
+    padding: 9px 14px; cursor: pointer; transition: .15s;
+  }
+  .btn-primary { background: var(--accent); color: #06251f; border-color: var(--accent); }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-ghost { background: transparent; color: var(--text); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: rgba(248,113,113,.12); color: var(--red); border-color: rgba(248,113,113,.4); }
+  .btn-danger:hover { background: rgba(248,113,113,.2); }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-row .btn { flex: 1; }
+
+  .gui-output { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; min-width: 0; }
+  .output-pane {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    min-width: 0;
+    display: flex; flex-direction: column;
+  }
+  .output-pane h4 {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--muted); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px; justify-content: space-between;
+  }
+  .output-pane pre {
+    flex: 1; overflow: auto; max-height: 380px;
+    font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+    color: var(--text);
+  }
+  .output-pane pre .sql { color: var(--green); }
+  .output-pane pre .bind { color: var(--accent-2); }
+  .output-pane pre .dim { color: var(--muted); }
+  .msg-line { margin-top: 10px; padding: 8px 10px; border-radius: 8px; font-size: 12.5px; }
+  .msg-ok { background: rgba(74,222,128,.1); color: var(--green); border: 1px solid rgba(74,222,128,.3); }
+  .msg-err { background: rgba(248,113,113,.1); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
+  .msg-info { background: rgba(96,165,250,.1); color: var(--blue); border: 1px solid rgba(96,165,250,.3); }
+
+  .table-state h3 { display: flex; align-items: center; gap: 10px; }
+  .table-state pre { font-size: 12px; color: var(--text); overflow: auto; max-height: 300px; }
+  .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(96,165,250,.12); color: var(--blue); border: 1px solid rgba(96,165,250,.3); }
+  .pill.green { background: rgba(74,222,128,.12); color: var(--green); border-color: rgba(74,222,128,.3); }
+
+  /* ---------- Evidence ---------- */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .stat {
+    background: var(--card-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat .value { font-size: 26px; font-weight: 800; font-family: var(--mono); color: var(--accent); }
+  .stat .value.green { color: var(--green); }
+  .stat .value.amber { color: var(--accent-2); }
+  .stat .label { font-size: 12px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .4px; }
+
+  footer.foot {
+    margin-top: 30px; padding: 18px 22px;
+    border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 13px;
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .kbd {
+    background: rgba(148,163,184,.12); border: 1px solid var(--border-strong);
+    border-radius: 5px; padding: 1px 6px; font-family: var(--mono); font-size: 12px; color: var(--text);
+  }
+  @media (max-width: 1100px) {
+    .gui { grid-template-columns: 1fr; }
+    .gui-output { grid-template-columns: 1fr; }
+    body { padding: 16px 14px 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===================== 1. HEADER ===================== -->
+  <header class="top">
+    <div>
+      <h1>EXP-02 · <span class="tag">Mini ORM</span></h1>
+      <p class="sub">Mini ORM en TypeScript ESM sobre <code>node:sqlite</code> — zero dependencies, arquitectura minimalista y verificada por especificación.</p>
+    </div>
+    <div class="badges">
+      <span class="badge green">✅ Implementado</span>
+      <span class="badge blue">TypeScript</span>
+      <span class="badge blue">node:sqlite</span>
+      <span class="badge blue">node:test</span>
+      <span class="badge neutral">68/68 tests</span>
+      <span class="badge amber">28/28 escenarios</span>
+    </div>
+  </header>
+
+  <!-- ===================== 2. EXPLICACIÓN GENERAL ===================== -->
+  <section class="card">
+    <h2><span class="num">2</span>Explicación general</h2>
+    <p>
+      Un <strong class="strong">ORM</strong> (Object-Relational Mapping) traduce entre dos mundos incompatibles: las
+      <strong class="strong">filas y columnas</strong> de una base de datos relacional y los
+      <strong class="strong">objetos tipados</strong> de un lenguaje de programación. Este Mini ORM hace esa traducción en
+      <strong class="strong">tres mecánicas</strong>:
+    </p>
+    <div class="cols" style="margin-top:14px;">
+      <div class="module">
+        <div class="mname">① Mapping</div>
+        <div class="mdesc">El <code>descriptor</code> declara tabla, columnas y tipos (<code>int · float · string · bool · date</code>). Es la única fuente de verdad: sin él no hay SQL.</div>
+      </div>
+      <div class="module">
+        <div class="mname">② Query generation</div>
+        <div class="mdesc">Cada llamada (<code>find</code>, <code>create</code>, <code>update</code>…) genera SQL + bindings con <code>?</code> — los valores nunca se interpolan.</div>
+      </div>
+      <div class="module">
+        <div class="mname">③ Hydration</div>
+        <div class="mdesc">Las filas crudas (de <code>node:sqlite</code>, con <em>null prototype</em>) se copian a instancias reales de clase con tipos JS: <code>0/1</code> → <code>boolean</code>, ISO string → <code>Date</code>.</div>
+      </div>
+    </div>
+    <h3>Las 2 gotchas de <code>node:sqlite</code> que el ORM resuelve</h3>
+    <ul class="clean">
+      <li><strong class="strong">Booleans rechazados como binds:</strong> <code>node:sqlite</code> no acepta <code>true/false</code> como parámetro → la capa de coerción convierte <code>bool</code> a <code>0/1</code> <em>antes</em> de enlazar.</li>
+      <li><strong class="strong">Filas con null prototype:</strong> las filas devueltas vienen con <code>Object.create(null)</code> (sin <code>hasOwnProperty</code> ni <code>toString</code>) → la hidratación copia cada columna a una instancia real de clase.</li>
+    </ul>
+    <h3>Axiomas ejercitados</h3>
+    <ul class="clean">
+      <li><strong class="strong">Axioma 2 — Inyección SQL imposible:</strong> los valores solo viajan por bindings <code>?</code>, nunca interpolados en el string SQL.</li>
+      <li><strong class="strong">Axioma 3 — La BD decide la semántica SQL:</strong> el ORM solo emite SQL; el motor (<code>node:sqlite</code>) interpreta, valida y ejecuta.</li>
+      <li><strong class="strong">Axioma 4 — El descriptor es la fuente única de verdad:</strong> columnas y tipos se derivan exclusivamente de él; columnas desconocidas se rechazan (<code>assertKnownColumn</code>).</li>
+      <li><strong class="strong">Axioma 5 — API deliberadamente pequeña:</strong> 5 métodos estáticos + 2 de instancia. Nada más.</li>
+      <li><strong class="strong">Axioma 8 — Conexión síncrona única:</strong> una sola conexión <code>node:sqlite</code> síncrona compartida por el modelo.</li>
+    </ul>
+  </section>
+
+  <!-- ===================== 3. ARQUITECTURA ===================== -->
+  <section class="card">
+    <h2><span class="num">3</span>Arquitectura</h2>
+    <div class="arch-diagram">
+      <div class="module">
+        <div class="mname">src/schema.ts</div>
+        <div class="mdesc">Descriptor + const-tipos + <code>validateDescriptor</code> + <code>assertKnownColumn</code></div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="module">
+        <div class="mname">src/query-builder.ts</div>
+        <div class="mdesc">Puro: <code>buildSelect / buildInsert / buildUpdate / buildDelete</code> → <code>{ sql, bindings }</code></div>
+      </div>
+      <div class="module">
+        <div class="mname">src/coercion.ts</div>
+        <div class="mdesc"><code>toSql / fromSql</code> — bool→0/1 antes del bind; fechas ISO-8601 UTC</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="module">
+        <div class="mname">src/model.ts</div>
+        <div class="mdesc"><code>createModel</code> + <code>hydrate</code> → clase real, filas → instancias</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="module tests">
+        <div class="mname">tests/</div>
+        <div class="mdesc">14 archivos · node:test · 68/68 verdes</div>
+      </div>
+    </div>
+    <h3>Cómo fluye una consulta</h3>
+    <ol class="steps">
+      <li>Se llama, por ejemplo, <code>User.find({ where: { age: 21, active: true }, orderBy: 'name', limit: 5 })</code>.</li>
+      <li><code>createModel(descriptor, db)</code> ya unió descriptor + conexión en la clase <code>User</code>.</li>
+      <li><code>query-builder.buildSelect</code> produce <code>SELECT * FROM users WHERE age = ? AND active = ? ORDER BY name LIMIT ?</code>.</li>
+      <li><code>coercion.toSql</code> convierte <code>true</code> → <code>1</code> y las fechas → ISO antes de armar los bindings <code>[21, 1, 5]</code>.</li>
+      <li>Se ejecuta <code>db.prepare(sql).all(...bindings)</code> sobre la única conexión síncrona.</li>
+      <li>Las filas llegan con <strong class="strong">null prototype</strong>; <code>hydrate</code> copia cada columna y aplica <code>fromSql</code> (<code>1</code> → <code>true</code>, ISO → <code>Date</code>).</li>
+      <li>El resultado son instancias reales de la clase <code>User</code>, no objetos crudos.</li>
+    </ol>
+  </section>
+
+  <!-- ===================== 4. GUÍA DE USUARIO ===================== -->
+  <section class="card">
+    <h2><span class="num">4</span>Guía de usuario</h2>
+    <div class="cols">
+      <div>
+        <h3>Comandos</h3>
+        <pre style="background:var(--card-2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12.5px;color:var(--text);overflow:auto;">npm install
+npm test          <span class="dim" style="color:var(--muted)"># 68/68 verde</span>
+npm run typecheck <span class="dim" style="color:var(--muted)"># tsc --noEmit</span></pre>
+        <h3>Estructura de archivos</h3>
+        <pre style="background:var(--card-2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12.5px;color:var(--text);overflow:auto;">exp-02-mini-orm/
+├── package.json
+├── tsconfig.json
+├── README.md
+├── src/
+│   ├── coercion.ts        # toSql / fromSql
+│   ├── model.ts           # createModel + hydrate
+│   ├── query-builder.ts   # buildSelect/Insert/Update/Delete
+│   └── schema.ts          # descriptor + validación
+└── tests/
+    ├── coercion.test.ts
+    ├── create.test.ts
+    ├── delete.test.ts
+    ├── find.test.ts
+    ├── findById.test.ts
+    ├── hydration.test.ts
+    ├── injection.test.ts
+    ├── model-definition.test.ts
+    ├── not-found.test.ts
+    ├── query-builder.test.ts
+    ├── save-delete-instance.test.ts
+    ├── schema.test.ts
+    ├── update.test.ts
+    └── helpers.ts</pre>
+      </div>
+      <div>
+        <h3>API pública</h3>
+        <table class="api">
+          <thead><tr><th>Firma</th><th>Contrato not-found</th></tr></thead>
+          <tbody>
+            <tr><td><code>createModel(descriptor, db) → ModelClass</code></td><td>—</td></tr>
+            <tr><td><code>find(criteria?)</code><br><small style="color:var(--muted)"><code>{where?, orderBy?, limit?}</code> — igualdad AND, sin operadores</small></td><td>→ <code>[]</code></td></tr>
+            <tr><td><code>findById(id)</code></td><td>→ <code>null</code></td></tr>
+            <tr><td><code>create(data)</code></td><td>→ instancia creada</td></tr>
+            <tr><td><code>update(id, patch)</code></td><td>→ <code>null</code></td></tr>
+            <tr><td><code>delete(id)</code></td><td>→ <code>false</code></td></tr>
+            <tr><td><code>instance.save()</code></td><td>update-only; lanza si no hay PK; <strong class="strong">nunca hace upsert</strong></td></tr>
+            <tr><td><code>instance.delete()</code></td><td>—</td></tr>
+          </tbody>
+        </table>
+        <h3>Semántica de <code>save()</code></h3>
+        <ul class="clean">
+          <li><code>save()</code> genera un <code>UPDATE … WHERE id = ?</code> con el <code>id</code> como último binding.</li>
+          <li>Sin primary key lanza un error (<em>throw</em>) — nunca inserta ni hace upsert.</li>
+          <li>Cada consulta devuelve <strong class="strong">instancias frescas</strong>: no existe identity map.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 5. GUI INTERACTIVA ===================== -->
+  <section class="card">
+    <h2><span class="num">5</span>GUI interactiva — Simulador del ORM en el navegador</h2>
+    <p style="margin-bottom:16px;">
+      Réplica del Mini ORM corriendo en memoria. Los datos se guardan con <strong class="strong">tipos de BD</strong>
+      (<code>active</code> como <code>0/1</code>, <code>created_at</code> como ISO string). Al ejecutar verás los tres
+      artefactos lado a lado: <strong class="strong">SQL + bindings</strong> (tal como los genera el query-builder real),
+      <strong class="strong">filas crudas</strong> (null-prototype, como las devuelve <code>node:sqlite</code>) e
+      <strong class="strong">instancias hidratadas</strong> (tipos JS coercidos). El estado persiste dentro de la sesión:
+      <code>create → find → update → delete</code> funciona como secuencia real.
+    </p>
+
+    <div class="gui">
+      <div class="gui-controls">
+        <div class="field">
+          <label>Operación</label>
+          <select id="op">
+            <option value="find">find(criteria?)</option>
+            <option value="findById">findById(id)</option>
+            <option value="create">create(data)</option>
+            <option value="update">update(id, patch)</option>
+            <option value="delete">delete(id)</option>
+            <option value="save">instance.save()</option>
+          </select>
+        </div>
+        <div class="field" id="f-where">
+          <label>criteria.where (JSON)</label>
+          <textarea id="whereJson">{"active": true}</textarea>
+        </div>
+        <div class="field" id="f-orderby">
+          <label>criteria.orderBy</label>
+          <input id="orderBy" type="text" value="name">
+        </div>
+        <div class="field" id="f-limit">
+          <label>criteria.limit</label>
+          <input id="limit" type="number" value="5" min="1">
+        </div>
+        <div class="field" id="f-data">
+          <label>data (JSON)</label>
+          <textarea id="dataJson">{"name":"Grace Hopper","email":"grace@example.com","age":85,"active":true}</textarea>
+        </div>
+        <div class="field" id="f-patch">
+          <label>patch (JSON)</label>
+          <textarea id="patchJson">{"age":37,"active":false}</textarea>
+        </div>
+        <div class="field" id="f-id">
+          <label>id</label>
+          <input id="rowId" type="number" value="1" min="1">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="runBtn">▶ Ejecutar</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-danger" id="injectBtn">💉 Demo inyección SQL</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="resetBtn">↺ Restablecer datos</button>
+        </div>
+      </div>
+
+      <div class="gui-output">
+        <div class="output-pane">
+          <h4>① SQL + bindings <span class="pill">query-builder</span></h4>
+          <pre id="out-sql"><span class="dim">— esperando acción —</span></pre>
+        </div>
+        <div class="output-pane">
+          <h4>② Raw rows <span class="pill">null prototype</span></h4>
+          <pre id="out-raw"><span class="dim">— esperando acción —</span></pre>
+        </div>
+        <div class="output-pane">
+          <h4>③ Hidratadas <span class="pill green">tipos JS</span></h4>
+          <pre id="out-hydrated"><span class="dim">— esperando acción —</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-state" style="margin-top:18px;">
+      <h3>Estado de la tabla <code>users</code> <span class="pill green">tipos de BD</span></h3>
+      <pre id="table-state">cargando…</pre>
+    </div>
+    <div id="statusBox"></div>
+  </section>
+
+  <!-- ===================== 6. EVIDENCIA ===================== -->
+  <section class="card">
+    <h2><span class="num">6</span>Evidencia</h2>
+    <div class="stat-grid">
+      <div class="stat"><div class="value green">68/68</div><div class="label">tests verdes</div></div>
+      <div class="stat"><div class="value green">28/28</div><div class="label">escenarios COMPLIANT</div></div>
+      <div class="stat"><div class="value amber">PASS-WITH-FINDINGS</div><div class="label">verificación</div></div>
+      <div class="stat"><div class="value amber">3267cb7</div><div class="label">commit</div></div>
+      <div class="stat"><div class="value">22</div><div class="label">archivos</div></div>
+      <div class="stat"><div class="value">+1327</div><div class="label">líneas</div></div>
+      <div class="stat"><div class="value">0</div><div class="label">dependencias</div></div>
+      <div class="stat"><div class="value">0</div><div class="label">hallazgos CRITICAL</div></div>
+    </div>
+    <h3>Detalle de verificación</h3>
+    <table class="api">
+      <thead><tr><th>Métrica</th><th>Resultado</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td><code>npm test</code></td><td><span class="badge green">68/68</span></td><td>Suites de mapping, query generation, hidratación, inyección y contratos not-found.</td></tr>
+        <tr><td><code>npm run typecheck</code></td><td><span class="badge green">OK</span></td><td><code>tsc --noEmit</code> sin errores.</td></tr>
+        <tr><td>Escenarios de especificación</td><td><span class="badge green">28/28 COMPLIANT</span></td><td>Cobertura completa del documento de especificación del experimento.</td></tr>
+        <tr><td>Verificación</td><td><span class="badge amber">PASS-WITH-FINDINGS</span></td><td>Aprobado; hallazgos menores sin severidad CRITICAL.</td></tr>
+        <tr><td>Inyección SQL</td><td><span class="badge green">Axioma 2</span></td><td>Payload <code>Robert'); DROP TABLE users;--</code> almacenado verbatim, tabla intacta.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===================== 7. FOOTER ===================== -->
+  <footer class="foot">
+    <div>EXP-02 · Mini ORM — <a href="https://github.com/JSofSolutions/temporada-1" target="_blank" rel="noopener">repositorio temporada-1</a> · commit <code class="kbd">3267cb7</code></div>
+    <div>📝 Referencia: nota Obsidian <em>EXP-02 Mini ORM</em> (spec · 28 escenarios · verificación PASS-WITH-FINDINGS)</div>
+  </footer>
+
+</div>
+
+<script>
+'use strict';
+
+/* ============================================================
+   Simulador del Mini ORM (EXP-02) — replica fiel en el navegador
+   - Tipos de BD en memoria (active: 0/1, created_at: ISO string)
+   - Query shapes idénticos a src/query-builder.ts
+   - Coerción idéntica a src/coercion.ts
+   - Filas con null-prototype, hidratación a instancias reales
+   ============================================================ */
+
+/* ---------- Descriptor (fuente única de verdad, axiom 4) ---------- */
+const DESCRIPTOR = {
+  table: 'users',
+  columns: [
+    { name: 'id',         type: 'int',    primaryKey: true },
+    { name: 'name',       type: 'string' },
+    { name: 'email',      type: 'string' },
+    { name: 'age',        type: 'int' },
+    { name: 'active',     type: 'bool' },
+    { name: 'created_at', type: 'date' }
+  ]
+};
+
+function columnMap() {
+  const m = {};
+  for (const c of DESCRIPTOR.columns) m[c.name] = c;
+  return m;
+}
+
+/* ---------- Coerción toSql / fromSql (mirror de src/coercion.ts) ---------- */
+function toSql(type, value) {
+  switch (type) {
+    case 'bool':  return value ? 1 : 0;                         // bool → 0/1 ANTES del bind
+    case 'date': {
+      const d = value instanceof Date ? value : new Date(value);
+      return isNaN(d.getTime()) ? null : d.toISOString();       // ISO-8601 UTC
+    }
+    case 'int': {
+      const n = Number(value);
+      return Number.isNaN(n) ? null : Math.trunc(n);
+    }
+    case 'float': {
+      const n = Number(value);
+      return Number.isNaN(n) ? null : n;
+    }
+    default: return String(value);
+  }
+}
+
+function fromSql(type, value) {
+  switch (type) {
+    case 'bool':  return value === 1;                           // estricto 0/1
+    case 'date':  return value == null ? null : new Date(value);
+    case 'int':   return value == null ? null : Number(value);
+    case 'float': return value == null ? null : Number(value);
+    default:      return value == null ? null : String(value);
+  }
+}
+
+/* ---------- Query builder (mirror exacto de src/query-builder.ts) ---------- */
+function buildSelect(criteria) {
+  criteria = criteria || {};
+  const where = criteria.where || {};
+  const keys = Object.keys(where);
+  let sql = 'SELECT * FROM ' + DESCRIPTOR.table;
+  const bindings = [];
+  if (keys.length) {
+    const clauses = keys.map(function (k) {
+      const col = columnMap()[k];
+      const v = toSql(col.type, where[k]);
+      bindings.push(v);
+      return k + ' = ?';
+    });
+    sql += ' WHERE ' + clauses.join(' AND ');
+  }
+  if (criteria.orderBy) sql += ' ORDER BY ' + criteria.orderBy;
+  if (criteria.limit != null) {
+    sql += ' LIMIT ?';
+    bindings.push(Number(criteria.limit));
+  }
+  return { sql: sql, bindings: bindings };
+}
+
+function buildInsert(data) {
+  const cols = DESCRIPTOR.columns.filter(function (c) {
+    return c.name !== 'id' && Object.prototype.hasOwnProperty.call(data, c.name);
+  });
+  const sql = 'INSERT INTO ' + DESCRIPTOR.table +
+    ' (' + cols.map(function (c) { return c.name; }).join(', ') + ')' +
+    ' VALUES (' + cols.map(function () { return '?'; }).join(', ') + ')';
+  const bindings = cols.map(function (c) { return toSql(c.type, data[c.name]); });
+  return { sql: sql, bindings: bindings };
+}
+
+function buildUpdate(patch, id) {
+  const cols = DESCRIPTOR.columns.filter(function (c) {
+    return c.name !== 'id' && Object.prototype.hasOwnProperty.call(patch, c.name);
+  });
+  const sql = 'UPDATE ' + DESCRIPTOR.table +
+    ' SET ' + cols.map(function (c) { return c.name + ' = ?'; }).join(', ') +
+    ' WHERE id = ?';                                            // id binding LAST
+  const bindings = cols.map(function (c) { return toSql(c.type, patch[c.name]); });
+  bindings.push(id);
+  return { sql: sql, bindings: bindings };
+}
+
+function buildDelete(id) {
+  return { sql: 'DELETE FROM ' + DESCRIPTOR.table + ' WHERE id = ?', bindings: [id] };
+}
+
+/* ---------- Clase Model + hydrate (mirror de src/model.ts) ---------- */
+class User {
+  save() { return this; }   // update-only; en la GUI lo ejecuta execSave
+  delete() { return true; }
+}
+
+function hydrate(row) {
+  const inst = new User();
+  for (const col of DESCRIPTOR.columns) {
+    inst[col.name] = fromSql(col.type, row[col.name]);
+  }
+  return inst;
+}
+
+/* ---------- Estado en memoria (tipos de BD) ---------- */
+function makeRow(obj) {
+  const r = Object.create(null);          // null-prototype, como node:sqlite
+  for (const col of DESCRIPTOR.columns) {
+    r[col.name] = Object.prototype.hasOwnProperty.call(obj, col.name) ? obj[col.name] : null;
+  }
+  return r;
+}
+
+function seedRows() {
+  const now = new Date('2024-01-15T10:00:00.000Z').toISOString();
+  return [
+    makeRow({ id: 1, name: 'Ada Lovelace', email: 'ada@example.com',   age: 36, active: 1, created_at: now }),
+    makeRow({ id: 2, name: 'Alan Turing',  email: 'alan@example.com',  age: 41, active: 1, created_at: now }),
+    makeRow({ id: 3, name: 'Grace Hopper', email: 'grace@example.com', age: 85, active: 1, created_at: now }),
+    makeRow({ id: 4, name: 'Katherine Johnson', email: 'k@example.com', age: 101, active: 0, created_at: now }),
+    makeRow({ id: 5, name: 'Linus Torvalds', email: 'linus@example.com', age: 54, active: 1, created_at: now })
+  ];
+}
+
+const state = { rows: seedRows() };
+function nextId() {
+  let max = 0;
+  for (const r of state.rows) if (r.id > max) max = r.id;
+  return max + 1;
+}
+
+/* ---------- Operaciones ---------- */
+function execFind() {
+  const where = parseJson($('whereJson').value, {});
+  const orderByRaw = $('orderBy').value.trim();
+  const limitRaw = $('limit').value.trim();
+  const criteria = {
+    where: where,
+    orderBy: orderByRaw === '' ? undefined : orderByRaw,
+    limit: limitRaw === '' ? undefined : parseInt(limitRaw, 10)
+  };
+  const q = buildSelect(criteria);
+  let rows = state.rows.slice();
+  const cols = columnMap();
+  for (const key of Object.keys(where)) {
+    const col = cols[key];
+    if (!col) continue;
+    const want = toSql(col.type, where[key]);
+    rows = rows.filter(function (r) { return r[key] === want; });
+  }
+  if (criteria.orderBy) {
+    const col = cols[criteria.orderBy];
+    rows = rows.slice().sort(function (a, b) {
+      const av = a[criteria.orderBy], bv = b[criteria.orderBy];
+      if (col && (col.type === 'int' || col.type === 'float')) return av - bv;
+      return String(av).localeCompare(String(bv));
+    });
+  }
+  if (criteria.limit != null) rows = rows.slice(0, criteria.limit);
+  return { q: q, raw: rows, hydrated: rows.map(hydrate), msg: 'find → ' + rows.length + ' fila(s)' };
+}
+
+function execFindById() {
+  const id = toSql('int', $('rowId').value);
+  const q = { sql: 'SELECT * FROM ' + DESCRIPTOR.table + ' WHERE id = ?', bindings: [id] };
+  const row = state.rows.find(function (r) { return r.id === id; }) || null;
+  return { q: q, raw: row, hydrated: row ? hydrate(row) : null, msg: row ? 'found' : '→ null (no encontrado)' };
+}
+
+function execCreate() {
+  const data = parseJson($('dataJson').value, {});
+  if (!Object.prototype.hasOwnProperty.call(data, 'created_at')) {
+    data.created_at = new Date().toISOString();                  // default de BD
+  }
+  const q = buildInsert(data);
+  const id = nextId();                                            // lastInsertRowid
+  const row = Object.create(null);
+  for (const col of DESCRIPTOR.columns) {
+    row[col.name] = col.name === 'id'
+      ? id
+      : (Object.prototype.hasOwnProperty.call(data, col.name) ? toSql(col.type, data[col.name]) : null);
+  }
+  state.rows.push(row);
+  return { q: q, raw: row, hydrated: hydrate(row), msg: 'inserted id=' + id + ' (PK via lastInsertRowid)' };
+}
+
+function applyPatch(row, patch) {
+  const cols = columnMap();
+  for (const key of Object.keys(patch)) {
+    const col = cols[key];
+    if (!col || col.name === 'id') continue;
+    row[col.name] = toSql(col.type, patch[key]);
+  }
+}
+
+function execUpdate() {
+  const id = toSql('int', $('rowId').value);
+  const patch = parseJson($('patchJson').value, {});
+  const q = buildUpdate(patch, id);
+  const row = state.rows.find(function (r) { return r.id === id; });
+  if (!row) return { q: q, raw: null, hydrated: null, msg: '→ null (no encontrado)' };
+  applyPatch(row, patch);
+  return { q: q, raw: row, hydrated: hydrate(row), msg: 'updated id=' + id };
+}
+
+function execDelete() {
+  const id = toSql('int', $('rowId').value);
+  const q = buildDelete(id);
+  const idx = state.rows.findIndex(function (r) { return r.id === id; });
+  if (idx === -1) return { q: q, raw: null, hydrated: null, msg: '→ false (no encontrado)' };
+  state.rows.splice(idx, 1);
+  return { q: q, raw: null, hydrated: null, msg: 'deleted id=' + id + ' → true' };
+}
+
+function execSave() {
+  const idRaw = $('rowId').value.trim();
+  if (idRaw === '') {
+    return { error: 'ModelError: save() requiere primary key (throw) — nunca hace upsert' };
+  }
+  const id = toSql('int', idRaw);
+  const patch = parseJson($('patchJson').value, {});
+  const q = buildUpdate(patch, id);
+  const row = state.rows.find(function (r) { return r.id === id; });
+  if (!row) return { q: q, raw: null, hydrated: null, msg: '→ null (no encontrado)' };
+  applyPatch(row, patch);
+  return { q: q, raw: row, hydrated: hydrate(row), msg: 'instance.save() → UPDATE (update-only, id binding last)' };
+}
+
+/* ---------- Demo de inyección SQL (axioma 2) ---------- */
+function demoInjection() {
+  const payload = "Robert'); DROP TABLE users;--";
+  const data = { name: payload, email: 'bobby@example.com', age: 42, active: true };
+  if (!Object.prototype.hasOwnProperty.call(data, 'created_at')) {
+    data.created_at = new Date().toISOString();
+  }
+  const q = buildInsert(data);          // el payload va SOLO como binding, nunca interpolado
+  const id = nextId();
+  const row = Object.create(null);
+  for (const col of DESCRIPTOR.columns) {
+    row[col.name] = col.name === 'id' ? id : toSql(col.type, data[col.name]);
+  }
+  state.rows.push(row);
+  return {
+    q: q,
+    raw: row,
+    hydrated: hydrate(row),
+    msg: 'Payload almacenado verbatim en name. La tabla sigue intacta (' + state.rows.length +
+         ' filas) — el valor solo viaja por binding ?, nunca se interpola en el SQL.'
+  };
+}
+
+/* ---------- Render ---------- */
+function $(id) { return document.getElementById(id); }
+
+function esc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function serializeHydrated(v, indent) {
+  indent = indent || 0;
+  const pad = '  '.repeat(indent);
+  if (v === null) return 'null';
+  if (Array.isArray(v)) {
+    if (v.length === 0) return '[]';
+    return '[\n' + v.map(function (x) { return pad + '  ' + serializeHydrated(x, indent + 1); }).join(',\n') + '\n' + pad + ']';
+  }
+  if (v instanceof Date) return 'Date(' + v.toISOString() + ')';
+  if (typeof v === 'object') {
+    const ctor = (v.constructor && v.constructor.name && v.constructor.name !== 'Object')
+      ? v.constructor.name + ' '
+      : '';
+    const keys = Object.keys(v);
+    if (keys.length === 0) return ctor + '{ }';
+    return ctor + '{\n' + keys.map(function (k) {
+      return pad + '  ' + k + ': ' + serializeHydrated(v[k], indent + 1);
+    }).join(',\n') + '\n' + pad + '}';
+  }
+  if (typeof v === 'string') return "'" + v + "'";
+  return JSON.stringify(v);
+}
+
+function renderSqlPane(q) {
+  $('out-sql').innerHTML =
+    '<span class="sql">' + esc(q.sql) + '</span>\n\n' +
+    '<span class="bind">bindings:</span> ' + esc(JSON.stringify(q.bindings));
+}
+
+function renderRawPane(raw) {
+  const isArr = Array.isArray(raw);
+  const list = isArr ? raw : (raw === null ? [] : [raw]);
+  let out = '<span class="dim">// rows de node:sqlite — Object.create(null)</span>\n';
+  if (list.length === 0) {
+    out += isArr ? '[]\n// → contrato not-found: [] (find)' : 'null\n// → contrato not-found: null / false';
+  } else {
+    out += (isArr ? '[' : '') + '\n';
+    list.forEach(function (r, i) {
+      const protoOk = Object.getPrototypeOf(r) === null;
+      out += '  ' + JSON.stringify(r).replace(/"/g, "'") +
+             '  <span class="dim">// prototype: ' + (protoOk ? 'null' : 'Object') + '</span>' +
+             (i < list.length - 1 ? ',' : '') + '\n';
+    });
+    out += isArr ? ']' : '';
+  }
+  $('out-raw').innerHTML = out;
+}
+
+function renderHydratedPane(hydrated) {
+  let out = '<span class="dim">// instancias reales de clase — tipos JS coercidos</span>\n';
+  if (hydrated === null) {
+    out += 'null';
+  } else {
+    out += serializeHydrated(hydrated);
+  }
+  $('out-hydrated').innerHTML = out;
+}
+
+function renderTableState() {
+  const lines = state.rows.map(function (r) {
+    return '  ' + JSON.stringify(r).replace(/"/g, "'");
+  });
+  $('table-state').textContent =
+    '// estado en memoria — tipos de BD (' + state.rows.length + ' filas)\n' +
+    '[' + (lines.length ? '\n' + lines.join(',\n') + '\n' : '') + ']';
+}
+
+function showStatus(result) {
+  const box = $('statusBox');
+  if (result.error) {
+    box.innerHTML = '<div class="msg-line msg-err">' + esc(result.error) + '</div>';
+    return;
+  }
+  const kind = /null|false|no encontrado/.test(result.msg) ? 'msg-info' : 'msg-ok';
+  box.innerHTML = '<div class="msg-line ' + kind + '">' + esc(result.msg) + '</div>';
+}
+
+function run(op) {
+  let result;
+  try {
+    switch (op) {
+      case 'find':     result = execFind(); break;
+      case 'findById': result = execFindById(); break;
+      case 'create':   result = execCreate(); break;
+      case 'update':   result = execUpdate(); break;
+      case 'delete':   result = execDelete(); break;
+      case 'save':     result = execSave(); break;
+      default: return;
+    }
+  } catch (e) {
+    showStatus({ error: e.message });
+    return;
+  }
+  if (result.error) { showStatus(result); return; }
+  present(result);
+}
+
+function present(result) {
+  if (result.error) { showStatus(result); return; }
+  renderSqlPane(result.q);
+  renderRawPane(result.raw);
+  renderHydratedPane(result.hydrated);
+  renderTableState();
+  showStatus(result);
+}
+
+/* ---------- Control de campos visibles por operación ---------- */
+const FIELD_BY_OP = {
+  find:     ['f-where', 'f-orderby', 'f-limit'],
+  findById: ['f-id'],
+  create:   ['f-data'],
+  update:   ['f-id', 'f-patch'],
+  delete:   ['f-id'],
+  save:     ['f-id', 'f-patch']
+};
+function syncFields() {
+  const op = $('op').value;
+  const visible = FIELD_BY_OP[op] || [];
+  document.querySelectorAll('.gui-controls .field').forEach(function (el) {
+    el.classList.toggle('visible', visible.indexOf(el.id) !== -1);
+  });
+}
+
+function parseJson(raw, fallback) {
+  const t = raw.trim();
+  if (t === '') return fallback;
+  return JSON.parse(t);
+}
+
+/* ---------- Wiring ---------- */
+$('op').addEventListener('change', syncFields);
+$('runBtn').addEventListener('click', function () { run($('op').value); });
+$('injectBtn').addEventListener('click', function () { present(demoInjection()); });
+$('resetBtn').addEventListener('click', function () {
+  state.rows = seedRows();
+  renderTableState();
+  $('statusBox').innerHTML = '<div class="msg-line msg-info">Datos restablecidos al seed inicial (5 filas).</div>';
+});
+
+syncFields();
+renderTableState();
+</script>
+</body>
+</html>
