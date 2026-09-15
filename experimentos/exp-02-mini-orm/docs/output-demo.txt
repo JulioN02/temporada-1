@@ -1,0 +1,148 @@
+========================================================================
+  EXP-02 · MINI ORM — DEMO EN VIVO
+  Motor real: node:sqlite (DatabaseSync) · base :memory:
+========================================================================
+
+========================================================================
+  1 · Esquema y descriptor
+========================================================================
+  DDL ejecutado:
+
+  CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    email TEXT,
+    age INTEGER,
+    active INTEGER,
+    created_at TEXT
+  );
+
+  Descriptor: {
+  "table": "users",
+  "primaryKey": "id",
+  "columns": {
+    "id": "int",
+    "name": "string",
+    "email": "string",
+    "age": "int",
+    "active": "bool",
+    "created_at": "date"
+  }
+}
+
+========================================================================
+  2 · create() — insertar dos usuarios
+========================================================================
+  --- INSERT usuario 1 ---
+  SQL      : INSERT INTO users (name, email, age, active, created_at) VALUES (?, ?, ?, ?, ?)
+  bindings : ["Ana","ana@example.com",28,1,"2026-09-15T10:30:00.000Z"]
+    Resultado:
+{
+  "id": 1,
+  "name": "Ana",
+  "email": "ana@example.com",
+  "age": 28,
+  "active": true,
+  "created_at": "2026-09-15T10:30:00.000Z"
+}
+  --- INSERT usuario 2 ---
+  SQL      : INSERT INTO users (name, email, age, active, created_at) VALUES (?, ?, ?, ?, ?)
+  bindings : ["Bruno","bruno@example.com",34,0,"2026-09-14T08:00:00.000Z"]
+    Resultado:
+{
+  "id": 2,
+  "name": "Bruno",
+  "email": "bruno@example.com",
+  "age": 34,
+  "active": false,
+  "created_at": "2026-09-14T08:00:00.000Z"
+}
+
+========================================================================
+  3 · findById(1) — hidratación de tipos
+========================================================================
+  --- SELECT por PK ---
+  SQL      : SELECT * FROM users WHERE id = ?
+  bindings : [1]
+    Resultado:
+{
+  "id": 1,
+  "name": "Ana",
+  "email": "ana@example.com",
+  "age": 28,
+  "active": true,
+  "created_at": "2026-09-15T10:30:00.000Z"
+}
+  Tipos comprobados: active es boolean · created_at es Date
+
+========================================================================
+  4 · find({ where: { active: true } }) — consulta filtrada
+========================================================================
+  --- SELECT filtrado ---
+  SQL      : SELECT * FROM users WHERE active = ?
+  bindings : [1]
+    Resultado: 1 resultado(s)
+   - {"id":1,"name":"Ana","email":"ana@example.com","age":28,"active":true,"created_at":"2026-09-15T10:30:00.000Z"}
+
+========================================================================
+  5 · update(1, { age: 32 }) — actualización estática
+========================================================================
+  --- UPDATE ---
+  SQL      : UPDATE users SET age = ? WHERE id = ?
+  bindings : [32,1]
+    Resultado:
+{
+  "id": 1,
+  "name": "Ana",
+  "email": "ana@example.com",
+  "age": 32,
+  "active": true,
+  "created_at": "2026-09-15T10:30:00.000Z"
+}
+
+========================================================================
+  6 · save() de instancia — mutar y persistir
+========================================================================
+  --- UPDATE desde save() ---
+  SQL      : UPDATE users SET name = ?, email = ?, age = ?, active = ?, created_at = ? WHERE id = ?
+  bindings : ["Ana María","ana@example.com",32,1,"2026-09-15T10:30:00.000Z",1]
+  save() devolvió: true
+    Persistido:
+{
+  "id": 1,
+  "name": "Ana María",
+  "email": "ana@example.com",
+  "age": 32,
+  "active": true,
+  "created_at": "2026-09-15T10:30:00.000Z"
+}
+
+========================================================================
+  7 · delete(2) — borrar y comprobar ausencia
+========================================================================
+  --- DELETE ---
+  SQL      : DELETE FROM users WHERE id = ?
+  bindings : [2]
+  delete(2) devolvió: true
+  findById(2) después del borrado: null (correcto)
+
+========================================================================
+  8 · Inyección SQL — el payload se guarda como dato, no como SQL
+========================================================================
+  --- INSERT con payload malicioso ---
+  SQL      : INSERT INTO users (name, email, age, active, created_at) VALUES (?, ?, ?, ?, ?)
+  bindings : ["Robert'); DROP TABLE users;--","robert@example.com",99,1,"2026-01-01T00:00:00.000Z"]
+  Fila creada con id=3
+  ¿Existe aún la tabla users? SÍ: users
+    El payload se recupera tal cual: 1 resultado(s)
+   - {"id":3,"name":"Robert'); DROP TABLE users;--","email":"robert@example.com","age":99,"active":true,"created_at":"2026-01-01T00:00:00.000Z"}
+
+========================================================================
+  9 · Resumen
+========================================================================
+  Filas en la tabla users: 2
+  Total de tablas: 2
+
+========================================================================
+  DEMO FINALIZADA SIN ERRORES
+========================================================================

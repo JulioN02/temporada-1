@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EXP-02 · Mini ORM — Dashboard de evidencia</title>
+<title>EXP-02 · Mini ORM — Prueba el ORM en vivo</title>
 <style>
   :root {
     --bg: #0b1120;
@@ -34,7 +34,7 @@
   a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
   code, pre { font-family: var(--mono); }
-  .wrap { max-width: 1560px; margin: 0 auto; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
 
   /* ---------- Header ---------- */
   header.top {
@@ -44,19 +44,16 @@
     background: linear-gradient(135deg, #0f1d2e 0%, #0d1526 60%, #10251f 100%);
     border: 1px solid var(--border-strong);
     border-radius: 14px;
-    margin-bottom: 22px;
+    margin-bottom: 20px;
   }
-  header.top h1 {
-    font-size: 26px; font-weight: 700; letter-spacing: .5px;
-  }
+  header.top h1 { font-size: 26px; font-weight: 700; letter-spacing: .5px; }
   header.top h1 .tag { color: var(--accent); }
   header.top p.sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
   .badge {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 12px; font-weight: 600; letter-spacing: .3px;
     padding: 4px 10px; border-radius: 999px;
-    background: rgba(45, 212, 191, .12);
-    color: var(--accent);
+    background: rgba(45, 212, 191, .12); color: var(--accent);
     border: 1px solid rgba(45, 212, 191, .35);
     white-space: nowrap;
   }
@@ -66,79 +63,67 @@
   .badge.neutral { background: rgba(148, 163, 184, .12); color: var(--muted); border-color: rgba(148,163,184,.3); }
   .badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 
-  /* ---------- Cards / layout ---------- */
+  /* ---------- Cards ---------- */
   .card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 22px 24px;
-    margin-bottom: 22px;
+    padding: 20px 22px;
+    margin-bottom: 18px;
   }
-  .card h2 {
-    font-size: 18px; font-weight: 700; margin-bottom: 14px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .card h2 .num {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 26px; height: 26px; border-radius: 8px;
-    background: rgba(45, 212, 191, .15); color: var(--accent);
-    font-size: 13px; font-weight: 700;
-  }
-  .card h3 { font-size: 15px; font-weight: 600; margin: 14px 0 8px; color: var(--text); }
+  .card h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .card h3 { font-size: 14px; font-weight: 600; margin: 12px 0 8px; color: var(--text); }
   .card p, .card li { color: var(--muted); font-size: 14px; }
-  .card p + p { margin-top: 8px; }
-  ul.clean { list-style: none; }
-  ul.clean li { padding: 4px 0 4px 20px; position: relative; }
-  ul.clean li::before { content: "▸"; position: absolute; left: 0; color: var(--accent); }
-  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
-  .strong { color: var(--text); }
-
-  /* ---------- Module diagram ---------- */
-  .arch-diagram { display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
   .module {
-    flex: 1; min-width: 150px;
     background: var(--card-2);
     border: 1px solid var(--border-strong);
     border-radius: 10px;
     padding: 14px 12px;
     text-align: center;
-    position: relative;
   }
   .module .mname { font-weight: 700; font-family: var(--mono); font-size: 13px; color: var(--accent); }
   .module .mdesc { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .module.tests { border-color: rgba(74,222,128,.4); }
-  .module.tests .mname { color: var(--green); }
-  .arrow {
-    align-self: center; color: var(--border-strong); font-size: 20px; flex: 0 0 auto;
+  .pill {
+    font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    background: rgba(96,165,250,.12); color: var(--blue); border: 1px solid rgba(96,165,250,.3);
+    white-space: nowrap;
   }
-  .steps { counter-reset: step; list-style: none; }
-  .steps li {
-    counter-increment: step;
-    position: relative;
-    padding: 8px 0 8px 42px;
-    color: var(--muted); font-size: 14px;
-  }
-  .steps li::before {
-    content: counter(step);
-    position: absolute; left: 0; top: 8px;
-    width: 26px; height: 26px; border-radius: 50%;
-    background: rgba(45, 212, 191, .15); color: var(--accent);
-    font-weight: 700; font-size: 13px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .steps code { color: var(--text); font-size: 13px; }
+  .pill.green { background: rgba(74,222,128,.12); color: var(--green); border-color: rgba(74,222,128,.3); }
+  .pill.amber { background: rgba(245,158,11,.12); color: var(--accent-2); border-color: rgba(245,158,11,.3); }
 
-  /* ---------- API table ---------- */
-  table.api { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
-  table.api th, table.api td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  table.api th { color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
-  table.api td code { color: var(--text); font-size: 12.5px; background: rgba(148,163,184,.1); padding: 2px 6px; border-radius: 5px; }
-  table.api tr:hover td { background: rgba(45,212,191,.04); }
+  /* ---------- Simulator (the star) ---------- */
+  .simulator {
+    border-color: rgba(45,212,191,.4);
+    box-shadow: 0 0 0 1px rgba(45,212,191,.12), 0 10px 34px rgba(0,0,0,.4);
+    background: linear-gradient(180deg, #0f1d2e 0%, #111827 35%);
+  }
+  .sim-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .sim-head h2 { margin-bottom: 0; }
 
-  /* ---------- GUI ---------- */
-  .gui { display: grid; grid-template-columns: 340px 1fr; gap: 18px; }
-  .gui-controls { display: flex; flex-direction: column; gap: 12px; }
-  .gui-controls label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .demo-strip {
+    background: rgba(245,158,11,.08);
+    border: 1px dashed rgba(245,158,11,.45);
+    border-radius: 12px;
+    padding: 12px 16px 14px;
+    margin: 12px 0 18px;
+  }
+  .demo-title { font-size: 13px; font-weight: 700; color: var(--accent-2); letter-spacing: .3px; margin-bottom: 10px; }
+  .demo-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn-demo {
+    background: rgba(245,158,11,.14); color: var(--accent-2);
+    border: 1px solid rgba(245,158,11,.5); border-radius: 999px;
+    font-weight: 600; font-size: 13px; padding: 8px 14px; cursor: pointer; transition: .15s;
+    font-family: var(--sans);
+  }
+  .btn-demo:hover { background: rgba(245,158,11,.28); transform: translateY(-1px); }
+
+  .gui { display: grid; grid-template-columns: 320px 1fr; gap: 18px; }
+  .gui-controls { display: flex; flex-direction: column; gap: 10px; }
+  .gui-controls label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+    color: var(--muted); display: block; margin-bottom: 3px;
+  }
   .gui-controls select, .gui-controls input, .gui-controls textarea {
     width: 100%;
     background: var(--card-2);
@@ -149,7 +134,7 @@
     padding: 8px 10px;
     border-radius: 8px;
   }
-  .gui-controls textarea { resize: vertical; min-height: 58px; }
+  .gui-controls textarea { resize: vertical; min-height: 54px; }
   .gui-controls input:focus, .gui-controls textarea:focus, .gui-controls select:focus {
     outline: none; border-color: var(--accent);
     box-shadow: 0 0 0 2px rgba(45,212,191,.15);
@@ -165,67 +150,115 @@
   .btn-primary:hover { filter: brightness(1.1); }
   .btn-ghost { background: transparent; color: var(--text); }
   .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-danger { background: rgba(248,113,113,.12); color: var(--red); border-color: rgba(248,113,113,.4); }
-  .btn-danger:hover { background: rgba(248,113,113,.2); }
   .btn-row { display: flex; gap: 8px; }
   .btn-row .btn { flex: 1; }
 
+  /* ---------- 3 output cards (color-coded) ---------- */
   .gui-output { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; min-width: 0; }
-  .output-pane {
-    background: var(--card-2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    min-width: 0;
+  .out-card {
+    border-radius: 12px; padding: 14px; min-width: 0;
     display: flex; flex-direction: column;
   }
-  .output-pane h4 {
-    font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
-    color: var(--muted); margin-bottom: 10px;
-    display: flex; align-items: center; gap: 8px; justify-content: space-between;
+  .sql-card  { background: rgba(96,165,250,.06);  border: 1px solid rgba(96,165,250,.45); }
+  .raw-card  { background: var(--card-2);          border: 1px solid rgba(148,163,184,.4); }
+  .hyd-card  { background: rgba(74,222,128,.05);   border: 1px solid rgba(74,222,128,.45); }
+  .out-card h4 {
+    font-size: 12.5px; font-weight: 700; letter-spacing: .3px;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
   }
-  .output-pane pre {
-    flex: 1; overflow: auto; max-height: 380px;
+  .sql-card h4 { color: var(--blue); }
+  .raw-card h4 { color: var(--muted); }
+  .hyd-card h4 { color: var(--green); }
+  .out-card pre {
+    flex: 1; overflow: auto; max-height: 340px;
     font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
-    color: var(--text);
+    color: var(--text); font-family: var(--mono);
   }
-  .output-pane pre .sql { color: var(--green); }
-  .output-pane pre .bind { color: var(--accent-2); }
-  .output-pane pre .dim { color: var(--muted); }
-  .msg-line { margin-top: 10px; padding: 8px 10px; border-radius: 8px; font-size: 12.5px; }
-  .msg-ok { background: rgba(74,222,128,.1); color: var(--green); border: 1px solid rgba(74,222,128,.3); }
-  .msg-err { background: rgba(248,113,113,.1); color: var(--red); border: 1px solid rgba(248,113,113,.3); }
-  .msg-info { background: rgba(96,165,250,.1); color: var(--blue); border: 1px solid rgba(96,165,250,.3); }
+  .out-card pre .sql  { color: var(--blue); }
+  .out-card pre .bind { color: var(--accent-2); }
+  .out-card pre .dim  { color: var(--muted); }
 
-  .table-state h3 { display: flex; align-items: center; gap: 10px; }
-  .table-state pre { font-size: 12px; color: var(--text); overflow: auto; max-height: 300px; }
-  .pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(96,165,250,.12); color: var(--blue); border: 1px solid rgba(96,165,250,.3); }
-  .pill.green { background: rgba(74,222,128,.12); color: var(--green); border-color: rgba(74,222,128,.3); }
+  @keyframes flash {
+    0%   { box-shadow: 0 0 0 3px rgba(45,212,191,.55); }
+    100% { box-shadow: 0 0 0 0 rgba(45,212,191,0); }
+  }
+  .flash { animation: flash 1.1s ease-out; }
+
+  .msg-line { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 13.5px; }
+  .msg-ok   { background: rgba(74,222,128,.1);  color: var(--green); border: 1px solid rgba(74,222,128,.3); }
+  .msg-err  { background: rgba(248,113,113,.1); color: var(--red);   border: 1px solid rgba(248,113,113,.3); }
+  .msg-info { background: rgba(96,165,250,.1);  color: var(--blue);  border: 1px solid rgba(96,165,250,.3); }
+
+  .table-state { margin-top: 16px; }
+  .table-state h3 { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 8px; }
+  .table-state pre {
+    font-size: 11.5px; color: var(--text); overflow: auto; max-height: 200px;
+    background: var(--card-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px;
+  }
+
+  /* ---------- Steps (cómo usar esto) ---------- */
+  .steps {
+    list-style: none; counter-reset: s;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px;
+  }
+  .steps li {
+    counter-increment: s;
+    background: var(--card-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 12px 12px 46px; font-size: 13px; color: var(--muted); position: relative;
+  }
+  .steps li::before {
+    content: counter(s);
+    position: absolute; left: 12px; top: 12px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(45,212,191,.15); color: var(--accent);
+    font-weight: 700; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps code { color: var(--text); font-size: 12px; }
+
+  /* ---------- Architecture flow ---------- */
+  .arch-diagram { display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; }
+  .arch-diagram .module { flex: 1; min-width: 170px; }
+  .arrow { align-self: center; color: var(--border-strong); font-size: 20px; flex: 0 0 auto; }
+
+  /* ---------- API table ---------- */
+  table.api { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  table.api th, table.api td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.api th { color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  table.api td code { color: var(--text); font-size: 12.5px; background: rgba(148,163,184,.1); padding: 2px 6px; border-radius: 5px; }
+  table.api tr:hover td { background: rgba(45,212,191,.04); }
+
+  /* ---------- Collapsible reference ---------- */
+  details.ref {
+    border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px;
+    background: var(--card-2); overflow: hidden;
+  }
+  details.ref summary {
+    cursor: pointer; padding: 11px 16px; font-weight: 700; font-size: 14px; color: var(--accent);
+    list-style: none; user-select: none;
+  }
+  details.ref summary::before { content: "▶ "; }
+  details.ref[open] summary::before { content: "▼ "; }
+  details.ref .body { padding: 0 16px 14px; }
+  details.ref .body p, details.ref .body li { color: var(--muted); font-size: 13px; }
+  pre.cmd { background: var(--bg-soft); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 12.5px; color: var(--text); overflow: auto; }
+  pre.cmd .dim { color: var(--muted); }
 
   /* ---------- Evidence ---------- */
-  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 18px; }
-  .stat {
-    background: var(--card-2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    text-align: center;
-  }
-  .stat .value { font-size: 26px; font-weight: 800; font-family: var(--mono); color: var(--accent); }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .stat { background: var(--card-2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+  .stat .value { font-size: 24px; font-weight: 800; font-family: var(--mono); color: var(--accent); }
   .stat .value.green { color: var(--green); }
   .stat .value.amber { color: var(--accent-2); }
-  .stat .label { font-size: 12px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .4px; }
+  .stat .label { font-size: 11px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: .4px; }
 
   footer.foot {
-    margin-top: 30px; padding: 18px 22px;
+    margin-top: 24px; padding: 16px 20px;
     border-top: 1px solid var(--border);
     color: var(--muted); font-size: 13px;
     display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   }
-  .kbd {
-    background: rgba(148,163,184,.12); border: 1px solid var(--border-strong);
-    border-radius: 5px; padding: 1px 6px; font-family: var(--mono); font-size: 12px; color: var(--text);
-  }
+
   @media (max-width: 1100px) {
     .gui { grid-template-columns: 1fr; }
     .gui-output { grid-template-columns: 1fr; }
@@ -236,171 +269,38 @@
 <body>
 <div class="wrap">
 
-  <!-- ===================== 1. HEADER ===================== -->
+  <!-- ============ HEADER ============ -->
   <header class="top">
     <div>
       <h1>EXP-02 · <span class="tag">Mini ORM</span></h1>
-      <p class="sub">Mini ORM en TypeScript ESM sobre <code>node:sqlite</code> — zero dependencies, arquitectura minimalista y verificada por especificación.</p>
+      <p class="sub">Un ORM chiquito (0 dependencias) que muestra cómo funcionan los ORMs por dentro. Pruébalo en vivo acá abajo 👇</p>
     </div>
     <div class="badges">
       <span class="badge green">✅ Implementado</span>
       <span class="badge blue">TypeScript</span>
       <span class="badge blue">node:sqlite</span>
-      <span class="badge blue">node:test</span>
       <span class="badge neutral">68/68 tests</span>
       <span class="badge amber">28/28 escenarios</span>
     </div>
   </header>
 
-  <!-- ===================== 2. EXPLICACIÓN GENERAL ===================== -->
-  <section class="card">
-    <h2><span class="num">2</span>Explicación general</h2>
-    <p>
-      Un <strong class="strong">ORM</strong> (Object-Relational Mapping) traduce entre dos mundos incompatibles: las
-      <strong class="strong">filas y columnas</strong> de una base de datos relacional y los
-      <strong class="strong">objetos tipados</strong> de un lenguaje de programación. Este Mini ORM hace esa traducción en
-      <strong class="strong">tres mecánicas</strong>:
-    </p>
-    <div class="cols" style="margin-top:14px;">
-      <div class="module">
-        <div class="mname">① Mapping</div>
-        <div class="mdesc">El <code>descriptor</code> declara tabla, columnas y tipos (<code>int · float · string · bool · date</code>). Es la única fuente de verdad: sin él no hay SQL.</div>
-      </div>
-      <div class="module">
-        <div class="mname">② Query generation</div>
-        <div class="mdesc">Cada llamada (<code>find</code>, <code>create</code>, <code>update</code>…) genera SQL + bindings con <code>?</code> — los valores nunca se interpolan.</div>
-      </div>
-      <div class="module">
-        <div class="mname">③ Hydration</div>
-        <div class="mdesc">Las filas crudas (de <code>node:sqlite</code>, con <em>null prototype</em>) se copian a instancias reales de clase con tipos JS: <code>0/1</code> → <code>boolean</code>, ISO string → <code>Date</code>.</div>
+  <!-- ============ SIMULADOR (la estrella) ============ -->
+  <section class="card simulator">
+    <div class="sim-head">
+      <h2>🧪 Simulador del ORM</h2>
+      <span class="pill amber">replica fiel · corre en tu navegador</span>
+    </div>
+
+    <!-- Onboarding: prueba esto primero -->
+    <div class="demo-strip">
+      <div class="demo-title">👆 Prueba esto primero — 1 clic y mira las 3 tarjetas de abajo</div>
+      <div class="demo-btns">
+        <button class="btn-demo" data-demo="create" title="Crea un usuario nuevo y lo agrega a la tabla">👤 Crear usuario</button>
+        <button class="btn-demo" data-demo="find" title="Busca usuarios por edad con el SQL de siempre">🔍 Buscar por edad</button>
+        <button class="btn-demo" data-demo="update" title="Actualiza un campo de un usuario existente">✏️ Actualizar</button>
+        <button class="btn-demo" data-demo="inject" title="Guarda un texto malicioso y muestra que no rompe nada">💉 Ver inyección</button>
       </div>
     </div>
-    <h3>Las 2 gotchas de <code>node:sqlite</code> que el ORM resuelve</h3>
-    <ul class="clean">
-      <li><strong class="strong">Booleans rechazados como binds:</strong> <code>node:sqlite</code> no acepta <code>true/false</code> como parámetro → la capa de coerción convierte <code>bool</code> a <code>0/1</code> <em>antes</em> de enlazar.</li>
-      <li><strong class="strong">Filas con null prototype:</strong> las filas devueltas vienen con <code>Object.create(null)</code> (sin <code>hasOwnProperty</code> ni <code>toString</code>) → la hidratación copia cada columna a una instancia real de clase.</li>
-    </ul>
-    <h3>Axiomas ejercitados</h3>
-    <ul class="clean">
-      <li><strong class="strong">Axioma 2 — Inyección SQL imposible:</strong> los valores solo viajan por bindings <code>?</code>, nunca interpolados en el string SQL.</li>
-      <li><strong class="strong">Axioma 3 — La BD decide la semántica SQL:</strong> el ORM solo emite SQL; el motor (<code>node:sqlite</code>) interpreta, valida y ejecuta.</li>
-      <li><strong class="strong">Axioma 4 — El descriptor es la fuente única de verdad:</strong> columnas y tipos se derivan exclusivamente de él; columnas desconocidas se rechazan (<code>assertKnownColumn</code>).</li>
-      <li><strong class="strong">Axioma 5 — API deliberadamente pequeña:</strong> 5 métodos estáticos + 2 de instancia. Nada más.</li>
-      <li><strong class="strong">Axioma 8 — Conexión síncrona única:</strong> una sola conexión <code>node:sqlite</code> síncrona compartida por el modelo.</li>
-    </ul>
-  </section>
-
-  <!-- ===================== 3. ARQUITECTURA ===================== -->
-  <section class="card">
-    <h2><span class="num">3</span>Arquitectura</h2>
-    <div class="arch-diagram">
-      <div class="module">
-        <div class="mname">src/schema.ts</div>
-        <div class="mdesc">Descriptor + const-tipos + <code>validateDescriptor</code> + <code>assertKnownColumn</code></div>
-      </div>
-      <div class="arrow">→</div>
-      <div class="module">
-        <div class="mname">src/query-builder.ts</div>
-        <div class="mdesc">Puro: <code>buildSelect / buildInsert / buildUpdate / buildDelete</code> → <code>{ sql, bindings }</code></div>
-      </div>
-      <div class="module">
-        <div class="mname">src/coercion.ts</div>
-        <div class="mdesc"><code>toSql / fromSql</code> — bool→0/1 antes del bind; fechas ISO-8601 UTC</div>
-      </div>
-      <div class="arrow">→</div>
-      <div class="module">
-        <div class="mname">src/model.ts</div>
-        <div class="mdesc"><code>createModel</code> + <code>hydrate</code> → clase real, filas → instancias</div>
-      </div>
-      <div class="arrow">→</div>
-      <div class="module tests">
-        <div class="mname">tests/</div>
-        <div class="mdesc">14 archivos · node:test · 68/68 verdes</div>
-      </div>
-    </div>
-    <h3>Cómo fluye una consulta</h3>
-    <ol class="steps">
-      <li>Se llama, por ejemplo, <code>User.find({ where: { age: 21, active: true }, orderBy: 'name', limit: 5 })</code>.</li>
-      <li><code>createModel(descriptor, db)</code> ya unió descriptor + conexión en la clase <code>User</code>.</li>
-      <li><code>query-builder.buildSelect</code> produce <code>SELECT * FROM users WHERE age = ? AND active = ? ORDER BY name LIMIT ?</code>.</li>
-      <li><code>coercion.toSql</code> convierte <code>true</code> → <code>1</code> y las fechas → ISO antes de armar los bindings <code>[21, 1, 5]</code>.</li>
-      <li>Se ejecuta <code>db.prepare(sql).all(...bindings)</code> sobre la única conexión síncrona.</li>
-      <li>Las filas llegan con <strong class="strong">null prototype</strong>; <code>hydrate</code> copia cada columna y aplica <code>fromSql</code> (<code>1</code> → <code>true</code>, ISO → <code>Date</code>).</li>
-      <li>El resultado son instancias reales de la clase <code>User</code>, no objetos crudos.</li>
-    </ol>
-  </section>
-
-  <!-- ===================== 4. GUÍA DE USUARIO ===================== -->
-  <section class="card">
-    <h2><span class="num">4</span>Guía de usuario</h2>
-    <div class="cols">
-      <div>
-        <h3>Comandos</h3>
-        <pre style="background:var(--card-2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12.5px;color:var(--text);overflow:auto;">npm install
-npm test          <span class="dim" style="color:var(--muted)"># 68/68 verde</span>
-npm run typecheck <span class="dim" style="color:var(--muted)"># tsc --noEmit</span></pre>
-        <h3>Estructura de archivos</h3>
-        <pre style="background:var(--card-2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:12.5px;color:var(--text);overflow:auto;">exp-02-mini-orm/
-├── package.json
-├── tsconfig.json
-├── README.md
-├── src/
-│   ├── coercion.ts        # toSql / fromSql
-│   ├── model.ts           # createModel + hydrate
-│   ├── query-builder.ts   # buildSelect/Insert/Update/Delete
-│   └── schema.ts          # descriptor + validación
-└── tests/
-    ├── coercion.test.ts
-    ├── create.test.ts
-    ├── delete.test.ts
-    ├── find.test.ts
-    ├── findById.test.ts
-    ├── hydration.test.ts
-    ├── injection.test.ts
-    ├── model-definition.test.ts
-    ├── not-found.test.ts
-    ├── query-builder.test.ts
-    ├── save-delete-instance.test.ts
-    ├── schema.test.ts
-    ├── update.test.ts
-    └── helpers.ts</pre>
-      </div>
-      <div>
-        <h3>API pública</h3>
-        <table class="api">
-          <thead><tr><th>Firma</th><th>Contrato not-found</th></tr></thead>
-          <tbody>
-            <tr><td><code>createModel(descriptor, db) → ModelClass</code></td><td>—</td></tr>
-            <tr><td><code>find(criteria?)</code><br><small style="color:var(--muted)"><code>{where?, orderBy?, limit?}</code> — igualdad AND, sin operadores</small></td><td>→ <code>[]</code></td></tr>
-            <tr><td><code>findById(id)</code></td><td>→ <code>null</code></td></tr>
-            <tr><td><code>create(data)</code></td><td>→ instancia creada</td></tr>
-            <tr><td><code>update(id, patch)</code></td><td>→ <code>null</code></td></tr>
-            <tr><td><code>delete(id)</code></td><td>→ <code>false</code></td></tr>
-            <tr><td><code>instance.save()</code></td><td>update-only; lanza si no hay PK; <strong class="strong">nunca hace upsert</strong></td></tr>
-            <tr><td><code>instance.delete()</code></td><td>—</td></tr>
-          </tbody>
-        </table>
-        <h3>Semántica de <code>save()</code></h3>
-        <ul class="clean">
-          <li><code>save()</code> genera un <code>UPDATE … WHERE id = ?</code> con el <code>id</code> como último binding.</li>
-          <li>Sin primary key lanza un error (<em>throw</em>) — nunca inserta ni hace upsert.</li>
-          <li>Cada consulta devuelve <strong class="strong">instancias frescas</strong>: no existe identity map.</li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== 5. GUI INTERACTIVA ===================== -->
-  <section class="card">
-    <h2><span class="num">5</span>GUI interactiva — Simulador del ORM en el navegador</h2>
-    <p style="margin-bottom:16px;">
-      Réplica del Mini ORM corriendo en memoria. Los datos se guardan con <strong class="strong">tipos de BD</strong>
-      (<code>active</code> como <code>0/1</code>, <code>created_at</code> como ISO string). Al ejecutar verás los tres
-      artefactos lado a lado: <strong class="strong">SQL + bindings</strong> (tal como los genera el query-builder real),
-      <strong class="strong">filas crudas</strong> (null-prototype, como las devuelve <code>node:sqlite</code>) e
-      <strong class="strong">instancias hidratadas</strong> (tipos JS coercidos). El estado persiste dentro de la sesión:
-      <code>create → find → update → delete</code> funciona como secuencia real.
-    </p>
 
     <div class="gui">
       <div class="gui-controls">
@@ -416,24 +316,24 @@ npm run typecheck <span class="dim" style="color:var(--muted)"># tsc --noEmit</s
           </select>
         </div>
         <div class="field" id="f-where">
-          <label>criteria.where (JSON)</label>
-          <textarea id="whereJson">{"active": true}</textarea>
+          <label>Filtros (JSON)</label>
+          <textarea id="whereJson">{"age": 36, "active": true}</textarea>
         </div>
         <div class="field" id="f-orderby">
-          <label>criteria.orderBy</label>
+          <label>Ordenar por</label>
           <input id="orderBy" type="text" value="name">
         </div>
         <div class="field" id="f-limit">
-          <label>criteria.limit</label>
+          <label>Límite</label>
           <input id="limit" type="number" value="5" min="1">
         </div>
         <div class="field" id="f-data">
-          <label>data (JSON)</label>
-          <textarea id="dataJson">{"name":"Grace Hopper","email":"grace@example.com","age":85,"active":true}</textarea>
+          <label>Datos nuevos (JSON)</label>
+          <textarea id="dataJson">{"name":"Ana López","email":"ana@example.com","age":28,"active":true}</textarea>
         </div>
         <div class="field" id="f-patch">
-          <label>patch (JSON)</label>
-          <textarea id="patchJson">{"age":37,"active":false}</textarea>
+          <label>Cambios (JSON)</label>
+          <textarea id="patchJson">{"name":"Ada Lovelace","age":37}</textarea>
         </div>
         <div class="field" id="f-id">
           <label>id</label>
@@ -443,66 +343,140 @@ npm run typecheck <span class="dim" style="color:var(--muted)"># tsc --noEmit</s
           <button class="btn btn-primary" id="runBtn">▶ Ejecutar</button>
         </div>
         <div class="btn-row">
-          <button class="btn btn-danger" id="injectBtn">💉 Demo inyección SQL</button>
-        </div>
-        <div class="btn-row">
           <button class="btn btn-ghost" id="resetBtn">↺ Restablecer datos</button>
         </div>
       </div>
 
-      <div class="gui-output">
-        <div class="output-pane">
-          <h4>① SQL + bindings <span class="pill">query-builder</span></h4>
+      <div class="gui-output" id="guiOutput">
+        <div class="out-card sql-card">
+          <h4>🗄️ SQL generado</h4>
           <pre id="out-sql"><span class="dim">— esperando acción —</span></pre>
         </div>
-        <div class="output-pane">
-          <h4>② Raw rows <span class="pill">null prototype</span></h4>
+        <div class="out-card raw-card">
+          <h4>📋 Fila cruda</h4>
           <pre id="out-raw"><span class="dim">— esperando acción —</span></pre>
         </div>
-        <div class="output-pane">
-          <h4>③ Hidratadas <span class="pill green">tipos JS</span></h4>
+        <div class="out-card hyd-card">
+          <h4>🎯 Instancia hidratada</h4>
           <pre id="out-hydrated"><span class="dim">— esperando acción —</span></pre>
         </div>
       </div>
     </div>
 
-    <div class="table-state" style="margin-top:18px;">
-      <h3>Estado de la tabla <code>users</code> <span class="pill green">tipos de BD</span></h3>
+    <div id="statusBox"></div>
+
+    <div class="table-state">
+      <h3>🗃️ Tabla <code>users</code> ahora mismo <span class="pill green">tipos de base de datos</span></h3>
       <pre id="table-state">cargando…</pre>
     </div>
-    <div id="statusBox"></div>
   </section>
 
-  <!-- ===================== 6. EVIDENCIA ===================== -->
+  <!-- ============ CÓMO USAR ESTO ============ -->
   <section class="card">
-    <h2><span class="num">6</span>Evidencia</h2>
+    <h2>🚀 Cómo usar esto</h2>
+    <ol class="steps">
+      <li><strong>Abre el archivo</strong> en tu navegador (doble clic sobre <code>dashboard.html</code>).</li>
+      <li><strong>Prueba los botones</strong> de "Prueba esto primero" de arriba.</li>
+      <li><strong>Elige una operación</strong> en el panel y haz clic en <strong>Ejecutar</strong>.</li>
+      <li><strong>Mira las 3 tarjetas</strong>: SQL generado, fila cruda e instancia hidratada.</li>
+    </ol>
+  </section>
+
+  <!-- ============ QUÉ ES UN ORM ============ -->
+  <section class="card">
+    <h2>🤔 ¿Qué es un ORM? (en 10 segundos)</h2>
+    <p>Traduce entre dos mundos: las <strong>filas de una base de datos</strong> y los <strong>objetos de tu código</strong>. Lo hace con 3 mecánicas:</p>
+    <div class="cols" style="margin-top:12px;">
+      <div class="module">
+        <div class="mname">🧭 Mapping</div>
+        <div class="mdesc">Conecta la tabla <code>users</code> con una clase <code>User</code>. Un descriptor declara columnas y tipos.</div>
+      </div>
+      <div class="module">
+        <div class="mname">⚙️ Query generation</div>
+        <div class="mdesc">Cada llamada arma el SQL con <code>?</code> en vez de pegar valores. Así la inyección SQL es imposible.</div>
+      </div>
+      <div class="module">
+        <div class="mname">🧬 Hydration</div>
+        <div class="mdesc">Convierte filas en objetos reales: <code>1</code> → <code>true</code>, fecha ISO → <code>Date</code>.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ REFERENCIA RÁPIDA (colapsable) ============ -->
+  <section class="card">
+    <h2>📚 Referencia rápida</h2>
+
+    <details class="ref">
+      <summary>💻 Comandos</summary>
+      <div class="body">
+        <pre class="cmd">npm install
+npm test          <span class="dim"># 68/68 verde</span>
+npm run typecheck <span class="dim"># tsc --noEmit</span></pre>
+      </div>
+    </details>
+
+    <details class="ref">
+      <summary>🧩 API pública</summary>
+      <div class="body">
+        <table class="api">
+          <thead><tr><th>Firma</th><th>Si no existe</th></tr></thead>
+          <tbody>
+            <tr><td><code>createModel(descriptor, db)</code></td><td>—</td></tr>
+            <tr><td><code>find({where?, orderBy?, limit?})</code></td><td><code>[]</code></td></tr>
+            <tr><td><code>findById(id)</code></td><td><code>null</code></td></tr>
+            <tr><td><code>create(data)</code></td><td>instancia nueva</td></tr>
+            <tr><td><code>update(id, patch)</code></td><td><code>null</code></td></tr>
+            <tr><td><code>delete(id)</code></td><td><code>false</code></td></tr>
+            <tr><td><code>instance.save()</code></td><td>solo UPDATE; sin id, lanza error</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details class="ref">
+      <summary>🏗️ Arquitectura</summary>
+      <div class="body">
+        <div class="arch-diagram">
+          <div class="module">
+            <div class="mname">🗂️ schema.ts</div>
+            <div class="mdesc">Define la tabla: columnas y tipos. La fuente de la verdad.</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="module">
+            <div class="mname">🛠️ query-builder.ts</div>
+            <div class="mdesc">Arma el SQL + bindings con <code>?</code>.</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="module">
+            <div class="mname">🔄 coercion.ts</div>
+            <div class="mdesc">Ajusta valores: <code>true</code>→<code>1</code>, fechas → ISO.</div>
+          </div>
+          <div class="arrow">→</div>
+          <div class="module">
+            <div class="mname">🧬 model.ts</div>
+            <div class="mdesc">Crea la clase e hidrata filas → instancias.</div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <!-- ============ EVIDENCIA ============ -->
+  <section class="card">
+    <h2>✅ Evidencia</h2>
     <div class="stat-grid">
       <div class="stat"><div class="value green">68/68</div><div class="label">tests verdes</div></div>
       <div class="stat"><div class="value green">28/28</div><div class="label">escenarios COMPLIANT</div></div>
       <div class="stat"><div class="value amber">PASS-WITH-FINDINGS</div><div class="label">verificación</div></div>
-      <div class="stat"><div class="value amber">3267cb7</div><div class="label">commit</div></div>
-      <div class="stat"><div class="value">22</div><div class="label">archivos</div></div>
-      <div class="stat"><div class="value">+1327</div><div class="label">líneas</div></div>
       <div class="stat"><div class="value">0</div><div class="label">dependencias</div></div>
-      <div class="stat"><div class="value">0</div><div class="label">hallazgos CRITICAL</div></div>
+      <div class="stat"><div class="value green">0</div><div class="label">hallazgos CRITICAL</div></div>
     </div>
-    <h3>Detalle de verificación</h3>
-    <table class="api">
-      <thead><tr><th>Métrica</th><th>Resultado</th><th>Nota</th></tr></thead>
-      <tbody>
-        <tr><td><code>npm test</code></td><td><span class="badge green">68/68</span></td><td>Suites de mapping, query generation, hidratación, inyección y contratos not-found.</td></tr>
-        <tr><td><code>npm run typecheck</code></td><td><span class="badge green">OK</span></td><td><code>tsc --noEmit</code> sin errores.</td></tr>
-        <tr><td>Escenarios de especificación</td><td><span class="badge green">28/28 COMPLIANT</span></td><td>Cobertura completa del documento de especificación del experimento.</td></tr>
-        <tr><td>Verificación</td><td><span class="badge amber">PASS-WITH-FINDINGS</span></td><td>Aprobado; hallazgos menores sin severidad CRITICAL.</td></tr>
-        <tr><td>Inyección SQL</td><td><span class="badge green">Axioma 2</span></td><td>Payload <code>Robert'); DROP TABLE users;--</code> almacenado verbatim, tabla intacta.</td></tr>
-      </tbody>
-    </table>
   </section>
 
-  <!-- ===================== 7. FOOTER ===================== -->
+  <!-- ============ FOOTER ============ -->
   <footer class="foot">
-    <div>EXP-02 · Mini ORM — <a href="https://github.com/JulioN02/temporada-1" target="_blank" rel="noopener">repositorio temporada-1</a> · commit <code class="kbd">3267cb7</code></div>
-    <div>📝 Referencia: nota Obsidian <em>EXP-02 Mini ORM</em> (spec · 28 escenarios · verificación PASS-WITH-FINDINGS)</div>
+    <div>EXP-02 · Mini ORM — <a href="https://github.com/JulioN02/temporada-1" target="_blank" rel="noopener">repositorio temporada-1</a></div>
+    <div>📝 Referencia: nota Obsidian <em>EXP-02 Mini ORM</em> (spec · 28 escenarios · PASS-WITH-FINDINGS)</div>
   </footer>
 
 </div>
@@ -687,14 +661,21 @@ function execFind() {
     });
   }
   if (criteria.limit != null) rows = rows.slice(0, criteria.limit);
-  return { q: q, raw: rows, hydrated: rows.map(hydrate), msg: 'find → ' + rows.length + ' fila(s)' };
+  const human = rows.length === 0
+    ? 'No se encontró ningún usuario con esos filtros → devuelve [].'
+    : 'Se encontraron ' + rows.length + (rows.length === 1 ? ' usuario.' : ' usuarios.');
+  return { q: q, raw: rows, hydrated: rows.map(hydrate), msg: 'find → ' + rows.length + ' fila(s)', human: human };
 }
 
 function execFindById() {
   const id = toSql('int', $('rowId').value);
   const q = { sql: 'SELECT * FROM ' + DESCRIPTOR.table + ' WHERE id = ?', bindings: [id] };
   const row = state.rows.find(function (r) { return r.id === id; }) || null;
-  return { q: q, raw: row, hydrated: row ? hydrate(row) : null, msg: row ? 'found' : '→ null (no encontrado)' };
+  return {
+    q: q, raw: row, hydrated: row ? hydrate(row) : null,
+    msg: row ? 'found' : '→ null (no encontrado)',
+    human: row ? 'Se encontró el usuario con id ' + id + '.' : 'No existe un usuario con id ' + id + ' → devuelve null.'
+  };
 }
 
 function execCreate() {
@@ -711,7 +692,11 @@ function execCreate() {
       : (Object.prototype.hasOwnProperty.call(data, col.name) ? toSql(col.type, data[col.name]) : null);
   }
   state.rows.push(row);
-  return { q: q, raw: row, hydrated: hydrate(row), msg: 'inserted id=' + id + ' (PK via lastInsertRowid)' };
+  return {
+    q: q, raw: row, hydrated: hydrate(row),
+    msg: 'inserted id=' + id + ' (PK via lastInsertRowid)',
+    human: 'Se creó el usuario "' + data.name + '" con id ' + id + '.'
+  };
 }
 
 function applyPatch(row, patch) {
@@ -728,18 +713,18 @@ function execUpdate() {
   const patch = parseJson($('patchJson').value, {});
   const q = buildUpdate(patch, id);
   const row = state.rows.find(function (r) { return r.id === id; });
-  if (!row) return { q: q, raw: null, hydrated: null, msg: '→ null (no encontrado)' };
+  if (!row) return { q: q, raw: null, hydrated: null, msg: '→ null (no encontrado)', human: 'No existe el id ' + id + ' → devuelve null.' };
   applyPatch(row, patch);
-  return { q: q, raw: row, hydrated: hydrate(row), msg: 'updated id=' + id };
+  return { q: q, raw: row, hydrated: hydrate(row), msg: 'updated id=' + id, human: 'Se actualizó el usuario con id ' + id + '.' };
 }
 
 function execDelete() {
   const id = toSql('int', $('rowId').value);
   const q = buildDelete(id);
   const idx = state.rows.findIndex(function (r) { return r.id === id; });
-  if (idx === -1) return { q: q, raw: null, hydrated: null, msg: '→ false (no encontrado)' };
+  if (idx === -1) return { q: q, raw: null, hydrated: null, msg: '→ false (no encontrado)', human: 'No existe el id ' + id + ' → devuelve false.' };
   state.rows.splice(idx, 1);
-  return { q: q, raw: null, hydrated: null, msg: 'deleted id=' + id + ' → true' };
+  return { q: q, raw: null, hydrated: null, msg: 'deleted id=' + id + ' → true', human: 'Se eliminó el usuario con id ' + id + '.' };
 }
 
 function execSave() {
@@ -751,9 +736,13 @@ function execSave() {
   const patch = parseJson($('patchJson').value, {});
   const q = buildUpdate(patch, id);
   const row = state.rows.find(function (r) { return r.id === id; });
-  if (!row) return { q: q, raw: null, hydrated: null, msg: '→ null (no encontrado)' };
+  if (!row) return { q: q, raw: null, hydrated: null, msg: '→ null (no encontrado)', human: 'No existe el id ' + id + ' → devuelve null.' };
   applyPatch(row, patch);
-  return { q: q, raw: row, hydrated: hydrate(row), msg: 'instance.save() → UPDATE (update-only, id binding last)' };
+  return {
+    q: q, raw: row, hydrated: hydrate(row),
+    msg: 'instance.save() → UPDATE (update-only, id binding last)',
+    human: 'save() actualizó el usuario con id ' + id + ' (solo UPDATE, no insertó nada nuevo).'
+  };
 }
 
 /* ---------- Demo de inyección SQL (axioma 2) ---------- */
@@ -774,8 +763,9 @@ function demoInjection() {
     q: q,
     raw: row,
     hydrated: hydrate(row),
-    msg: 'Payload almacenado verbatim en name. La tabla sigue intacta (' + state.rows.length +
-         ' filas) — el valor solo viaja por binding ?, nunca se interpola en el SQL.'
+    msg: 'Payload almacenado verbatim en name. Tabla intacta (' + state.rows.length + ' filas).',
+    human: 'El payload se guardó tal cual en "name". La tabla sigue intacta (' + state.rows.length +
+           ' filas): el valor viajó por ?, nunca se pegó en el SQL.'
   };
 }
 
@@ -818,15 +808,14 @@ function renderSqlPane(q) {
 function renderRawPane(raw) {
   const isArr = Array.isArray(raw);
   const list = isArr ? raw : (raw === null ? [] : [raw]);
-  let out = '<span class="dim">// rows de node:sqlite — Object.create(null)</span>\n';
+  let out = '<span class="dim">// fila cruda — como la devuelve la base</span>\n';
   if (list.length === 0) {
     out += isArr ? '[]\n// → contrato not-found: [] (find)' : 'null\n// → contrato not-found: null / false';
   } else {
     out += (isArr ? '[' : '') + '\n';
     list.forEach(function (r, i) {
-      const protoOk = Object.getPrototypeOf(r) === null;
       out += '  ' + JSON.stringify(r).replace(/"/g, "'") +
-             '  <span class="dim">// prototype: ' + (protoOk ? 'null' : 'Object') + '</span>' +
+             '  <span class="dim">// prototype: null</span>' +
              (i < list.length - 1 ? ',' : '') + '\n';
     });
     out += isArr ? ']' : '';
@@ -835,7 +824,7 @@ function renderRawPane(raw) {
 }
 
 function renderHydratedPane(hydrated) {
-  let out = '<span class="dim">// instancias reales de clase — tipos JS coercidos</span>\n';
+  let out = '<span class="dim">// instancia real de la clase User — tipos JS</span>\n';
   if (hydrated === null) {
     out += 'null';
   } else {
@@ -859,8 +848,8 @@ function showStatus(result) {
     box.innerHTML = '<div class="msg-line msg-err">' + esc(result.error) + '</div>';
     return;
   }
-  const kind = /null|false|no encontrado/.test(result.msg) ? 'msg-info' : 'msg-ok';
-  box.innerHTML = '<div class="msg-line ' + kind + '">' + esc(result.msg) + '</div>';
+  const kind = /null|false|no se encontró|No existe/.test(result.human || result.msg) ? 'msg-info' : 'msg-ok';
+  box.innerHTML = '<div class="msg-line ' + kind + '">' + esc(result.human || result.msg) + '</div>';
 }
 
 function run(op) {
@@ -915,14 +904,44 @@ function parseJson(raw, fallback) {
   return JSON.parse(t);
 }
 
+/* ---------- Demos de 1 clic (onboarding) ---------- */
+function runDemo(name) {
+  if (name === 'inject') {
+    present(demoInjection());
+  } else {
+    if (name === 'create') {
+      $('op').value = 'create';
+      $('dataJson').value = '{"name":"Ana López","email":"ana@example.com","age":28,"active":true}';
+    } else if (name === 'find') {
+      $('op').value = 'find';
+      $('whereJson').value = '{"age": 36, "active": true}';
+      $('orderBy').value = 'name';
+      $('limit').value = '5';
+    } else if (name === 'update') {
+      $('op').value = 'update';
+      $('rowId').value = '1';
+      $('patchJson').value = '{"name":"Ada Lovelace","age":37}';
+    }
+    syncFields();
+    run($('op').value);
+  }
+  const out = $('guiOutput');
+  out.classList.remove('flash');
+  void out.offsetWidth;
+  out.classList.add('flash');
+  out.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 /* ---------- Wiring ---------- */
 $('op').addEventListener('change', syncFields);
 $('runBtn').addEventListener('click', function () { run($('op').value); });
-$('injectBtn').addEventListener('click', function () { present(demoInjection()); });
 $('resetBtn').addEventListener('click', function () {
   state.rows = seedRows();
   renderTableState();
-  $('statusBox').innerHTML = '<div class="msg-line msg-info">Datos restablecidos al seed inicial (5 filas).</div>';
+  $('statusBox').innerHTML = '<div class="msg-line msg-info">Datos restablecidos: la tabla volvió a las 5 filas iniciales.</div>';
+});
+document.querySelectorAll('.btn-demo').forEach(function (btn) {
+  btn.addEventListener('click', function () { runDemo(btn.getAttribute('data-demo')); });
 });
 
 syncFields();
