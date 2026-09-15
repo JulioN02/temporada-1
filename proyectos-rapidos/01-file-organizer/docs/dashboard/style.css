@@ -312,7 +312,45 @@ a code { color: var(--accent-2); }
   padding: 12px 14px;
   overflow-x: auto;
   margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  cursor: text;
 }
+.term-output { min-height: 110px; }
+.term-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+.term-prompt { color: var(--accent-2); flex: 0 0 auto; white-space: nowrap; }
+.term-input-row input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: .8rem;
+  color: var(--tx);
+  background: transparent;
+  border: none;
+  outline: none;
+  caret-color: var(--accent-2);
+}
+.term-input-row input::placeholder { color: var(--tx-faint); }
+.sim-run-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.term-hint {
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--tx-faint);
+}
+.term-line .t-err { color: var(--bad-ink); }
 .term-line { white-space: pre; }
 .term-line .t-cmd { color: var(--info-ink); }
 .term-line .t-move { color: var(--tx); }

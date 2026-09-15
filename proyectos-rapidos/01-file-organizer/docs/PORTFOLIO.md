@@ -1,8 +1,6 @@
 # File Organizer — CLI para ordenar archivos por extensión
 
-**Un comando, un directorio ordenado: clasifica por extensión, con modo de ensayo (`--dry-run`), resolución segura de colisiones e idempotencia. Cero dependencias de runtime y 50/50 tests en verde.**
-
-File Organizer es un CLI didáctico en TypeScript/Node que organiza el nivel superior de un directorio (por ejemplo `~/Downloads`): escanea, clasifica cada archivo regular por su extensión y lo mueve a una subcarpeta de categoría (`PDF/`, `Images/`, `Videos/`, `Code/`, …). Es seguro por diseño: nunca sobrescribe, nunca borra, es idempotente y se ejecuta en modo de ensayo sin escribir nada.
+**Un comando, un directorio ordenado.** File Organizer es un CLI didáctico en TypeScript/Node que organiza el nivel superior de un directorio (por ejemplo `~/Downloads`): escanea, clasifica cada archivo regular por su extensión y lo mueve a una subcarpeta de categoría (`PDF/`, `Images/`, `Videos/`, `Code/`, …). Es seguro por diseño — modo de ensayo (`--dry-run`) que no escribe nada, resolución de colisiones sin sobrescribir e idempotencia — con cero dependencias de runtime y 50/50 tests en verde.
 
 ## Por qué CLI
 
@@ -61,4 +59,4 @@ node --experimental-strip-types src/cli.ts --config ./mi-config.json ~/Downloads
 
 ## Links
 
-[GitHub (planeado) — JulioN02/file-organizer](https://github.com/JulioN02/file-organizer) · [Dashboard didáctico](dashboard.html) · [Guía de usuario](user-guide.md) · Obsidian: `Temporada 1/Proyectos rápidos/01 File Organizer.md` y `01 File Organizer — Ficha Técnica.md`
+[GitHub — JulioN02/file-organizer](https://github.com/JulioN02/file-organizer) · [Dashboard interactivo (GitHub Pages)](https://julion02.github.io/file-organizer/dashboard/) · [Guía de usuario](user-guide.md) · Obsidian: `Temporada 1/Proyectos rápidos/01 File Organizer.md` y `01 File Organizer — Ficha Técnica.md`

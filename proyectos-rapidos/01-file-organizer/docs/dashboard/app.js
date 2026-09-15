@@ -105,7 +105,7 @@ function renderClassifier(filename) {
 
 function bindClassifier() {
   const input = $("#classify-input");
-  const examples = $$(".chip-btn");
+  const examples = $$(".chip-btn[data-file]");
   input.addEventListener("input", () => renderClassifier(input.value));
   examples.forEach((btn) =>
     btn.addEventListener("click", () => {
@@ -117,14 +117,32 @@ function bindClassifier() {
   renderClassifier(input.value); // initial state
 }
 
-/* ================= 04 · TERMINAL (dry-run vs real) ================= */
-const TERM_MODE = { mode: "dry" };
+/* ================= 04 · INTERACTIVE TERMINAL (CLI playground) =================
+   Typeable terminal: the visitor writes commands (or uses the quick chips) and gets
+   the same deterministic output a real run would produce. Output mirrors the real
+   CLI format (see docs/evidence). No external requests — works from file://. */
+const TERM_PROMPT = "node --experimental-strip-types src/cli.ts";
+
+// Deterministic virtual folder: fixed file list, mixed categories + one hidden file.
 const TERM_FILES = [
-  { name: "README.md", dest: "Documents/README.md" },
-  { name: "photo.png", dest: "Images/photo.png" },
-  { name: "report.pdf", dest: "PDF/report.pdf" },
-  { name: "setup.exe", dest: "Others/setup.exe" },
+  ".env",
+  "README.md",
+  "datos.bin",
+  "foto.png",
+  "movie.mkv",
+  "notas.md",
+  "report.pdf",
+  "script.py",
+  "setup.exe",
 ];
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 function appendTermLine(term, cls, text) {
   const line = document.createElement("div");
@@ -133,67 +151,148 @@ function appendTermLine(term, cls, text) {
   term.appendChild(line);
 }
 
-async function runTerminal() {
-  const term = $("#terminal");
-  const btn = $("#term-run");
-  btn.disabled = true;
-  term.innerHTML = "";
-
-  const dry = TERM_MODE.mode === "dry";
-  const prefix = dry ? '<span class="t-dry">[dry-run] </span>' : "";
-  const cmd = dry
-    ? "$ node --experimental-strip-types src/cli.ts --dry-run"
-    : "$ node --experimental-strip-types src/cli.ts";
-
-  appendTermLine(term, "t-cmd", cmd + '<span class="term-cursor"></span>');
-  await sleep(450);
-
-  // summary line
-  appendTermLine(term, "t-ok", prefix + "Moved: 4 | Skipped: 1 | Errors: 0");
-  await sleep(350);
-
-  // per-file plan (sorted lexicographically, matches report order)
-  for (const f of TERM_FILES) {
-    const destRel = f.dest;
-    appendTermLine(term, "t-move", prefix + `${destRel} ← ${f.name}`);
-    await sleep(260);
-  }
-  appendTermLine(term, "t-skip", prefix + "skipped: .env (hidden)");
-  await sleep(350);
-
-  if (dry) {
-    appendTermLine(term, "t-dim", prefix + "0 escrituras — ni un mkdir, ni un rename, ni un unlink.");
-    await sleep(350);
-    appendTermLine(term, "t-ok", "✔ El plan se imprimió tal cual se ejecutaría; nada cambió en disco.");
-  } else {
-    appendTermLine(term, "t-dim", "[create] PDF/ · Images/ · Documents/ · Others/");
-    await sleep(320);
-    for (const f of TERM_FILES) {
-      const from = f.name;
-      appendTermLine(term, "t-move", `[rename] ${from} → ${f.dest}`);
-      await sleep(200);
+function buildPlan(opts) {
+  const hidden = !!opts.hidden;
+  const plan = [];
+  const skipped = [];
+  for (const name of TERM_FILES) {
+    const isHidden = name.startsWith(".");
+    if (isHidden && !hidden) {
+      skipped.push({ name, why: "hidden" });
+      continue;
     }
-    await sleep(300);
-    appendTermLine(term, "t-ok", "✔ 4 movimientos reales. Una segunda corrida reportaría 0 movimientos (idempotencia).");
+    const result = classify(name);
+    const dest =
+      result.kind === "category" ? `${result.category}/${name}` : `Others/${name}`;
+    plan.push({ name, dest });
   }
+  plan.sort((a, b) => a.name.localeCompare(b.name));
+  return { plan, skipped };
+}
 
-  btn.disabled = false;
+async function simulateRun(out, { dry, hidden }) {
+  const { plan, skipped } = buildPlan({ hidden });
+  const prefix = dry ? '<span class="t-dry">[dry-run] </span>' : "";
+  appendTermLine(out, "t-ok", prefix + `Moved: ${plan.length} | Skipped: ${skipped.length} | Errors: 0`);
+  await sleep(220);
+  for (const m of plan) {
+    appendTermLine(out, "t-move", prefix + `${m.dest} ← ${m.name}`);
+    await sleep(140);
+  }
+  for (const s of skipped) {
+    appendTermLine(out, "t-skip", prefix + `skipped: ${s.name} (${s.why})`);
+    await sleep(110);
+  }
+  await sleep(180);
+  if (dry) {
+    appendTermLine(out, "t-dim", prefix + "0 escrituras — ni un mkdir, ni un rename, ni un unlink.");
+    appendTermLine(out, "t-ok", "✔ El plan se imprimió tal cual se ejecutaría; nada cambió en disco.");
+  } else {
+    const folders = [...new Set(plan.map((m) => m.dest.split("/")[0]))];
+    appendTermLine(out, "t-dim", `[create] ${folders.join(" · ")}`);
+    await sleep(160);
+    for (const m of plan) {
+      appendTermLine(out, "t-move", `[rename] ${m.name} → ${m.dest}`);
+      await sleep(120);
+    }
+    appendTermLine(out, "t-ok", `✔ ${plan.length} movimientos reales. Una segunda corrida reportaría 0 movimientos (idempotencia).`);
+  }
+}
+
+function simulateHelp(out) {
+  const lines = [
+    ["t-ok", "file-organizer — organize a directory by file extension"],
+    ["", ""],
+    ["", "Usage:"],
+    ["", "  node --experimental-strip-types src/cli.ts [options] [targetDir]"],
+    ["", ""],
+    ["", "Options:"],
+    ["", "  --dry-run               print the plan without writing anything (no mkdir)"],
+    ["", "  --config <path>         highest-precedence JSON config file"],
+    ["", "  --include-hidden        also process hidden (dot) files"],
+    ["", "  --help                  show this help and exit"],
+    ["", "  --version               print the version and exit"],
+    ["", ""],
+    ["", "Configuration precedence (lowest → highest):"],
+    ["", "  embedded defaults < <cwd>/.file-organizer.json"],
+    ["", "  < <target>/.file-organizer.json < --config <path>"],
+    ["t-dim", "EXIT:0"],
+  ];
+  for (const [cls, text] of lines) appendTermLine(out, cls, escapeHtml(text));
+}
+
+function simulateVersion(out) {
+  appendTermLine(out, "t-ok", "file-organizer 1.0.0");
+  appendTermLine(out, "t-dim", "EXIT:0");
+}
+
+function simulateConfig(out, path) {
+  appendTermLine(out, "t-dim", `[load] ${escapeHtml(path)} (capa de mayor precedencia)`);
+  appendTermLine(out, "t-move", 'miscFolder: "Mezclados" · mapping: { "pdf": "Documentos", "png": "Pictures" }');
+  appendTermLine(out, "t-dim", "La capa superior gana por clave; el resto del mapeo por defecto se conserva (fusión por extensión).");
+  appendTermLine(out, "t-ok", "✔ Configuración válida. Los archivos de configuración cargados nunca se mueven.");
+}
+
+function runCommand(raw) {
+  const out = $("#term-output");
+  let args = raw.trim().split(/\s+/).filter(Boolean);
+
+  // Allow pasting the full command (node --experimental-strip-types src/cli.ts <flags>)
+  if (args[0] === "node") args = args.slice(3);
+
+  appendTermLine(out, "t-cmd", `$ ${TERM_PROMPT}${args.length ? " " + escapeHtml(args.join(" ")) : ""}`);
+  if (args.length === 0) return simulateRun(out, { dry: false, hidden: false });
+
+  const a = args[0];
+  if (a === "clear") return (out.innerHTML = "");
+  if (a === "--help" || a === "help" || a === "-h") return simulateHelp(out);
+  if (a === "--version" || a === "version" || a === "-v") return simulateVersion(out);
+  if (a === "--config" || a === "config") return simulateConfig(out, args[1] || "./mi-config.json");
+  if (a === "--dry-run" || a === "dry-run" || a === "-n")
+    return simulateRun(out, { dry: true, hidden: args.includes("--include-hidden") });
+  if (a === "--include-hidden" || a === "run" || a === "organize")
+    return simulateRun(out, { dry: args.includes("--dry-run"), hidden: true });
+  appendTermLine(out, "t-err", `error: comando desconocido: ${escapeHtml(a)} (usa --help)`);
+  appendTermLine(out, "t-dim", "EXIT:1");
 }
 
 function bindTerminal() {
-  const tabs = $$(".sim-run-tabs .tab-btn");
-  tabs.forEach((tab) =>
-    tab.addEventListener("click", () => {
-      tabs.forEach((t) => t.classList.remove("active"));
-      tab.classList.add("active");
-      TERM_MODE.mode = tab.dataset.mode;
-      const term = $("#terminal");
-      term.innerHTML = "";
-      appendTermLine(term, "t-dim", "Preparado · seleccioná «▶ Ejecutar simulación».");
-    })
+  const input = $("#term-input");
+  const out = $("#term-output");
+  const host = $(".terminal");
+  const history = [];
+  let histIdx = 0;
+
+  const run = (raw) => {
+    history.push(raw);
+    histIdx = history.length;
+    runCommand(raw);
+    input.value = "";
+  };
+
+  input.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      run(input.value);
+    } else if (ev.key === "ArrowUp") {
+      ev.preventDefault();
+      if (histIdx > 0) { histIdx--; input.value = history[histIdx] || ""; }
+    } else if (ev.key === "ArrowDown") {
+      ev.preventDefault();
+      if (histIdx < history.length - 1) { histIdx++; input.value = history[histIdx] || ""; }
+      else { histIdx = history.length; input.value = ""; }
+    }
+  });
+
+  $$(".chip-btn[data-term]").forEach((btn) =>
+    btn.addEventListener("click", () => run(btn.dataset.term))
   );
-  $("#term-run").addEventListener("click", runTerminal);
-  appendTermLine($("#terminal"), "t-dim", "Preparado · seleccioná «▶ Ejecutar simulación».");
+
+  if (host) host.addEventListener("click", () => input.focus());
+
+  appendTermLine(out, "t-dim", "Terminal interactivo · escribe un comando y pulsa Enter (↑/↓ historial).");
+  appendTermLine(out, "t-dim", "Prueba: --dry-run · --include-hidden · --config ./mi-config.json · --help · --version · clear");
+  input.focus();
 }
 
 /* ================= 05 · COLLISION SIM =================

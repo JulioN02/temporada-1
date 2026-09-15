@@ -6,6 +6,13 @@ Estado: ✅ Entregado · 50/50 tests · typecheck limpio · cero dependencias
 
 Proyecto rápido de la temporada 1 (sección **Proyectos**). Documentación en Obsidian → `Temporada 1/Proyectos rápidos/01 File Organizer.md` (nota general) y `01 File Organizer — Ficha Técnica.md` (ficha técnica).
 
+## Demo en vivo
+
+- **Dashboard interactivo (GitHub Pages):** <https://julion02.github.io/file-organizer/dashboard/>
+- **Repositorio:** <https://github.com/JulioN02/file-organizer>
+
+La demo corre en el navegador sin build ni dependencias externas: simulador de clasificación, dry-run vs. ejecución real, resolución de colisiones y precedencia de configuración.
+
 ## El problema
 
 La carpeta de descargas acumula archivos desordenados y encontrarlos se vuelve lento. Una regla simple de clasificación por extensión lo automatiza: un comando escanea el nivel superior, clasifica cada archivo regular por su extensión y lo mueve a una subcarpeta de categoría (`PDF/`, `Images/`, `Videos/`, `Code/`, …).
@@ -18,7 +25,7 @@ Requisito: **Node.js >= 26** (por la ejecución nativa de TypeScript con `--expe
 
 ```bash
 npm install          # solo devDependencies (@types/node, typescript)
-npm test             # 50/50 tests (node --test, 3 suites)
+npm test             # node --test (3 suites)
 npm run typecheck    # tsc --noEmit
 ```
 
@@ -108,13 +115,6 @@ Todos los archivos de configuración cargados en la ejecución (el de `--config`
 | `src/cli.ts` | Argumentos con `util.parseArgs`, orquestación, reporte y códigos de salida |
 | `tests/` | Tres suites `node:test` (50 tests) |
 
-Comandos de desarrollo:
-
-```bash
-npm test          # node --test (3 suites)
-npm run typecheck # tsc --noEmit
-```
-
 ## Axiomas
 
 1. **Categoría solo desde la extensión** — la clasificación depende únicamente del nombre y el mapeo activo; misma entrada, misma salida.
@@ -132,7 +132,7 @@ npm run typecheck # tsc --noEmit
 ## Documentación
 
 - **Guía de usuario** (`docs/user-guide.md`) — requisitos, instalación/ejecución, ejemplo paso a paso, flags, configuración JSON, mapeo por defecto, casos de uso y solución de problemas.
-- **Dashboard didáctico** (`docs/dashboard.html`) — explicación visual e interactiva del proyecto en un solo archivo autónomo (CSS/JS inline, sin dependencias externas; ≤ 1MB). Se abre directo en el navegador, sin build. Fuente editable: `docs/dashboard/` (index.html + app.js + style.css).
+- **Dashboard interactivo en vivo** — [github.com/JulioN02/file-organizer → dashboard](https://julion02.github.io/file-organizer/dashboard/): explicación visual del proyecto con un **terminal interactivo** (escribe comandos del CLI y ve la salida real simulada), simulaciones de clasificador, colisiones y precedencia, y una **guía rápida** de instalación y uso. Fuente: `docs/dashboard/` (index.html + app.js + style.css) en HTML/CSS/JS puro, sin CDN ni build. `docs/index.html` redirige a la demo desde la raíz de GitHub Pages.
 - **Ficha de portafolio** (`docs/PORTFOLIO.md`) — versión divulgativa para la sección Proyectos (por qué CLI, diseño de ingeniería, evidencia, links).
 - **Obsidian:** nota general `Temporada 1/Proyectos rápidos/01 File Organizer.md` · ficha técnica `01 File Organizer — Ficha Técnica.md`.
 
@@ -140,7 +140,7 @@ npm run typecheck # tsc --noEmit
 
 ### 1. ¿Qué problema resuelve?
 
-La carpeta de descargas acumula archivos desordenados y encontrarlos se vuelve lento. Una regla simple de clasificación por extensión lo automatiza: un comando mueve cada archivo a su carpeta de categoría de forma segura, con modo de ensayo y configuración declarativa por directorio.
+El problema descrito arriba: una carpeta de descargas desordenada donde encontrar un archivo es lento. Lo que se aprendió: automatizarlo con una regla simple de clasificación por extensión — un comando mueve cada archivo a su carpeta de categoría de forma segura, con modo de ensayo y configuración declarativa por directorio.
 
 ### 2. ¿Qué aprendí?
 

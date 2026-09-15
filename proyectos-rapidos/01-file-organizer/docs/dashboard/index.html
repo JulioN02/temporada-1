@@ -139,9 +139,9 @@
 <!-- ================= 03 · CLASIFICACIÓN INTERACTIVA ================= -->
 <section id="clasificador">
   <div class="wrap">
-    <h2><span class="num">03</span> Probalo: ¿a qué categoría va cada archivo?</h2>
+    <h2><span class="num">03</span> Pruébalo: ¿a qué categoría va cada archivo?</h2>
     <p class="lede">
-      Escribí un nombre de archivo (o elegí un ejemplo) y observá la clasificación con el <b>mapeo
+      Escribe un nombre de archivo (o elige un ejemplo) y observa la clasificación con el <b>mapeo
       por defecto real</b> del proyecto — la misma lógica de <code>classify()</code> traducida a
       JavaScript.
     </p>
@@ -186,8 +186,9 @@
     <h2><span class="num">04</span> Dry-run vs. ejecución real: ensayar sin tocar nada</h2>
     <p class="lede">
       El modo de ensayo muestra el plan <b>sin escribir una sola letra</b>: ni mueve archivos, ni crea
-      carpetas. Es la salvaguarda para revisar el resultado antes de comprometerte. La única diferencia
-      con la ejecución real es… que no ejecuta.
+      carpetas. Es la salvaguarda para revisar el resultado antes de comprometerte. El reporte se muestra
+      <b>tal cual</b> se ejecutaría — el mismo orden, los mismos destinos, el mismo conteo
+      <code>Moved: n | Skipped: n | Errors: n</code> — con la única diferencia de que no ejecuta.
     </p>
 
     <div class="cmp-grid">
@@ -210,19 +211,25 @@
     </div>
 
     <div class="sim-run-host">
-      <div class="sim-run-tabs">
-        <button class="tab-btn active" data-mode="dry">Ensayo · <code>--dry-run</code></button>
-        <button class="tab-btn" data-mode="real">Real · sin flags</button>
+      <div class="terminal" id="terminal">
+        <div class="term-output" id="term-output" aria-live="polite"></div>
+        <div class="term-input-row">
+          <span class="term-prompt" aria-hidden="true">$ node --experimental-strip-types src/cli.ts</span>
+          <input id="term-input" type="text" autocomplete="off" spellcheck="false" placeholder="--dry-run · --include-hidden · --config · --help" aria-label="Terminal del CLI: escribe un comando y pulsa Enter" />
+        </div>
       </div>
-      <div class="terminal" id="terminal"></div>
-      <button class="btn-play sim-run" id="term-run">▶ Ejecutar simulación</button>
+      <div class="sim-run-chips">
+        <span class="term-hint">Prueba:</span>
+        <button class="chip-btn" data-term="--dry-run">--dry-run</button>
+        <button class="chip-btn" data-term="">ejecución real</button>
+        <button class="chip-btn" data-term="--include-hidden">--include-hidden</button>
+        <button class="chip-btn" data-term="--config ./mi-config.json">--config</button>
+        <button class="chip-btn" data-term="--help">--help</button>
+        <button class="chip-btn" data-term="--version">--version</button>
+        <button class="chip-btn" data-term="clear">clear</button>
+      </div>
     </div>
 
-    <div class="callout" style="margin-top:18px">
-      En <code>--dry-run</code> el reporte del plan se muestra <b>tal cual</b> se ejecutaría: el mismo
-      orden, los mismos destinos, el mismo conteo <code>Moved: n | Skipped: n | Errors: n</code>. La
-      diferencia es que no pasa nada en disco.
-    </div>
   </div>
 </section>
 
@@ -242,8 +249,6 @@
         <ul class="req-list">
           <li>Si <code>PDF/report.pdf</code> ya existe → el nuevo se llama <code>report (1).pdf</code>.</li>
           <li>Si <code>report (1).pdf</code> también existe (o fue reservado por otro movimiento del plan) → <code>report (2).pdf</code>.</li>
-          <li>El sufijo es <b>determinista</b>: misma entrada, mismo resultado.</li>
-          <li>Nunca se borra ni se reemplaza un archivo existente (axioma 3).</li>
         </ul>
       </div>
       <div class="card">
@@ -251,7 +256,7 @@
         <p class="lede" style="margin:0">
           Dos archivos de la raíz pueden terminar queriendo el <b>mismo destino</b> dentro del plan.
           El conjunto de <b>reservas</b> lo impide: el primer movimiento «reserva» su nombre y el
-          segundo elige otro. Probalo abajo.
+          segundo elige otro. Pruébalo abajo.
         </p>
       </div>
     </div>
@@ -291,7 +296,7 @@
     <div class="card prec-demo">
       <h3>Demo: ¿qué <code>miscFolder</code> queda activo?</h3>
       <p class="lede" style="margin:4px 0 14px">
-        Activá o desactivá cada capa opcional y observá cuál gana. Las capas ausentes simplemente se
+        Activa o desactiva cada capa opcional y observa cuál gana. Las capas ausentes simplemente se
         saltan.
       </p>
       <div class="prec-toggles">
@@ -347,10 +352,10 @@
         <span class="ax-num">A3</span>
         <h3>Nunca sobrescribe ni pierde datos</h3>
         <p class="ax-body">
-          Ante colisión, <b>sufijo</b> <code>name (1).ext</code>. El dry-run no realiza ninguna
-          escritura: plan y ejecución están separados.
+          Ningún movimiento reemplaza ni elimina un archivo existente: ante un destino ocupado, el
+          plan elige otro nombre.
         </p>
-        <div class="ax-rule"><b>Garantía:</b> <code>resolveUniquePath()</code> + dry-run.</div>
+        <div class="ax-rule"><b>Garantía:</b> <code>resolveUniquePath()</code>.</div>
       </div>
       <div class="axiom">
         <span class="ax-num">A4</span>
@@ -543,11 +548,121 @@
   </div>
 </section>
 
+<!-- ================= 11 · GUÍA RÁPIDA ================= -->
+<section id="guia">
+  <div class="wrap">
+    <h2><span class="num">11</span> Guía rápida: cómo funciona en la práctica</h2>
+    <p class="lede">
+      Esto es un <b>CLI de terminal</b>: escribes un comando apuntando a una carpeta y él mueve los
+      archivos a subcarpetas por categoría según su extensión. Abajo, las preguntas prácticas.
+      ¿Sin ganas de instalar? Usa el terminal interactivo de la <a href="#dryrun"><b>sección 04</b></a>
+      para probar la salida sin tocar tu disco.
+    </p>
+
+    <div class="cmp-grid">
+      <div class="card">
+        <h3>¿Cómo funciona en la práctica?</h3>
+        <ul class="req-list">
+          <li>Es una <b>herramienta de terminal</b>: un comando sobre una carpeta la organiza por extensiones.</li>
+          <li>Internamente hace <b>4 etapas</b> — <code>scan → classify → plan → move</code> (ver <a href="#flujo"><b>sección 02</b></a>).</li>
+          <li><b>Primero analiza sin tocar nada</b>; solo al final mueve. Por eso existe el <code>--dry-run</code> real.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>¿Tiene un comando CLI?</h3>
+        <div class="code-view" style="padding:12px 14px">
+          <div class="tx">node --experimental-strip-types src/cli.ts [opciones] [directorio]</div>
+        </div>
+        <p class="lede" style="margin:8px 0 0">
+          Sin directorio, organiza el actual. No está instalado como comando global (pendiente para
+          una v2); puedes crear un alias:
+        </p>
+        <div class="code-view" style="padding:12px 14px; margin-top:8px">
+          <div class="tx">alias file-organizer="node --experimental-strip-types $PWD/src/cli.ts"</div>
+          <div class="tx">file-organizer --dry-run ~/Downloads</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cmp-grid" style="margin-top:18px">
+      <div class="card">
+        <h3>¿Solo se descarga y ya? Casi</h3>
+        <div class="code-view" style="padding:12px 14px">
+          <div class="cm"># 1. descargar</div>
+          <div class="tx">git clone https://github.com/JulioN02/file-organizer.git</div>
+          <div class="cm" style="margin-top:6px"># 2. tener Node.js &gt;= 26</div>
+          <div class="cm" style="margin-top:6px"># 3. correr el comando</div>
+          <div class="tx">node --experimental-strip-types src/cli.ts ~/Downloads</div>
+        </div>
+        <p class="lede" style="margin:8px 0 0">
+          <b>Cero dependencias de runtime:</b> no necesitas <code>npm install</code> para usarlo;
+          hace falta solo para desarrollo (tests/typecheck).
+        </p>
+      </div>
+      <div class="card">
+        <h3>¿Qué opciones tiene?</h3>
+        <table class="keys">
+          <thead>
+            <tr><th>Opción</th><th>Qué hace</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="k"><code>--dry-run</code></td><td>muestra el plan sin escribir nada (ni <code>mkdir</code>)</td></tr>
+            <tr><td class="k"><code>--config &lt;ruta&gt;</code></td><td>archivo JSON de mayor precedencia (debe existir)</td></tr>
+            <tr><td class="k"><code>--include-hidden</code></td><td>procesa también archivos ocultos (punto inicial)</td></tr>
+            <tr><td class="k"><code>--help</code></td><td>muestra la ayuda y termina</td></tr>
+            <tr><td class="k"><code>--version</code></td><td>muestra la versión y termina</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cmp-grid" style="margin-top:18px">
+      <div class="card">
+        <h3>¿Cómo se configura? (opcional)</h3>
+        <p class="lede" style="margin:0 0 10px">
+          <b>Sin configurar ya funciona</b>: el mapeo por defecto es <code>pdf → PDF/</code>,
+          <code>png → Images/</code>, <code>mkv → Videos/</code>, <code>py → Code/</code>,
+          <code>docx → Documents/</code>, <code>zip → Archives/</code> y lo desconocido → <code>Others/</code>.
+        </p>
+        <p class="lede" style="margin:0 0 8px">
+          Para personalizarlo, crea un <code>.file-organizer.json</code> en la carpeta (o usa <code>--config</code>):
+        </p>
+        <div class="code-view" style="padding:12px 14px">
+          <div class="tx">{</div>
+          <div class="tx">  "mapping": { "py": "Python", "pdf": "Documentos" },</div>
+          <div class="tx">  "miscFolder": "Otros",</div>
+          <div class="tx">  "omitMisc": false</div>
+          <div class="tx">}</div>
+        </div>
+        <div class="callout" style="margin-top:10px">
+          Precedencia: <b>por defecto</b> &lt; <code>&lt;cwd&gt;/.file-organizer.json</code> &lt;
+          <code>&lt;destino&gt;/.file-organizer.json</code> &lt; <code>--config</code> — gana la capa
+          superior y el <code>mapping</code> se fusiona por extensión (ver <a href="#precedencia"><b>sección 06</b></a>).
+        </div>
+      </div>
+      <div class="card">
+        <h3>Links y recursos</h3>
+        <ul class="req-list">
+          <li><b>Repositorio:</b> <a href="https://github.com/JulioN02/file-organizer">github.com/JulioN02/file-organizer</a></li>
+          <li><b>Guía de usuario completa:</b> <code>docs/user-guide.md</code> en el repositorio</li>
+          <li><b>Evidencia:</b> 50/50 tests en verde · typecheck limpio · capturas reales del CLI en <code>docs/evidence/</code></li>
+          <li><b>Este dashboard:</b> corre en GitHub Pages, sin build ni dependencias externas</li>
+        </ul>
+        <div class="callout" style="margin-top:10px">
+          Automatizar una operación no consiste solo en hacerla automática: consiste en hacerla
+          <b>confiable</b>.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ================= FOOTER ================= -->
 <footer class="site-foot">
   <div class="wrap">
     <b>01 · File Organizer</b> — dashboard didáctico del proyecto rápido. Guía de usuario en
-    <code>docs/user-guide.md</code> · README introductorio en la raíz del proyecto. Hecho con
+    <code>docs/user-guide.md</code> · README introductorio en la raíz del proyecto ·
+    <a href="https://github.com/JulioN02/file-organizer">Repositorio</a>. Hecho con
     HTML/CSS/JS puro, sin CDN ni paso de build: se abre directo desde el navegador.
   </div>
 </footer>

@@ -57,7 +57,7 @@ Salida esperada (stdout, todo con el prefijo `[dry-run]`):
 [dry-run] skipped: .env (hidden)
 ```
 
-Verificá que el plan tiene sentido: `report.pdf` → `PDF/`, `foto.png` → `Images/`,
+Verifica que el plan tiene sentido: `report.pdf` → `PDF/`, `foto.png` → `Images/`,
 `script.py` → `Code/`, `datos.bin` (extensión sin mapear) → `Others/`, y `.env` se **omite** por ser
 archivo oculto. Nada se escribió todavía.
 
@@ -116,31 +116,7 @@ Un JSON con hasta tres claves opcionales:
 | `miscFolder` | string | Carpeta para extensiones desconocidas o archivos sin extensión (por defecto `Others`). Solo un nombre de carpeta, sin separadores de ruta. |
 | `omitMisc` | boolean | Si es `true`, los archivos misceláneos **no se mueven** y se reportan como omitidos (`skipped: … (misc omitted)`). |
 
-**Ejemplo con `miscFolder: "Otros"` y un mapeo custom** (añade `py` → `Python` y sobreescribe
-`pdf` → `Documentos`, conservando el resto del mapeo por defecto):
-
-```json
-{
-  "mapping": { "py": "Python", "pdf": "Documentos" },
-  "miscFolder": "Otros",
-  "omitMisc": false
-}
-```
-
-### Precedencia (de menor a mayor)
-
-1. Valores por defecto embebidos.
-2. `<cwd>/.file-organizer.json` (si existe).
-3. `<target>/.file-organizer.json` (si existe).
-4. `--config <ruta>` (debe existir).
-
-La capa superior gana en cada conflicto; el `mapping` se fusiona por extensión en cada capa. Un JSON
-malformado, con claves desconocidas o con valores incorrectos produce un **error fatal** en stderr
-con código de salida `1` — nunca hay un fallback silencioso a los valores por defecto.
-
-Los archivos de configuración cargados (los de `--config` y los `.file-organizer.json` del
-directorio y del cwd) se añaden a la **lista de ignorados**: nunca se mueven, aunque su extensión
-tenga categoría.
+La precedencia de capas y la lista de archivos ignorados se explican en el README del proyecto (§Configuración).
 
 ## 6. Mapeo por defecto (extensión → categoría)
 
@@ -176,7 +152,7 @@ Cualquier otra extensión, o un archivo sin extensión (`LICENSE`) o con punto i
 | `error: cannot access target directory …` | El directorio destino no existe o no es accesible; código `1`. |
 | `error: <ruta> is not a directory` | Pasaste un archivo como directorio destino; código `1`. |
 | `error: <ruta>: cannot read config file` | `--config <ruta>` no existe (es obligatorio); código `1`. |
-| `error: <ruta>: invalid JSON` | El archivo de configuración no es JSON válido; corregilo y reintentá. |
+| `error: <ruta>: invalid JSON` | El archivo de configuración no es JSON válido; corrígelo y reintenta. |
 | `error: <ruta>: unknown top-level key "…"` | Solo se admiten `mapping`, `miscFolder`, `omitMisc`. |
 | `error: …: mapping[..] must be a non-empty string` | Los valores de `mapping` deben ser texto no vacío. |
 | `error: expected at most one target directory argument` | Se pasaron dos directorios; el CLI acepta uno solo. |
@@ -185,33 +161,14 @@ Cualquier otra extensión, o un archivo sin extensión (`LICENSE`) o con punto i
 
 **Consejos:**
 
-- Siempre probá con `--dry-run` antes de una corrida real.
+- Siempre prueba con `--dry-run` antes de una corrida real.
 - Si una carpeta de categoría es en realidad un archivo, el organizador lo detecta sin entrar en
   bucle (`ENOTDIR` se trata como destino no existente).
 - El reporte va a **stdout**; los errores van a **stderr**; los códigos de salida son `0`/`1`.
 
-## 9. Las 4 preguntas guía
+## 9. Preguntas guía
 
-**1. ¿Qué problema resuelve?** La carpeta de descargas acumula archivos desordenados y encontrarlos
-se vuelve lento. Una regla simple de clasificación por extensión lo automatiza con un comando
-seguro, con modo de ensayo y configuración declarativa por directorio.
-
-**2. ¿Qué aprendí?** Filesystem (`readdir` con `withFileTypes`, `rename` atómico, `mkdir`
-recursivo); streams (`pipeline` como fallback cross-device sin cargar el archivo en memoria); CLI
-(`util.parseArgs` estricto, stdout/stderr separados, códigos de salida); configuración declarativa
-(precedencia en capas, merge por extensión, type guards sobre `unknown`); diseño (separar el plan de
-la ejecución habilita el dry-run); y TypeScript nativo sin build con TDD estricto (`node:test`).
-
-**3. ¿Qué parte fue difícil?** Simular EXDEV sin un mount cross-device (resuelto con un seam de test
-que inyecta `rename`/`copy`/`unlink`); las colisiones intra-plan (el conjunto de reservas es
-obligatorio); las carreras TOCTOU (un archivo puede desaparecer entre el escaneo y el movimiento);
-y un caso sutil: si una carpeta de categoría es un archivo, `stat` lanza `ENOTDIR` (no `ENOENT`) y
-sin tratarlo el resolutor de colisiones entraba en un bucle infinito.
-
-**4. ¿Qué haría diferente?** Añadir recursividad (`--recursive`) y quizá un módulo MIME para
-clasificar por contenido; permitir rutas anidadas en `miscFolder`; una suite dedicada para el CLI
-con `spawn` real; y publicar un `bin` cuando la ejecución nativa de TypeScript se estabilice sin
-flags experimentales.
+Las 4 preguntas guía (problema, aprendizajes, dificultades, mejoras) están en el `README.md` del proyecto.
 
 ---
 
