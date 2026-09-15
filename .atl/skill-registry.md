@@ -22,6 +22,7 @@ See `_shared/skill-resolver.md` for the full resolution protocol.
 | Creating a pull request, opening a PR | branch-pr | /home/julion/.config/opencode/skills/branch-pr/SKILL.md |
 | Browser automation, test web pages, Playwright tests | playwright-cli | /home/julion/.claude/skills/playwright-cli/SKILL.md |
 | Saving discoveries/decisions, "remember", "recall" | engram-memory | /home/julion/.agents/skills/engram-memory/SKILL.md |
+| Creating/unifying a GitHub Pages evidence dashboard (lab, experimento, proyecto rápido, herramienta) | dashboard-pages | /home/julion/.config/opencode/skills/dashboard-pages/SKILL.md |
 
 ## Compact Rules
 
@@ -110,6 +111,14 @@ Pre-digested rules per skill. Delegators copy matching blocks into sub-agent pro
 ### judgment-day
 - Parallel adversarial review: two independent blind judge sub-agents review the same target simultaneously
 - Synthesize findings, apply fixes, re-judge until both pass or escalate after 2 iterations
+
+### dashboard-pages
+- ONE dashboard version per project — NEVER coexist a single-file `dashboard.html` AND a `dashboard/` folder with the same page
+- Pages root `docs/index.html` MUST always reach the interactive version via relative redirect (`meta refresh` to `./dashboard/` or `./dashboard.html`)
+- Zero CDN, zero build step, zero absolute paths — all relative so it works on `file://` and Pages
+- Simulations run client-side (inline `<script>` or local `app.js`); evidence embedded or in `docs/output-*.txt`
+- Commit EVERYTHING the dashboard documents (`docs/simulators/`, `docs/evidence/`) — untracked files don't deploy to Pages
+- GitHub Pages legacy (`main` → `/docs`) serves `docs/index.html`; relative `meta refresh` is enough, no `.nojekyll` needed
 
 ## Project Conventions
 
