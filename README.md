@@ -20,7 +20,7 @@ Mapa en código de la **Temporada 1** del plan de desarrollo profesional: softwa
 | `laboratorios-ingenieria/` | 8 labs de ingeniería (races, idempotencia, SQL, ...) | 🟡 LAB-01..04 hechos · LAB-05..08 pendientes |
 | `proyectos-profesionales/` | Proyectos CORE de portafolio (Inventory & Stock, Workflow Engine) | 🟡 Inventory & Stock entregado · Workflow Engine pendiente |
 | `proyectos-rapidos/` | Ideas de 1–3 días (8 carpetas) | 🟡 01 implementado · 02–08 pendientes |
-| `experimentos/` | Entender por dentro (Mini ORM, Mini Message Queue, ...) | 💡 Pendiente |
+| `experimentos/` | Entender por dentro (Mini ORM, Mini Message Queue, ...) | 🗄️ Archivado — absorbido por el capstone |
 | `capstone/` | Business Operations Platform (proyecto insignia) | 💡 Pendiente |
 | `evidencia/` *(planificada)* | Screenshots, demos, changelogs publicables | ⚪ Por crear |
 | `contenido/` *(planificada)* | Artículos "cómo lo hice" | ⚪ Por crear |
@@ -42,7 +42,7 @@ Mapa en código de la **Temporada 1** del plan de desarrollo profesional: softwa
 | Workflow Automation Engine | 🔲 Pendiente | EVENT → RULE → ACTION (colas, workers, retries) |
 | Developer/Operations Platform | 🔲 Pendiente (opcional) | Mini plataforma de registro y salud de aplicaciones |
 | Proyectos rápidos | 🟡 Parcial | 01 File Organizer implementado (CLI, 50 tests) · 02–08 ideas pendientes |
-| Experimentos | 🔲 Pendiente | 5 experimentos para entender por dentro |
+| Experimentos | 🗄️ Archivado | 5 experimentos para entender por dentro — conceptos absorbidos por el capstone |
 | CAPSTONE | 🔲 Pendiente | Business Operations Platform |
 
 ## Enlaces

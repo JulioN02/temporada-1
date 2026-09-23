@@ -2,7 +2,7 @@
 
 Experimento de la Temporada 1. Documentación en Obsidian → `Experimentos/Experimentos.md`.
 
-Estado: ✅ Implementado
+Estado: ✅ Implementado · 🗄️ Archivado
 
 ## Qué construiste
 

@@ -2,7 +2,7 @@
 
 Experimento de la Temporada 1. Documentación en Obsidian → `Experimentos/Experimentos.md`.
 
-Estado: 🔲 Pendiente (idea)
+Estado: 🗄️ Archivado — no construido (concepto cubierto por el capstone)
 
 ## Qué construyes
 
