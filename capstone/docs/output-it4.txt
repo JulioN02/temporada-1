@@ -1,0 +1,98 @@
+CAPSTONE — Business Operations Platform (BOP v1)
+Evidence: Iteration 4 (Stock ledger + atomic order→stock showpiece — T-4-1..T-4-9)
+Generated: 2026-09-21 · Node v26.8.2 · Postgres 16 (compose, bop-db)
+
+=== Iteration 4 — Stock ledger + atomic order→stock (showpiece) ===
+- Migrations (NEW files, runner tracks by name): 004_stock.sql (movements
+  ledger: type CHECK adjustment|transfer_out|transfer_in|order_out, quantity>0,
+  sign ±1 + sign/type coherence CHECK, reason NOT NULL, idempotency_key UNIQUE,
+  immutability trigger R-STK-1, stock_levels derived view R-STK-2, indexes) +
+  005_notifications.sql (7-type CHECK + channel CHECK + delivery_state +
+  UNIQUE(type,reference,channel,user_id) — SEE DEVIATION #2).
+- modules/stock/: repository (movement insert under pg_advisory_xact_lock keyed
+  on product, ascending id order — deadlock-free; currentStock inline SUM in
+  tx; defaultWarehouseId convention — SEE DEVIATION #1; zero-filled getStock;
+  newest-first listMovements) → events.ts (low-stock choke point ADR-5:
+  fires iff sign=-1 AND newLevel < threshold; R-STK-7) → service (adjust with
+  negative-stock invariant under lock R-STK-3, transfer 2 rows same tx
+  from≠to + source sufficiency R-STK-4, idempotent replay R-STK-6, audit
+  same-tx) → dto/controller/routes (POST /api/stock/movements stock_adjust,
+  POST /api/stock/transfers stock_transfer, GET /api/stock + /stock/movements
+  stock_read).
+- modules/notifications/emit.ts (S3 minimal in-tx emit — in-app rows only;
+  ADR-4 recipients: order creator / active manager+operator for low_stock;
+  email enqueue completes at it5 with pg-boss).
+- THE ATOMIC SHOWPIECE (T-4-6, R-ORD-5, design §7): orders.service.confirm =
+  lock order FOR UPDATE → state check (idempotent replay same key 200 original
+  | other key on confirmed 409 INVALID_STATE) → lock products ASC + sufficiency
+  → order_out movements (sign −1, reason 'order <id> confirmed',
+  order_out:{orderId}:{productId}) → markConfirmed + key → audit order.confirm
+  (movementIds) → emitEvent order_confirmed (+ low-stock choke per movement).
+  Commit-all or rollback-all: insufficient → 409 INSUFFICIENT_STOCK with ZERO
+  movements/notifications/audit; DB error → 500 full rollback. Cancel writes
+  audit order.cancel with reason, NEVER reverses stock (R-ORD-6).
+- Concurrency vs real Postgres (no timing sleeps): R-STK-5 parallel +5 → 20
+  (no lost update); stock 2 + 5 concurrent −1 → exactly 2×201, 3×409, level 0;
+  R-ORD-5 concurrent confirms (different keys) → one 200, one 409, exactly 1
+  movement set; adjust-vs-confirm on stock 3 → one wins, level 0, never
+  negative.
+- Suite: 157 tests green (119 baseline + 38 new: 6 lowStockRule unit + 4
+  migration-level + 15 stock ledger + 9 atomic orders + 4 concurrency),
+  tsc --noEmit clean.
+
+=== Atomic demo commands (T-4-9) — the showpiece end-to-end ===
+Prereq: compose db up; migrate --db=test; login as admin/manager/operator.
+
+# 1. Catalog + stock
+curl -s -X POST localhost:3000/api/products \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Widget","sku":"W-1","lowStockThreshold":5}'
+curl -s -X POST localhost:3000/api/warehouses \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"name":"Main"}'
+curl -s -X POST localhost:3000/api/stock/movements \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"type":"adjustment","productId":1,"warehouseId":1,"quantity":10,
+       "reason":"initial stock"}'
+curl -s localhost:3000/api/stock   # level "10"
+
+# 2. Order + ATOMIC confirm (one tx: sufficiency → order_out → audit → rows)
+curl -s -X POST localhost:3000/api/orders \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"customerId":1,"lines":[{"productId":1,"qty":3,"unitPrice":"0.10"}]}'
+curl -s -X POST localhost:3000/api/orders/1/confirm \
+  -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: confirm-1'
+#   → 200 {order:{state:"confirmed", total:"0.30"}}
+curl -s localhost:3000/api/stock            # level "7" (10 − 3, derived)
+curl -s localhost:3000/api/stock/movements  # order_out row, sign −1, reason
+                                           #   'order 1 confirmed', newest-first
+# replay with the SAME key → 200 original, no new movements
+curl -s -X POST localhost:3000/api/orders/1/confirm \
+  -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: confirm-1'
+
+# 3. Insufficient stock → 409 INSUFFICIENT_STOCK, ZERO side effects
+curl -s -X POST localhost:3000/api/orders \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"customerId":1,"lines":[{"productId":1,"qty":99,"unitPrice":"0.10"}]}'
+curl -s -X POST localhost:3000/api/orders/2/confirm \
+  -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: confirm-2'
+#   → 409 {"error":{"code":"INSUFFICIENT_STOCK",...}} — order stays draft,
+#     movements/notifications/audit untouched (proven by tests R-ORD-5)
+
+# 4. Low stock fires on crossing (level 7 → confirm qty 4 → 3 < threshold 5)
+curl -s -X POST localhost:3000/api/orders/3/confirm \
+  -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: confirm-3'
+#   → low_stock notification rows for manager+operator (R-STK-7)
+
+# 5. Cancel never reverses stock (R-ORD-6)
+curl -s -X POST localhost:3000/api/orders/1/cancel \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"reason":"customer changed their mind"}'
+curl -s localhost:3000/api/stock            # unchanged: still "3"
+
+=== Evidence it4 (real suite output appended by scripts/evidence.ts) ===
+=== Evidence it4 — 2026-09-21T05:29:08.069Z ===
+Command: node --test --test-concurrency=1 "tests/**/*.test.ts"
+Suite: 157 tests, 157 passed, 0 failed
+Requirement IDs covered in test names (38):
+R-AUD-1, R-AUD-2, R-AUD-3, R-AUTH-1, R-AUTH-2, R-AUTH-3, R-AUTH-4, R-AUTH-5, R-AUTH-6, R-AUTH-7, R-AUTH-8, R-CRM-1, R-CRM-2, R-CRM-3, R-CRM-4, R-CRM-5, R-NFR-1, R-NFR-2, R-NFR-5, R-NFR-6, R-NOT-2, R-OBS-1, R-ORD-1, R-ORD-2, R-ORD-3, R-ORD-4, R-ORD-5, R-ORD-6, R-ORD-7, R-PROD-5, R-STK-1, R-STK-2, R-STK-3, R-STK-4, R-STK-5, R-STK-6, R-STK-7, R-STK-8

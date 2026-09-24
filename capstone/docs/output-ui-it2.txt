@@ -1,0 +1,111 @@
+================================================================================
+BOP CAPSTONE-UI — Iteration 2b (auth + shell + guards + shared components) — EVIDENCE
+Change: capstone-ui · Project: temporada-1 · Date: 2026-09-22
+Scope: T-2-6..T-2-10 (AuthContext, RBAC parity mirror, LoginPage + Layout +
+       Sidebar + LocaleToggle + ToastProvider + App routes, shared components
+       + hooks, foundation tests + evidence)
+Exit gate: vitest green (R-AUTHUI-2..4, R-UI-FND-1..4, R-RBAC-1..3, R-I18N-3,
+           R-UI-NFR-5 chunk split) · tsc --noEmit ui CLEAN · backend suite
+           256/256 (zero regressions) · docs/output-ui-it2.txt
+================================================================================
+
+1) UI WORKSPACE TEST SUITE (real output — npm test -w ui, vitest 5.0.1)
+--------------------------------------------------------------------------------
+$ npm test -w ui
+> vitest run
+
+ RUN  v5.0.1 /home/julion/Documents/Programacion/JSOFTSOLUTIONS/Desarrollo-Profesional/temporada-1/capstone/ui
+
+ Test Files  7 passed (7)
+      Tests  84 passed (84)
+   Start at  22:55:03
+   Duration  34.63s
+
+Cumulative suite: 41 (it2a) + 43 new (it2b) = 84. Files: mock-fetch 3,
+i18n 13, formatters 11, api-client 14, auth 14, rbac 14, foundation 15.
+
+Requirement-referenced tests (it2b, all green — cumulative gate continues):
+  R-AUTHUI-2 (1)   after login, storage scan — NO token keys in
+                   localStorage/sessionStorage (memory-only token)
+  R-AUTHUI-3 (2)   logout fires POST /api/auth/logout, clears memory, lands
+                   /login · logout with no session stays on /login w/o error
+  R-AUTHUI-4 (3)   boot on /orders restores silently (1 refresh, no login
+                   flash) · no session → /login?next=/orders, returns there
+                   after login · restore failure bounded (≤1 attempt, no loop)
+  R-UI-FND-1 (2)   wrong password ES → exactly ONE neutral localized message,
+                   no field hint · valid credentials → token in memory, routes
+  R-UI-FND-2 (2)   viewer sidebar = 6 read modules, zero write actions ·
+                   admin sidebar shows every module entry
+  R-UI-FND-3 (4)   DataTable empty → localized empty state (no zero-row
+                   table) · loading state · error state + retry re-fetches ·
+                   data renders rows/cells
+  R-UI-FND-4 (2)   double-click same Idempotency-Key → ONE row (200 replay
+                   treated as success, no double-render) · fresh key per
+                   submit → two distinct keys, two rows
+  R-RBAC-1 (2)     viewer /users → redirect /dashboard + denial toast, NO
+                   /api/users request · auditor /audit renders (allowed)
+  R-RBAC-2 (4)     operator adjust visible / transfer hidden · manager jobs
+                   retry visible · viewer create hidden (hide, never disable)
+  R-RBAC-3 (9)     parity: role keys ≡ backend · per-role permission sets
+                   deep-equal backend ROLE_PERMISSIONS (DIRECT cross-workspace
+                   import — design flag c) · 5 roles × 19 codes · unknown role
+                   → empty set · five-role sidebar sweep exact sets (9/7/6/6/7)
+  R-I18N-3 (3)     pre-auth toggle persists, NO API call · post-auth toggle
+                   pushes PATCH /api/auth/me {locale} · backend wins on boot
+                   (restored user locale overrides localStorage, corrects it)
+Total it2b: 43 tests in 3 new files (auth 14, rbac 14, foundation 15).
+
+2) TYPESCRIPT (real output — npm run typecheck -w ui, strict)
+--------------------------------------------------------------------------------
+$ npm run typecheck -w ui
+> tsc --noEmit
+(no output — exit 0)   tsc --noEmit CLEAN
+Flags: noUncheckedIndexedAccess, exactOptionalPropertyTypes,
+erasableSyntaxOnly, verbatimModuleSyntax, noUnusedLocals/Parameters.
+The R-RBAC-3 parity test imports backend/src/permissions/registry.ts across
+workspaces — type-checks clean under the ui program (no server-only imports).
+
+3) BUILD (real output — npm run build -w ui, tsc + vite 6.4.3)
+--------------------------------------------------------------------------------
+$ npm run build -w ui
+> tsc --noEmit && vite build
+
+vite v6.4.3 building for production...
+✓ 77 modules transformed.
+dist/index.html                      0.42 kB │ gzip:   0.29 kB
+dist/assets/index-BdVPAt0Z.css       5.36 kB │ gzip:   1.52 kB
+dist/assets/JobsPage-hJFAcrRc.js     0.22 kB │ gzip:   0.20 kB
+dist/assets/AuditPage-3FoclVev.js    0.22 kB │ gzip:   0.20 kB
+dist/assets/UsersPage-B8NvL2Fr.js    0.22 kB │ gzip:   0.20 kB
+dist/assets/index-dwfd5e2v.js      352.51 kB │ gzip: 111.66 kB
+✓ built in 13.15s
+R-UI-NFR-5 ✓: governance pages (AuditPage/UsersPage/JobsPage) are SEPARATE
+lazy chunks — the login → dashboard critical path (111.66 kB gzipped) never
+downloads them; initial chunk well under the 250 kB cap.
+
+4) BACKEND SUITE (real output — npm test -w backend, node --test)
+--------------------------------------------------------------------------------
+$ npm test -w backend
+ℹ tests 256
+ℹ suites 58
+ℹ pass 256
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+Zero regressions (R-PROD-3). One R-PROD-7 assertion hardened (see
+deviations): "module entry referenced" now accepts the dev source
+(/src/main.tsx) OR the built shell (/assets/...) — a local `npm run build
+-w ui` produces dist/, so `/` serves the built shell (R-BE-5 static wins).
+Count unchanged 256.
+
+5) DEMO COMMANDS (it2b)
+--------------------------------------------------------------------------------
+$ npm test -w ui                     # vitest 84/84 green (43 new)
+$ npm run typecheck -w ui            # tsc strict clean
+$ npm run build -w ui                # vite build → ui/dist (lazy governance)
+$ npm test -w backend                # 256/256 green (no regressions)
+$ npm run dev -w ui                  # vite dev, /api proxied to :3000
+# Login: http://localhost:5173/login  (es default; EN toggle pre-auth)
+# Guarded routes: /dashboard /customers /products /stock /orders
+# /orders/:id /notifications; permission-guarded: /audit /users /jobs
+================================================================================

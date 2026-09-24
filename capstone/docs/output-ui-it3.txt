@@ -1,0 +1,68 @@
+# Output — capstone-ui it3 (Dashboard + CRM)
+
+**Change**: capstone-ui · **Batch**: C (it3) · **Date**: 2026-09-23 · **Mode**: Strict TDD (RED→GREEN→TRIANGULATE→REFACTOR)
+
+**Runner**: vitest 5 + RTL 16 + jsdom 30 (`npm test -w ui`) · tsc 5.9 strict (`--noEmit`) · vite build
+
+## Tasks completed (it3)
+
+- [x] **T-3-1** DashboardPage: status card (`/api/status` + `/api/health`), KPI cards (customers/products/orders via `limit=1` pagination.total), low-stock card (client-side `level <= threshold` from `/api/stock` + `/api/products`), recent-unread card (5), refresh button (stale-while-revalidating). R-UI-DSH-1..4.
+- [x] **T-3-2** api/customers + CustomersPage: list/search (debounced q)/status filter/pagination; 403 → localized denial toast. R-UI-CRM-1.
+- [x] **T-3-3** Customer create/edit forms (Modal + FormField): client validation (name required, email format) + 422 field-level + 409 `DUPLICATE_EMAIL` localized, form intact; edit PATCHes ONLY the changed fields. R-UI-CRM-2/3.
+- [x] **T-3-4** Deactivate/reactivate (ConfirmButton gate; cancel fires nothing; inactive hidden from default list, reactivate from inactive filter). R-UI-CRM-4.
+- [x] **T-3-5** api/products + ProductsPage: list + search + inactive badge; create form (sku regex `[A-Za-z0-9._-]`, threshold int ≥ 0, 409 `DUPLICATE_SKU` localized). R-UI-CRM-5/6.
+- [x] **T-3-6** Product edit/deactivate via `PATCH /api/products/:id` (T-1-5 delta): confirm-gated deactivate → inactive badge; dup SKU 409 on edit. R-UI-CRM-7.
+- [x] **T-3-7** Warehouses in Stock module: `GET /api/warehouses` list + create form (POST, empty-name client block) + rename PATCH + confirm-gated DELETE with 409 `WAREHOUSE_IN_USE` localized (never silent). R-UI-CRM-8.
+- [x] **T-3-8** CRM page tests + evidence (this doc).
+
+## Tests added (it3) — 42 new
+
+| File | Count | Requirements |
+|---|---|---|
+| `tests/dashboard.test.tsx` | 10 | R-UI-DSH-1 (admin KPIs, partial failure, db-down degraded), R-UI-DSH-2 (alerts present / none-low / deriveLowStock ×2), R-UI-DSH-3, R-UI-DSH-4 (refresh 2nd round / stale+toast) |
+| `tests/customers.test.tsx` | 14 | R-UI-CRM-1 (search, pagination, empty, 403 toast), R-UI-CRM-2 (invalid email no-request, dup 409 intact, success), R-UI-CRM-3 (PATCH {phone} only, 404), R-UI-CRM-4 (gate cancel zero-requests, deactivate, reactivate), validation ×2 |
+| `tests/products.test.tsx` | 11 | R-UI-CRM-5 (list+badge, search), R-UI-CRM-6 (threshold −1 block, sku regex block, dup sku 409, success), R-UI-CRM-7 (deactivate PATCH, dup sku on edit, threshold-only PATCH), validation ×2 |
+| `tests/warehouses.test.tsx` | 7 | R-UI-CRM-8 (list, create 201, empty-name block, dup 409, rename PATCH, delete in-use 409 WAREHOUSE_IN_USE, delete 204) |
+
+## Files created / changed (it3)
+
+| File | Action |
+|---|---|
+| `ui/src/api/status.ts` | Created — getStatus/getHealth |
+| `ui/src/api/types.ts` | Modified — SystemStatus, HealthStatus, MovementListItem |
+| `ui/src/modules/dashboard/lowStock.ts` | Created — deriveLowStock pure helper |
+| `ui/src/pages/DashboardPage.tsx` | Replaced placeholder |
+| `ui/src/modules/crm/customerForm.ts` | Created — validateCustomerInput pure |
+| `ui/src/modules/crm/CustomerForm.tsx` | Created — create/edit modal form |
+| `ui/src/pages/CustomersPage.tsx` | Replaced placeholder |
+| `ui/src/modules/crm/productForm.ts` | Created — validateProductInput pure + SKU_REGEX |
+| `ui/src/modules/crm/ProductForm.tsx` | Created |
+| `ui/src/pages/ProductsPage.tsx` | Replaced placeholder |
+| `ui/src/modules/stock/WarehousesTab.tsx` | Created (T-3-7) |
+| `ui/src/i18n/locales/{es,en}.ts` | Modified — review-gated key additions (see report) |
+| `ui/src/styles/index.css` | Modified — dashboard/cards/tabs/forms/orders styles |
+| `ui/src/components/FormField.tsx` | Modified — error prop widened with `undefined` (exactOptionalPropertyTypes) |
+| `ui/vite.config.ts` | Modified — testTimeout 15000 (slow-machine infra mitigation) |
+| `ui/tests/{dashboard,customers,products,warehouses}.test.tsx` | Created |
+| `ui/tests/{rbac,auth}.test.tsx` | Modified — sidebar nav queries scoped (`within(navigation)`); dashboard now has its own notifications link (R-UI-DSH-3) |
+
+## i18n (S3 gate — BOTH catalogs, review-gated additions)
+
+New keys: `crm.customer.{name,email,createdAt,nameRequired,emailInvalid,created,updated}`, `crm.product.{name,createdAt,create,nameRequired,skuInvalid,thresholdInvalid,edit,deactivate,confirmDeactivate,created,updated}`, `crm.warehouse.{nameRequired,edit,created,updated,deleted}`, `stock.{product,warehouse,levels.filterProduct,levels.filterWarehouse,movements.date,movements.type,movements.sign,movements.filterType,movements.type.adjustment,transferOut,transferIn,orderOut,adjust.qtyInvalid,transfer.qtyMin}`, `orders.{id,state,createdAt,create.success,create.customerRequired,create.productRequired,create.product,create.qty,create.unitPrice,create.noCustomers}`. Parity (R-I18N-1) + banned-token (R-I18N-2) both green.
+
+## Verification (it3 gate)
+
+- `npx tsc --noEmit` (ui): CLEAN
+- vitest: dashboard 10/10, customers 14/14, products 11/11, warehouses 7/7 (42 new, all green)
+- Cumulative Batch C run (it3 + it4 together): **155/155** vitest, tsc clean, build ok, backend **256/256** — see `docs/output-ui-it4.txt` for the cumulative gate
+
+## Demo commands (ES)
+
+```bash
+cd capstone && docker compose up -d --build   # full stack
+cd ui && npm run dev                          # http://localhost:5173
+# /dashboard: status + KPIs (25/8/14 seeded), low-stock card, recent notifications, Actualizar
+# /customers: search "ana", filter Estado=Inactivo, Crear cliente, Desactivar (two-step)
+# /products: Crear producto (SKU BAD-1 → local error), Desactivar producto (confirm)
+# /stock → Almacenes tab: Crear almacén, Eliminar almacén en uso → 409 localizado
+```

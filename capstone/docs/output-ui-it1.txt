@@ -1,0 +1,135 @@
+================================================================================
+BOP CAPSTONE-UI — Iteration 1 (backend i18n delta) — EVIDENCE
+Change: capstone-ui · Project: temporada-1 · Date: 2026-09-22
+Scope: T-1-1..T-1-9 (migration 007, bilingual templates, per-recipient emit,
+       PATCH /api/auth/me, PATCH /api/products/:id, warehouses CRUD,
+       jobs filters, SPA fallback, OpenAPI regen)
+Exit gate: tsc --noEmit clean · node --test 229 + new green · docs/output-ui-it1.txt
+================================================================================
+
+1) MIGRATION 007 APPLIED (real output — node scripts/migrate.ts --db=test)
+--------------------------------------------------------------------------------
+$ node scripts/migrate.ts --db=test
+Migration complete (8 files, 0 newly applied) -> bop_test
+$ node scripts/migrate.ts --db=test            (re-run: idempotent no-op)
+Migration complete (8 files, 0 newly applied) -> bop_test
+
+8 migration files tracked in _migrations; 007_locale.sql applied by the
+pretest hook on the first suite run (R-BE-1 idempotency asserted in
+tests/integration/locale-migration.test.ts — applies twice, defaults 'es',
+CHECK rejects 'fr' on users + notifications).
+
+2) FULL BACKEND SUITE (real output — npm test, node --test)
+--------------------------------------------------------------------------------
+$ npm test
+ℹ tests 256        (baseline 229 + 27 new)
+ℹ suites 58        (baseline 52)
+ℹ pass 256
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+
+New requirement-referenced tests (all green):
+  R-BE-1 (3)  migration 007 idempotent / defaults / CHECK
+  R-BE-2 (3)  template key parity es≡en · neutral-Spanish banned-token scan ·
+              render selects dictionary by locale
+  R-BE-3 (2)  per-recipient locales (es+en same event, locale stored) ·
+              replay -> exactly-once, snapshot unchanged
+  R-BE-4 (5)  PATCH /api/auth/me 200+row updated · invalid fr -> 422 ·
+              unauthenticated 401 · DTO surface (login/refresh/me/users) ·
+              POST /api/users rejects locale
+  R-BE-5 (4)  deep link /orders/42 -> 200 index.html · /api 404 JSON
+              preserved · static asset wins · non-GET keeps JSON 404
+  R-NOT-5 (2 new + 3 updated) default locale es · fallback es ·
+              user_invited no password in BOTH locales (approval update:
+              R-NOT-4 mailpit subject now asserts the Spanish default)
+  R-UI-CRM-7 (2) deactivate -> absent from GET /api/stock · edit fields +
+              409 DUPLICATE_SKU + 404 + 422 empty + 403 operator
+  R-UI-CRM-8 (2) warehouses create/list/patch/delete 204 ·
+              delete in-use -> 409 WAREHOUSE_IN_USE (no orphan ledger)
+  R-UI-JOB-1 (2) state=completed filter + COUNT parity ·
+              queue filter + combined state+queue
+  R-DOC-1   (3 new) PATCH /api/auth/me + locale field · products PATCH +
+              warehouses GET/PATCH/DELETE + jobs state/queue params
+Total new tests: 27 (256 - 229). Zero regressions (R-PROD-3).
+
+3) TYPESCRIPT (real output — npm run typecheck, backend)
+--------------------------------------------------------------------------------
+$ npm run typecheck
+(no output — exit 0)   tsc --noEmit CLEAN
+
+4) NEW ENDPOINTS EXERCISED (real output — supertest vs real test DB,
+   scratch script scripts/ev-it1-demo.ts, same harness as the suite)
+--------------------------------------------------------------------------------
+  PATCH /api/auth/me {locale:en}                             -> 200
+  PATCH /api/auth/me {locale:fr} (invalid)                   -> 422
+  POST /api/products                                         -> 201
+  PATCH /api/products/:id {lowStockThreshold:5}              -> 200
+  POST /api/warehouses                                       -> 201
+  GET /api/warehouses                                        -> 200
+  PATCH /api/warehouses/:id {name}                           -> 200
+  DELETE /api/warehouses/:id (unused -> 204)                 -> 204
+  POST /api/stock/movements (ledger ref)                     -> 201
+  DELETE in-use warehouse -> 409 WAREHOUSE_IN_USE            -> 409
+  PATCH /api/products/:id {active:false}                     -> 200
+  GET /api/jobs?state=completed                              -> 200
+      pagination.total = 2 (COUNT parity)
+  GET /api/jobs?queue=report.queue                           -> 200
+  GET /orders/42 (deep link -> 200 index.html)               -> 200
+  GET /api/does-not-exist (JSON 404 preserved)               -> 404
+  GET /api/docs.json                                         -> 200
+      new/updated paths present: yes
+      user schema documents locale: yes
+
+5) DEMO COMMANDS (manual verification against the running stack)
+--------------------------------------------------------------------------------
+  # migrate (dev DB too, if not applied yet)
+  npm run migrate -w backend                     # or: node scripts/migrate.ts --db=dev
+
+  # bilingual notification (es default / en after PATCH)
+  curl -s -X POST localhost:3000/api/auth/login -H 'Content-Type: application/json' \
+       -d '{"username":"admin","password":"<pw>"}' | jq -r .accessToken
+  curl -s -X PATCH localhost:3000/api/auth/me -H "Authorization: Bearer $T" \
+       -H 'Content-Type: application/json' -d '{"locale":"en"}'
+  # then confirm an order / trigger low stock -> notification row renders EN
+  # (row stores its rendered snapshot + locale — immutable history)
+
+  # products PATCH + warehouses CRUD
+  curl -s -X PATCH localhost:3000/api/products/1 -H "Authorization: Bearer $T" \
+       -H 'Content-Type: application/json' -d '{"active":false}'
+  curl -s localhost:3000/api/warehouses -H "Authorization: Bearer $T"
+  curl -s -X DELETE localhost:3000/api/warehouses/1 -H "Authorization: Bearer $T"
+  #   -> 409 {"error":{"code":"WAREHOUSE_IN_USE",...}} when movements reference it
+
+  # jobs filters
+  curl -s "localhost:3000/api/jobs?state=completed&queue=notification.send" \
+       -H "Authorization: Bearer $T"
+
+  # SPA fallback (once ui/dist exists — it2; fixture-verified in the suite)
+  curl -s -o /dev/null -w '%{http_code}\n' localhost:3000/orders/42    # 200
+  curl -s localhost:3000/api/does-not-exist                            # JSON 404
+
+6) DESIGN FLAGS / DEVIATIONS (reported, not silently decided)
+--------------------------------------------------------------------------------
+  a) GET /api/stock inactive-product exclusion — VERIFIED ALREADY PRESENT:
+     stock repository getStock() filters WHERE p.active = true (repository.ts
+     it4 section). Design flag a resolved WITHOUT code change; R-UI-CRM-7
+     deactivation test asserts the behavior end-to-end (inactive product
+     disappears from /api/stock).
+  b) WAREHOUSE_IN_USE additive subcode — implemented as documented
+     (409 + code on DELETE when movements reference the warehouse).
+  c) pg-boss job states: the design listed 7 states incl. 'expired'; the
+     INSTALLED pg-boss v12 enum defines 6 (created/retry/active/completed/
+     cancelled/failed — verified via pg_enum). The jobs DTO whitelists the 6
+     REAL states; 'expired' omitted (could never match a row).
+  d) app.ts keeps the v1 vanilla static mount (../../ui) until it2 — the
+     design removes it with the files at T-2-1 (R-PROD-7 modified); the
+     it1 suite still asserts the vanilla UI (229 baseline). Ordering per
+     design is preserved: API routers -> static(uiDistDir) -> SPA fallback
+     -> JSON 404 -> errorHandler, with the vanilla static mounted between
+     static(uiDistDir) and the fallback (serves nothing once files are gone).
+  e) Default render locale changed es (R-NOT-5 modified) — pre-existing
+     English-template tests updated to pass 'en' explicitly (approval tests);
+     R-NOT-4 mailpit subject assertion updated to the Spanish default.
+================================================================================
+END OF IT1 EVIDENCE

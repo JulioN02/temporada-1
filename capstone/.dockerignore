@@ -1,0 +1,20 @@
+# Build context hygiene (T-7-1): never copy local artifacts or secrets into
+# the image. node_modules is re-installed per stage (npm ci); docs are not
+# needed at runtime; .env* must NEVER reach the image (secrets).
+# NOTE (capstone-ui it6 T-6-4): `.github` IS kept in the build context — the
+# Dockerfile build stage runs the SAME gate as CI (vitest, incl. the NFR scans
+# that read ci.yml and the Dockerfile itself). The monorepo-root `openspec/`
+# is OUTSIDE this context: the R-UI-NFR-6 requirement-coverage scan falls back
+# to its pinned static ID list inside the image build (mirrors backend
+# R-NFR-3). The runtime stage copies ONLY backend/src + backend/scripts +
+# ui/dist, so neither .github nor openspec ever reach the image.
+node_modules
+**/node_modules
+docs
+.git
+*.md
+.env
+.env.*
+!.env.example
+init
+pgdata

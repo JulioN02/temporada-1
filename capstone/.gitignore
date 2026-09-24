@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Builds / generated
+dist/
+build/
+coverage/
+
+# Local env — NEVER commit real secrets (.env.example is the template)
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Local data
+pgdata/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

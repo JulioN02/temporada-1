@@ -1,0 +1,80 @@
+=== Evidence it5 — Jobs (pg-boss) + Notifications (full) — 2026-09-21 ===
+
+Iteration 5 exit criteria: R-JOB-1..6 + R-NOT-1..6 green, docs/output-it5.txt.
+Environment: PostgreSQL 16 (compose bop-db:55437, bop_test), pg-boss 12.33.2,
+nodemailer 10.0.10, mailpit (compose bop-mailpit: SMTP 1025 / API 8025).
+
+--- T-5-1 SPIKE (ADR-2 Atomic Job Insertion) — docs/spike-pgboss-tx.md ---
+Script: scripts/spike-pgboss.ts (scratch, removed after capture). RED assertion:
+"send succeeds in-tx AND rollback hides the job row" (positive control — a send
+that fails before inserting would be a false positive).
+
+  pgboss schema installed; queue created: notification.send
+  PASS - rollback hides job row (in-tx send id=b685ea68-f979-43b6-b83c-3208e26acfb0)
+  PASS - committed tx keeps job row (id 6b9310a1-0ec6-4c7d-801b-d782fe572599)
+  PASS - pre-start enqueuer works (id fb91f790-1bc5-4737-b6e2-327784af496e)
+
+  === SPIKE SUMMARY ===
+    [PASS] rollback hides job row (send succeeded in-tx, row gone after rollback)
+    [PASS] committed tx keeps exactly 1 job row
+    [PASS] enqueue-only boss (never started) sends successfully
+    [PASS] schema-qualified pgboss.job insert (pgboss schema)
+
+  SPIKE RESULT: SUCCESS — atomic in-tx enqueue works; proceed with T-5-2..T-5-10
+
+Key findings: (1) send() issues a single parameterized INSERT..SELECT into
+pgboss.job — commits/rolls back with the business tx. (2) stop() closes the
+boss pool and send() consults the queue cache via the boss's OWN db, so the
+request path uses a NEVER-STARTED boss on a shared pool adapter. (3) jobs
+snapshot the queue retry config at insert time; create_queue is ON CONFLICT
+DO NOTHING → queue config is immutable per row (test helpers reset the queue
+row per test; tests swap config BEFORE enqueueing).
+
+--- T-5-2..T-5-10 key real-output evidence ---
+- R-JOB-1: getQueue('notification.send') → retryLimit 5, retryBackoff true,
+  retryDelay 1s base (retryDelayMax 60), expireInSeconds 900 (15 min).
+  NOTE: pg-boss v12 retryDelay is SECONDS — design "retryDelay 1000" read as
+  ms maps to the design intent "exponential 1s base" (design §8).
+- R-JOB-2: worker consumes jobs (delivery_state pending → sent), durable
+  across restart (2 workers, 2 jobs, 2 deliveries); real worker process:
+  `node src/worker.ts` spawned with test env → delivered via mailpit →
+  SIGTERM → exit code 0 (graceful shutdown).
+- R-JOB-3: SMTP failure (fake + real closed-port) → 1 retry → failed state
+  with retry_count evidence; audit job.failed {attempt: 2}; delivery_state
+  failed; job_failed in-app rows for admin+manager (R-NOT matrix).
+- R-JOB-4: handler idempotent — already-sent notification never re-sent
+  (2nd handler invocation → 0 additional sends).
+- R-JOB-5: lifecycle audit — job.created (in-tx at enqueue), job.completed
+  (handler), job.failed (handler terminal path).
+- R-JOB-6: GET /api/jobs lists all states (manager+); POST /api/jobs/:id/retry
+  redrives a dead-lettered job → re-processed → delivery_state sent.
+- R-NOT-1: in-app API owner scope — list own rows (404 on foreign mark-read,
+  row untouched), unread-count, idempotent mark-read 204.
+- R-NOT-2: channel matrix registry parity + behavior — order_confirmed both
+  channels for creator; user_invited email-only; low_stock both; 1 job per
+  email row.
+- R-NOT-3: static scan — nodemailer imported by exactly src/jobs/mailer.ts;
+  modules/ never import the mailer. Behavioral — request path leaves
+  delivery_state pending (no send), enqueues exactly 1 job.
+- R-NOT-4: real nodemailer → mailpit: delivery_state sent AND message present
+  in mailpit API (Subject 'You have been invited', body without password).
+  SMTP down (closed port): job dead-letters, delivery_state failed, business
+  tx committed (main flow never blocked/rolled back).
+- R-NOT-5: templates pure fns; user_invited never renders the password (unit
+  + delivered-email body assertion).
+- R-NOT-6: no-polling scan (no setInterval/setTimeout/cron/LISTEN in src/);
+  exactly-once — idempotent replay of confirm does not duplicate rows or jobs
+  (UNIQUE(type,reference,channel,user_id) + ON CONFLICT DO NOTHING RETURNING
+  + in-tx send via db adapter).
+
+--- S4 completion: R-ORD-5 email-job assertion ---
+orders-atomic.test.ts happy path now asserts: 2 notification rows (in_app +
+email for the creator) AND exactly 1 pgboss job for the email row AND 1
+job.created audit row — all committed atomically with the order confirm.
+
+--- Full suite (appended by scripts/evidence.ts below) ---
+=== Evidence it5 — 2026-09-21T07:57:14.579Z ===
+Command: node --test --test-concurrency=1 "tests/**/*.test.ts"
+Suite: 186 tests, 186 passed, 0 failed
+Requirement IDs covered in test names (49):
+R-AUD-1, R-AUD-2, R-AUD-3, R-AUTH-1, R-AUTH-2, R-AUTH-3, R-AUTH-4, R-AUTH-5, R-AUTH-6, R-AUTH-7, R-AUTH-8, R-CRM-1, R-CRM-2, R-CRM-3, R-CRM-4, R-CRM-5, R-JOB-1, R-JOB-2, R-JOB-3, R-JOB-4, R-JOB-5, R-JOB-6, R-NFR-1, R-NFR-2, R-NFR-5, R-NFR-6, R-NOT-1, R-NOT-2, R-NOT-3, R-NOT-4, R-NOT-5, R-NOT-6, R-OBS-1, R-ORD-1, R-ORD-2, R-ORD-3, R-ORD-4, R-ORD-5, R-ORD-6, R-ORD-7, R-PROD-5, R-STK-1, R-STK-2, R-STK-3, R-STK-4, R-STK-5, R-STK-6, R-STK-7, R-STK-8

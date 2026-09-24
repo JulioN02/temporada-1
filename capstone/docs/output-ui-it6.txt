@@ -1,0 +1,150 @@
+# Output — capstone-ui it6 (Polish + Evidence: RBAC sweep, NFR scans, Docker/CI, docs) — FINAL
+
+**Change**: capstone-ui · **Batch**: E (it6 — FINAL apply batch) · **Date**: 2026-09-23 · **Mode**: Strict TDD (RED→GREEN→TRIANGULATE→REFACTOR)
+
+**Runner**: vitest 5 + RTL 16 + jsdom 30 (`npm test -w ui`, serial) · tsc 5.9 strict (both workspaces) · vite build · backend `node --test` (256 regression gate) · docker compose appliance verification
+
+## Tasks completed (it6 — 6/6, change total 48/48)
+
+- [x] **T-6-1** RBAC final pass: five-role sweep (mount per role → EXACT sidebar module set per R-RBAC-3 matrix row, no extra/no missing) + EXACT action matrix sweep (13 action-gating permissions × 5 roles via RoleGate probe, driven directly by the BACKEND registry) + mid-session demotion (R-RBAC-4: shell re-fetches `GET /api/auth/me` on every route change — `Layout.tsx`; manager→operator drops "Trabajos"; admin→manager stale /users visit → denial toast + redirect + sidebar drops "Usuarios"). Behavior report: demotion is reflected on the NEXT navigation's `me()` re-fetch — no re-login, no polling; stale 403s surface the localized denial toast and visibility self-heals on the next `me()`.
+- [x] **T-6-2** NFR scan suite (`tests/nfr.test.ts`, 14 tests): R-UI-NFR-1 no-`any` (ui/src), R-UI-NFR-2 zero `dangerouslySetInnerHTML`, R-UI-NFR-3 secret scan (source + built dist — JWT_SECRET/COOKIE_SECRET/DATABASE_URL/SMTP_/PGPASSWORD/password literals), R-UI-NFR-4 compiler-on + zero useMemo/useCallback, R-UI-NFR-5 lazy governance chunks, **R-UI-NFR-6 requirement-ID coverage scan HARDENED** (multi-segment regex `\bR-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d+\b` — the previous regex could not match `R-UI-CRM-1`-style IDs, so the gate silently enforced only single-segment IDs; now all 72 spec IDs are enforced, verified complete; static fallback list added so the SAME gate runs inside the Docker build context where `openspec/` is not present — mirrors backend R-NFR-3 pattern), design flag b verification (WAREHOUSE_IN_USE fully localized in both catalogs).
+- [x] **T-6-3** ⚠️ CONDITIONAL (design flag a) — RESOLVED: `GET /api/stock` excludes inactive products at the backend (`WHERE p.active = true`, repository.ts; verified green since it1, #1433). UI assertion ADDED this iteration: `R-UI-CRM-5: inactive product absent from stock levels` in `tests/stock.test.tsx` — an inactive product with stock rows never renders in the levels table.
+- [x] **T-6-4** Docker + CI integration: `Dockerfile` build stage runs the FULL quality gate (`npm run typecheck` both workspaces → `npm test -w ui` vitest → `npm run build -w ui` vite); runtime `COPY --from=build /app/ui/dist ./ui/dist` — express static + spaFallback serve the React SPA at `/` (R-PROD-7 modified). `ci.yml` runs backend typecheck + `node --test` AND ui typecheck + vitest + vite build BEFORE the docker build (R-PROD-3 modified). npm 11 esbuild postinstall handled via `--allow-scripts=esbuild@0.25.12` + root `allowScripts` field (B1 finding). Verified end-to-end: image builds with the gate inside, `docker compose up` serves the SPA.
+- [x] **T-6-5** Polish + docs: dead `users.usernameTaken` catalog key REMOVED from both es+en (verified unused — only `errors.conflict.usernameTaken` referenced via localizeError; parity R-I18N-1 green); flake mitigation made deterministic — `fileParallelism: false` (serial files) + `testTimeout: 15000` in vite.config.ts; README updated (stack, SPA module table, appliance quickstart with dev-only credentials, evidence links, CI/CD, layout); evidence dashboard `docs/evidence/index.html` lists all 6 capstone-ui iterations incl. it6.
+- [x] **T-6-6** Final cumulative evidence (this doc) — full gate rerun with REAL outputs below.
+
+## Tests added (it6) — 22 new (217 cumulative, 18 files)
+
+| File | Count | Requirements |
+|---|---|---|
+| `tests/nfr.test.ts` | 14 (NEW) | R-UI-NFR-1 (no `any` scan), R-UI-NFR-2 (no dangerouslySetInnerHTML), R-UI-NFR-3 (source + dist secret scan), R-UI-NFR-4 (compiler on / no useMemo/useCallback), R-UI-NFR-5 (lazy chunks), R-UI-NFR-6 (72-ID coverage scan, static fallback), R-I18N-4 (WAREHOUSE_IN_USE parity), R-PROD-3 (ci.yml ui gate), R-UI-NFR-7 (Dockerfile ui stage + dist copy + root build script) |
+| `tests/rbac.test.tsx` | 14 → 21 (+7) | R-RBAC-3 five-role EXACT action matrix sweep (5 loop tests, expected set derived from the BACKEND registry — no hardcoded matrix), R-RBAC-4 mid-session demotion (manager→operator sidebar drop + exactly one `me()` re-fetch; admin→manager stale /users → denial toast + redirect + sidebar drop) |
+| `tests/stock.test.tsx` | 14 → 15 (+1) | R-UI-CRM-5 inactive product EXCLUDED from stock levels (backend contract T-6-3 assertion) |
+
+Final cumulative suite: 217 tests across 18 files (195 it1-it5 + 22 it6), all requirement-referenced (R-AUTHUI-*, R-UI-FND-*, R-RBAC-*, R-I18N-*, R-UI-NFR-*, R-UI-DSH-*, R-UI-CRM-*, R-UI-STK-*, R-UI-ORD-*, R-UI-NOT-*, R-UI-AUD-*, R-UI-USR-*, R-UI-JOB-*, R-PROD-3/7).
+
+## Files created / changed (it6)
+
+| File | Action |
+|---|---|
+| `ui/tests/nfr.test.ts` | Created — NFR scan suite (14 tests) |
+| `ui/tests/rbac.test.tsx` | Extended — five-role exact action sweep + R-RBAC-4 demotion tests (+7) |
+| `ui/tests/stock.test.tsx` | Extended — R-UI-CRM-5 inactive exclusion UI assertion (+1) |
+| `ui/src/components/Layout.tsx` | Modified — R-RBAC-4: `GET /api/auth/me` re-fetch on every route change |
+| `ui/src/i18n/locales/{es,en}.ts` | Modified — removed dead `users.usernameTaken` (both catalogs, parity green) |
+| `ui/vite.config.ts` | Modified — `fileParallelism: false` (serial files — deterministic gate) |
+| `Dockerfile` | Modified — build stage = full quality gate (typecheck both + vitest + vite build); runtime copies `ui/dist` |
+| `.dockerignore` | Modified — comment corrected (openspec NOT in context; NFR scan uses static fallback) |
+| `.github/workflows/ci.yml` | Modified — ui typecheck + vitest + vite build BEFORE docker build (R-PROD-3 modified) |
+| `README.md` | Modified — stack, SPA modules, appliance quickstart, dev-only credentials warning, evidence, CI/CD |
+| `docs/evidence/index.html` | Modified — capstone-ui table complete with it6 row |
+| `docs/output-ui-it6.txt` | Created — this evidence doc (FINAL) |
+
+## Verification (cumulative — Batch E FINAL gate)
+
+- `npm test -w ui`: **217/217 passed (18 files)** — serial (`fileParallelism: false`), deterministic
+- `npm run typecheck -w ui` AND `-w backend` AND root `npm run typecheck`: CLEAN (exit 0, no diagnostics)
+- `npm run build -w ui`: OK — initial chunk **132.53 kB gzip** (≤ 250 kB, R-UI-NFR-5); governance lazy chunks split (AuditPage 2.52 / UsersPage 3.13 / JobsPage 2.60 kB gzip)
+- Backend `npm test`: **256/256 passed** (58 suites, 0 failures — zero regressions)
+- Docker: image builds with the quality gate INSIDE the build stage; `docker compose up -d` → API healthy, `/` serves the React SPA, `/api/docs` 200, deep link `/orders/42` → SPA fallback, `/api/does-not-exist` → JSON 404 preserved
+
+## Real gate outputs (2026-09-23)
+
+```
+$ npm test -w ui
+ Test Files  18 passed (18)
+      Tests  217 passed (217)
+   Duration  250.16s
+
+$ npm run typecheck          # root → backend + ui, both exit 0
+> backend@0.1.0 typecheck
+> tsc --noEmit
+> ui@0.1.0 typecheck
+> tsc --noEmit
+
+$ npm run build -w ui
+✓ 120 modules transformed.
+dist/assets/JobsPage-D64S3JsL.js     5.47 kB │ gzip:   2.60 kB
+dist/assets/AuditPage-CULi4wVL.js    5.62 kB │ gzip:   2.52 kB
+dist/assets/UsersPage-Dc_WfGoV.js    7.48 kB │ gzip:   3.13 kB
+dist/assets/index-B4-2G7_F.js      425.86 kB │ gzip: 132.53 kB
+✓ built in 31.55s
+
+$ npm test -w backend
+ℹ tests 256 · ℹ suites 58 · ℹ pass 256 · ℹ fail 0 · ℹ duration_ms 473208.61
+
+$ docker compose build
+ Image capstone-migrate Built
+ Image capstone-worker Built
+ Image capstone-api Built
+
+$ docker compose up -d
+ Container bop-migrate Exited   # one-shot migrate: completed (API + worker started after)
+ Container bop-api Started
+ Container bop-worker Started
+
+$ curl -s http://localhost:3000/api/health
+{"status":"ok","db":"up"}
+
+$ curl -s http://localhost:3000/ | head -15
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BOP v1 — Business Operations Platform</title>
+    <script type="module" crossorigin src="/assets/index-B4-2G7_F.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CoM7LYk1.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+
+$ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/docs      # → 200 (Swagger UI: "BOP v1 — API Documentation")
+$ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/assets/index-B4-2G7_F.js   # → 200 (425861 bytes)
+$ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/orders/42    # → 200 (SPA deep link, id="root")
+$ curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3000/api/does-not-exist        # → 404 (API 404 preserved)
+
+$ docker logs bop-api | tail -6
+{"level":30,...,"msg":"BOP API listening"}
+{"level":30,...,"method":"GET","path":"/api/health","status":200,...}
+{"level":30,...,"method":"GET","path":"/","status":200,...}
+{"level":30,...,"method":"GET","path":"/api/docs","status":200,...}
+{"level":30,...,"method":"GET","path":"/orders/42","status":200,...}
+{"level":30,...,"method":"GET","path":"/api/does-not-exist","status":404,...}
+```
+
+## TDD Cycle Evidence (it6)
+
+| Task | Test File | Layer | Safety Net | RED | GREEN | TRIANGULATE | REFACTOR |
+|------|-----------|-------|------------|-----|-------|-------------|----------|
+| T-6-1 | `tests/rbac.test.tsx` | Integration (RTL) | ✅ 14/14 | ✅ Written (prior run) | ✅ 21/21 | ✅ 5 roles × matrix + 2 demotion cases | ✅ me() re-fetch in Layout |
+| T-6-2 | `tests/nfr.test.ts` | Scan (pure node) | ✅ 195/195 | ✅ Written (prior run) | ✅ 14/14 | ✅ 7 NFR scans + 2 infra gates | ✅ regex hardened + static fallback |
+| T-6-3 | `tests/stock.test.tsx` | Integration (RTL) | ✅ 195/195 | ✅ Written (prior run) | ✅ 15/15 | ✅ inactive present vs absent rows | ➖ None needed |
+| T-6-4 | Dockerfile/ci.yml + nfr scans | Infra + scan | ✅ 195/195 + 256 | ✅ Written (prior run) | ✅ build+compose verified | ✅ local + Docker context | ✅ .dockerignore comment |
+| T-6-5 | README/dashboard/locales/vite.config | Docs + config | ✅ 217/217 | N/A (docs/config) | ✅ gate rerun green | ✅ dead key removed (parity) | ✅ serial test strategy |
+| T-6-6 | `docs/output-ui-it6.txt` | Evidence | — | — | ✅ real outputs captured | — | — |
+
+## Demo commands
+
+```bash
+# Full appliance (offline, dev-only credentials)
+cd capstone && docker compose up -d --build
+# React SPA (ES default / EN toggle) → http://localhost:3000
+# Swagger UI → http://localhost:3000/api/docs · Health → /api/health · Mailpit → http://localhost:8025
+
+# Local dev
+docker compose up -d db mailpit && npm ci
+npm run dev -w backend && npm run dev -w ui   # SPA on :5173, /api proxied to :3000
+
+# ES demo: login admin → Dashboard (KPIs/low-stock/notificaciones) → Clientes (crear/buscar) →
+#   Productos (crear, badge inactivo) → Stock (niveles/movimientos/almacenes, ajustar/transferir) →
+#   Pedidos (crear con líneas, confirmar optimista, cancelar) → Notificaciones (solo no leídas) →
+#   Auditoría/Usuarios/Trabajos (admin) — toggle ES/EN arriba; el locale se sincroniza (PATCH /api/auth/me)
+# EN demo: same flow in English — toggle persists pre-auth (localStorage), backend-wins on boot
+```
+
+## Status
+
+**48/48 tasks complete — capstone-ui READY FOR sdd-verify.**

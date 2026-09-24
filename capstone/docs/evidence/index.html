@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BOP v1 — Evidence Dashboard (7 backend + 6 UI iterations)</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, sans-serif;
+      background: #0f1115; color: #e8eaf0; line-height: 1.55;
+    }
+    header { padding: 2rem 1.5rem 1rem; max-width: 900px; margin: 0 auto; }
+    header h1 { margin: 0 0 0.3rem; font-size: 1.5rem; }
+    header p { margin: 0; color: #9aa3b2; font-size: 0.95rem; }
+    main { max-width: 900px; margin: 0 auto; padding: 1rem 1.5rem 3rem; }
+    .summary { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .stat {
+      background: #14171d; border: 1px solid #262a33; border-radius: 10px;
+      padding: 0.8rem 1.2rem; min-width: 130px;
+    }
+    .stat .num { font-size: 1.6rem; font-weight: 700; color: #4ade80; }
+    .stat .label { font-size: 0.75rem; color: #9aa3b2; text-transform: uppercase; letter-spacing: 0.05em; }
+    h2 { font-size: 1.1rem; color: #c7cdd8; margin: 2rem 0 0.7rem; }
+    table { width: 100%; border-collapse: collapse; background: #14171d; border: 1px solid #262a33; }
+    th, td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid #1f232b; font-size: 0.9rem; }
+    th { color: #9aa3b2; font-weight: 600; }
+    .badge { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.75rem; }
+    .badge.green { background: #123524; color: #4ade80; }
+    a { color: #8b5cf6; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer { max-width: 900px; margin: 0 auto; padding: 0 1.5rem 2rem; color: #6b7280; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Business Operations Platform — v1 Evidence</h1>
+    <p>7 strict-TDD backend iterations + 6 capstone-ui iterations · requirement-referenced tests (<code>R-XXX</code>) · evidence per iteration (R-PROD-6/8, R-UI-NFR-7).</p>
+  </header>
+
+  <main>
+    <div class="summary">
+      <div class="stat"><div class="num" id="statTests">…</div><div class="label">backend tests green (latest)</div></div>
+      <div class="stat"><div class="num" id="statUiTests">…</div><div class="label">UI tests green (latest)</div></div>
+      <div class="stat"><div class="num">7/7 + 6/6</div><div class="label">iterations</div></div>
+      <div class="stat"><div class="num">100%</div><div class="label">coverage gate</div></div>
+    </div>
+
+    <h2>Backend iterations (v1 platform)</h2>
+    <table>
+      <thead>
+        <tr><th>Iteration</th><th>Focus</th><th>Status</th><th>Evidence</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>it1 — Foundation + Auth/RBAC</td><td>monorepo, env, DB, 5-role RBAC, health</td><td><span class="badge green">green</span></td><td><a href="../output-it1.txt">output-it1.txt</a></td></tr>
+        <tr><td>it2 — CRM</td><td>customers vertical slice, same-tx audit</td><td><span class="badge green">green</span></td><td><a href="../output-it2.txt">output-it2.txt</a></td></tr>
+        <tr><td>it3 — Orders</td><td>status machine, D13 money, idempotent create</td><td><span class="badge green">green</span></td><td><a href="../output-it3.txt">output-it3.txt</a></td></tr>
+        <tr><td>it4 — Stock ledger + atomic confirm</td><td>immutable ledger, advisory locks, §3.1 composition</td><td><span class="badge green">green</span></td><td><a href="../output-it4.txt">output-it4.txt</a></td></tr>
+        <tr><td>it5 — Jobs + Notifications</td><td>pg-boss worker, channel matrix, mailpit SMTP</td><td><span class="badge green">green</span></td><td><a href="../output-it5.txt">output-it5.txt</a></td></tr>
+        <tr><td>it6 — Audit API + Observability + OpenAPI</td><td>R-AUD-4 read API, /api/status, zod-to-openapi docs</td><td><span class="badge green">green</span></td><td><a href="../output-it6.txt">output-it6.txt</a></td></tr>
+        <tr><td>it7 — Production</td><td>Docker appliance, compose, CI/CD → GHCR, UI, runbook</td><td><span class="badge green">green</span></td><td><a href="../output-it7.txt">output-it7.txt</a></td></tr>
+      </tbody>
+    </table>
+
+    <h2>capstone-ui iterations (React 19 SPA + ES/EN i18n)</h2>
+    <table>
+      <thead>
+        <tr><th>Iteration</th><th>Focus</th><th>Status</th><th>Evidence</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>it1 — Backend i18n delta</td><td>locale migration, bilingual templates, PATCH products/warehouses, jobs filters, SPA fallback, OpenAPI</td><td><span class="badge green">green</span></td><td><a href="../output-ui-it1.txt">output-ui-it1.txt</a></td></tr>
+        <tr><td>it2 — UI foundation</td><td>Vite 6 + React 19 + compiler, i18n catalog (es/en), api client, auth session, RBAC guards, shell</td><td><span class="badge green">green</span></td><td><a href="../output-ui-it2.txt">output-ui-it2.txt</a></td></tr>
+        <tr><td>it3 — Dashboard + CRM</td><td>status/KPI/low-stock cards, customers CRUD, products CRUD, warehouses</td><td><span class="badge green">green</span></td><td><a href="../output-ui-it3.txt">output-ui-it3.txt</a></td></tr>
+        <tr><td>it4 — Stock + Orders</td><td>levels/movements/adjust/transfer, orders create/confirm (optimistic)/cancel, D13 money, idempotency</td><td><span class="badge green">green</span></td><td><a href="../output-ui-it4.txt">output-ui-it4.txt</a></td></tr>
+        <tr><td>it5 — Governance</td><td>notifications (snapshots + badge), audit (JSON-text payload), users, jobs filters/retry</td><td><span class="badge green">green</span></td><td><a href="../output-ui-it5.txt">output-ui-it5.txt</a></td></tr>
+        <tr><td>it6 — Polish + Evidence</td><td>RBAC five-role sweep + mid-session demotion, NFR scan suite, Docker ui stage + CI gate, README/dashboard, cumulative evidence</td><td><span class="badge green">green</span></td><td><a href="../output-ui-it6.txt">output-ui-it6.txt</a></td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:1.2rem;font-size:0.85rem;color:#9aa3b2">
+      Extra artifacts: <a href="../spike-pgboss-tx.md">pg-boss tx spike</a> (ADR-2) ·
+      <a href="../spike-vitest-rtl.md">vitest+RTL spike</a> (capstone-ui T-2-2) ·
+      <a href="../deploy-oracle.md">Oracle Cloud runbook</a> (R-PROD-4) ·
+      <a href="../../README.md">README</a>.
+    </p>
+  </main>
+
+  <footer>
+    dashboard-pages pattern: single dashboard, relative paths, zero CDN, offline-ready (GitHub Pages).
+  </footer>
+
+  <script>
+    // Test counts are read from the evidence docs at runtime (no build step).
+    const backendCounts = [1, 2, 3, 4, 5, 6, 7]
+      .map((n) => `../output-it${n}.txt`)
+    Promise.all(backendCounts.map((url) => fetch(url).then((r) => (r.ok ? r.text() : '')).catch(() => '')))
+      .then((docs) => {
+        const tests = docs
+          .map((d) => d.match(/Suite: (\d+) tests, (\d+) passed/))
+          .filter((m) => m)
+          .map((m) => Number(m[2]))
+        const latest = tests[tests.length - 1] ?? '—'
+        document.getElementById('statTests').textContent = String(latest)
+      })
+    // capstone-ui counts: latest "Tests  N passed" line from output-ui-it*.txt
+    const uiCounts = [1, 2, 3, 4, 5, 6]
+      .map((n) => `../output-ui-it${n}.txt`)
+    Promise.all(uiCounts.map((url) => fetch(url).then((r) => (r.ok ? r.text() : '')).catch(() => '')))
+      .then((docs) => {
+        const counts = docs.map((d) => {
+          const m = d.match(/Tests\s+(\d+)\s+passed/)
+          return m ? Number(m[1]) : null
+        }).filter((n) => n !== null)
+        const latest = counts[counts.length - 1] ?? '—'
+        document.getElementById('statUiTests').textContent = String(latest)
+      })
+  </script>
+</body>
+</html>

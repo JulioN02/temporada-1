@@ -1,0 +1,110 @@
+================================================================================
+BOP CAPSTONE-UI — Iteration 2a (bootstrap + i18n + api client) — EVIDENCE
+Change: capstone-ui · Project: temporada-1 · Date: 2026-09-22
+Scope: T-2-1..T-2-5 (Vite scaffold, vitest+RTL spike, mock-fetch harness,
+       i18n infra + parity + banned-token gate, single-flight api client)
+Exit gate: vitest green (R-AUTHUI-1, R-I18N-1..4, R-UI-FND-4, R-UI-ORD-6,
+           R-UI-NFR-6) · tsc --noEmit ui CLEAN · backend suite 256/256
+           (zero regressions) · docs/output-ui-it2a.txt
+================================================================================
+
+1) UI WORKSPACE TEST SUITE (real output — npm test -w ui, vitest 5.0.1)
+--------------------------------------------------------------------------------
+$ npm test -w ui
+> vitest run
+
+ RUN  v5.0.1 /home/julion/Documents/Programacion/JSOFTSOLUTIONS/Desarrollo-Profesional/temporada-1/capstone/ui
+
+ Test Files  4 passed (4)
+      Tests  41 passed (41)
+   Start at  21:52:08
+   Duration  21.14s
+
+Requirement-referenced tests (all green — cumulative gate starts here):
+  R-UI-NFR-6 (11)  mock fetch harness records method/path/headers/body ·
+                   scripted errors + 204 · vitest matchers on the seam ·
+                   auth.login/me request shapes · listCustomers query
+                   string + Paginated envelope · products/warehouses ·
+                   getStock {items} snake_case deviation (no pagination) ·
+                   movements filter + adjust shape (type injected) ·
+                   orders/notifications/audit/users/jobs paths · error
+                   normalization ApiClientError + UNKNOWN fallback ·
+                   DELETE 204 → null
+  R-AUTHUI-1 (4)   expired mid-session → 1 refresh + 1 retry (Bearer t2) ·
+                   4 concurrent 401s → exactly 1 refresh, all retried ·
+                   refresh fails → ≤1 attempt, zero retries, state cleared,
+                   no loop · login/refresh never trigger the refresh path
+  R-UI-FND-4 (2)   postWithStatus 201 vs 200 replay signal ·
+                   Idempotency-Key header per mutation submit
+  R-I18N-1 (2)     key parity es ≡ en (both directions, 168 keys) ·
+                   every value non-empty in both locales
+  R-I18N-2 (1)     banned-token scan (vos/tenés/querés/sos/andá/che/dale)
+                   → zero matches in the ES dictionary
+  R-I18N-3 (4)     default es + document.lang sync · toggle persists to
+                   localStorage, re-renders without reload · stored locale
+                   wins on boot, garbage falls back to es · pre-auth toggle
+                   fires NO API call   (component toggle lands at it2b)
+  R-I18N-4 (6)     INSUFFICIENT_STOCK / WAREHOUSE_IN_USE / UNAUTHORIZED /
+                   bare CONFLICT mapped · unknown code → generic fallback,
+                   never raw · non-errors + INTERNAL_ERROR · code set
+                   parity both locales
+  R-UI-ORD-6 (11)  D13 "12.50" → es "12,50 €" / en "$12.50" · thousands
+                   grouping "1.234.567,89 €" / "$1,234,567.89" · zero +
+                   large int (no float drift) · parseMoney round-trip es/en
+                   · scale > 2 rejected (client block) · pad + garbage →
+                   null · date formatting + invalid fallback
+Total: 41 tests, 4 files (mock-fetch 3, i18n 13, formatters 11, api-client 14).
+
+2) TYPESCRIPT (real output — npm run typecheck -w ui, strict)
+--------------------------------------------------------------------------------
+$ npm run typecheck -w ui
+(no output — exit 0)   tsc --noEmit CLEAN
+Flags active (probe RED→GREEN, T-2-1): noUncheckedIndexedAccess (TS2322),
+exactOptionalPropertyTypes (TS2375), erasableSyntaxOnly (TS1294).
+
+3) BUILD (real output — npm run build -w ui, tsc + vite 6.4.3)
+--------------------------------------------------------------------------------
+$ npm run build -w ui
+> tsc --noEmit && vite build
+
+vite v6.4.3 building for production...
+✓ 34 modules transformed.
+dist/index.html                   0.42 kB │ gzip:  0.29 kB
+dist/assets/index-C7VyxC8d.css    0.22 kB │ gzip:  0.18 kB
+dist/assets/index-DZims5kt.js   224.80 kB │ gzip: 70.05 kB
+✓ built in 9.56s
+Initial chunk 70.05 kB gzipped — well under the R-UI-NFR-5 250 kB cap
+(governance lazy chunks arrive at it2b).
+
+4) BACKEND SUITE (real output — npm test -w backend, node --test)
+--------------------------------------------------------------------------------
+$ npm test -w backend
+ℹ tests 256
+ℹ suites 58
+ℹ pass 256
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+Zero regressions (R-PROD-3). R-PROD-7 tests UPDATED to the modified
+contract (T-2-1, vanilla files removed): "/ serves the SPA shell (Vite
+index.html)" + "/app.js gone → SPA fallback shell" replace the two obsolete
+vanilla assertions; the 3 API-contract tests (e2e flow, 401, login) kept.
+Count unchanged 256 (5+3 tests, same shape).
+
+5) SPIKE OUTCOME (T-2-2, design flag d) — docs/spike-vitest-rtl.md
+--------------------------------------------------------------------------------
+First vitest+RTL run in the repo CONCLUDED: jsdom env global (design open
+question resolved), RTL auto-cleanup must be registered explicitly with
+vitest globals:false (setup.ts afterEach(cleanup)) — first spike failure
+observed and fixed; React Compiler runs through the vitest transform
+pipeline without interference; npm 11 allowScripts gates esbuild postinstall
+(approve + rebuild). Scratch test removed after documenting.
+
+6) DEMO COMMANDS (it2a)
+--------------------------------------------------------------------------------
+$ npm test -w ui                     # vitest 41/41 green
+$ npm run typecheck -w ui            # tsc strict clean
+$ npm run build -w ui                # vite build → ui/dist
+$ npm test -w backend                # 256/256 green (no regressions)
+$ npm run dev -w ui                  # vite dev, /api proxied to :3000
+================================================================================

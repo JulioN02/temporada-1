@@ -1,0 +1,88 @@
+# CI pipeline (T-7-3, R-PROD-3 MODIFIED — capstone-ui it6 T-6-4): push/PR →
+# install → test-db migrate → BACKEND typecheck + node --test AND UI typecheck
+# + vitest + vite build → docker build → publish to GHCR on main + v*.
+# Secrets come exclusively from GitHub Secrets (secrets.GITHUB_TOKEN) — never
+# inlined in the workflow (code-auditor rule).
+# npm 11 gates dependency postinstall scripts: `--allow-scripts=esbuild@0.25.12`
+# (matching the root package.json allowScripts field) approves the esbuild
+# binary build on fresh installs (it2a B1 finding).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  test:
+    name: Test · typecheck · build · publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install workspaces
+        run: npm ci --allow-scripts=esbuild@0.25.12
+
+      - name: Start test database + mailpit
+        run: docker compose up -d db mailpit
+
+      - name: Wait for Postgres
+        run: |
+          for i in $(seq 1 30); do
+            if docker compose exec -T db pg_isready -U postgres -d bop >/dev/null 2>&1; then
+              echo "Postgres ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Postgres did not become ready" >&2
+          exit 1
+
+      - name: Migrate test database
+        run: npm run migrate -w backend -- --db=test
+
+      # ── Backend gate (node --test vs real Postgres) ──────────────────────
+      - name: Backend typecheck (strict tsconfig)
+        run: npm run typecheck -w backend
+
+      - name: Backend test suite (node --test, requirement-referenced)
+        run: npm test -w backend
+
+      # ── Frontend gate (R-PROD-3 modified: UI gate BEFORE docker build) ──
+      - name: UI typecheck (strict tsconfig)
+        run: npm run typecheck -w ui
+
+      # F1 (verify): build BEFORE tests so the R-UI-NFR-3 dist secret scan
+      # actually has ui/dist present and asserts (previously a silent no-op).
+      - name: UI build (vite → ui/dist)
+        run: npm run build -w ui
+
+      - name: UI test suite (vitest + RTL, requirement-referenced, scans built dist)
+        run: npm test -w ui
+
+      - name: Docker build (multi-stage, quality gate inside)
+        run: docker build -t business-operations-platform:ci .
+
+      - name: Publish to GHCR (main + v* tags)
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/business-operations-platform
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker tag business-operations-platform:ci "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:${{ github.sha }}"
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            docker tag business-operations-platform:ci "$IMAGE:latest"
+            docker push "$IMAGE:latest"
+          fi
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            docker tag business-operations-platform:ci "$IMAGE:${{ github.ref_name }}"
+            docker push "$IMAGE:${{ github.ref_name }}"
+          fi

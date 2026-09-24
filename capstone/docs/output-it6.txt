@@ -1,0 +1,39 @@
+# Iteration 6 — Audit API + Observability + OpenAPI (T-6-1..T-6-6)
+
+## What landed
+
+- GET /api/audit (R-AUD-4): entity/action/from/to filters + pagination,
+  newest-first; audit:read = admin/auditor only (operator → 403).
+- R-AUD-3: login audit payloads verified actor/outcome/ip only — no
+  credentials (append-only + rollback parity already proven at F-7/Batch A).
+- GET /api/status (R-OBS-2 + ADR-6): any authenticated user →
+  {version, uptimeSeconds, db, timestamp, queues}. queues = pg-boss
+  reachability (DEV: pg-boss v12 has no ping(); bounded SQL ping of
+  pgboss.queue via the pool, 500ms — never blocks).
+- Request logs (R-OBS-3): one parseable JSON line per request with
+  method/path/status/durationMs/requestId; path captured at request start
+  (mounted routers rewrite req.path); redact verified: no token/password
+  values in any line.
+- OpenAPI 3.1 (R-DOC-1/2): spec generated at startup from the SAME zod DTOs
+  (extendZodWithOpenApi bootstrap — zod v4 dual-build + per-instance method
+  copying discovery); self-hosted Swagger UI at /api/docs (offline,
+  swagger-ui-dist assets); money = string pattern ^\d+\.\d{2}$; notification
+  types enum from NOTIFICATION_TYPES; /api/docs.json served.
+- Contract scans (T-6-5): R-NFR-3 cumulative gate (63/63 requirement IDs in
+  test names + strict tsconfig flags), R-NFR-4 (controllers no SQL, services
+  no runtime express/pg), R-DOC-2 (no static openapi.json in src/).
+
+## Files
+
+- src/modules/audit/{dto,repository,service,controller,routes}.ts (new)
+- src/modules/observability/{controller,routes}.ts + repository.ts (status)
+- src/middleware/requestLogger.ts (path capture fix)
+- src/openapi/{registry,extend}.ts + zod-to-openapi-esm.d.ts (new)
+- src/app.ts (audit + docs routers)
+- tests/integration/{audit,status,docs}.test.ts + tests/contract/contract-scans.test.ts
+
+=== Evidence it6 — 2026-09-21T15:54:37.332Z ===
+Command: node --test --test-concurrency=1 "tests/**/*.test.ts"
+Suite: 229 tests, 229 passed, 0 failed
+Requirement IDs covered in test names (63):
+R-AUD-1, R-AUD-2, R-AUD-3, R-AUD-4, R-AUTH-1, R-AUTH-2, R-AUTH-3, R-AUTH-4, R-AUTH-5, R-AUTH-6, R-AUTH-7, R-AUTH-8, R-CRM-1, R-CRM-2, R-CRM-3, R-CRM-4, R-CRM-5, R-DOC-1, R-DOC-2, R-JOB-1, R-JOB-2, R-JOB-3, R-JOB-4, R-JOB-5, R-JOB-6, R-NFR-1, R-NFR-2, R-NFR-3, R-NFR-4, R-NFR-5, R-NFR-6, R-NOT-1, R-NOT-2, R-NOT-3, R-NOT-4, R-NOT-5, R-NOT-6, R-OBS-1, R-OBS-2, R-OBS-3, R-ORD-1, R-ORD-2, R-ORD-3, R-ORD-4, R-ORD-5, R-ORD-6, R-ORD-7, R-PROD-1, R-PROD-2, R-PROD-3, R-PROD-4, R-PROD-5, R-PROD-6, R-PROD-7, R-PROD-8, R-STK-1, R-STK-2, R-STK-3, R-STK-4, R-STK-5, R-STK-6, R-STK-7, R-STK-8

@@ -1,0 +1,23 @@
+# SDD change state — CAPSTONE (Business Operations Platform)
+schema: spec-driven
+change: capstone
+project: temporada-1
+status: archived
+archived_at: 2026-09-21
+verdict: PASS WITH WARNINGS (archive-ready)
+
+phases:
+  explore: complete
+  propose: complete
+  spec: complete
+  design: complete
+  tasks: complete (62/62)
+  apply: complete (62/62 tasks, 229/229 tests, tsc clean, 63/63 req IDs)
+  verify: complete (PASS WITH WARNINGS, 15/15 deviations accepted)
+  archive: complete
+
+repo: business-operations-platform
+post_archive:
+  - T-7-8: create/push GitHub repo + GHCR verification (orchestrator/user, requires explicit authorization)
+  - S-1..S-4: verify suggestions -> future iteration
+  - W-1: optional canonical TDD evidence table in apply-progress

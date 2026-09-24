@@ -1,0 +1,66 @@
+# Output — capstone-ui it4 (Stock + Orders)
+
+**Change**: capstone-ui · **Batch**: C (it4) · **Date**: 2026-09-23 · **Mode**: Strict TDD (RED→GREEN→TRIANGULATE→REFACTOR)
+
+**Runner**: vitest 5 + RTL 16 + jsdom 30 (`npm test -w ui`) · tsc 5.9 strict · vite build · backend `node --test` (256 regression gate)
+
+## Tasks completed (it4)
+
+- [x] **T-4-1** api/stock (`{items: StockRow[]}` envelope deviation documented at it2a) + Stock page levels tab: string levels, `level <= threshold` low badge (equal counts), productId/warehouseId filters. R-UI-STK-1.
+- [x] **T-4-2** Movements tab: `GET /api/stock/movements` newest-first, filters (product/type), pagination; refreshed after every mutation. R-UI-STK-2. (Fixed `listMovements` typing → `Paginated<MovementListItem>` — was `Paginated<StockRow>`.)
+- [x] **T-4-3** Adjust form: signed non-zero qty, reason ≥ 10, FRESH Idempotency-Key per submit (regenerated after a 409 — old key consumed, R-STK-3); 409 `NEGATIVE_STOCK` localized + level cell unchanged (zero side effects). R-UI-STK-3.
+- [x] **T-4-4** Transfer form: from≠to client block ("Las bodegas deben ser diferentes"), qty ≥ 1, reason ≥ 10, idempotent; 409 → both cells unchanged; success → 2 ledger rows. R-UI-STK-4.
+- [x] **T-4-5** api/orders + OrdersPage (state filter, localized badges Borrador/Confirmada/Cancelada, pagination, actions per state) + OrderDetailPage (lines + D13 totals via MoneyText, localized 404 + back link). R-UI-ORD-1/2.
+- [x] **T-4-6** Create order form: customer select + dynamic line editor (product, qty ≥ 1, unitPrice via parseMoney scale ≤ 2, add/remove line, ≥ 1 line enforced), fresh Idempotency-Key per submit; 422/409 localized, form intact; replay 200 → one order. R-UI-ORD-3.
+- [x] **T-4-7** Confirm: `useOptimistic` pending row + ConfirmButton two-step + Idempotency-Key; 200 → confirmed + toast + refetch; 409 `INSUFFICIENT_STOCK` → rollback (server truth: still draft, zero order_out rows) + order-specific localized toast; 409 `INVALID_STATE` → refresh from server. Design sequence §4.2. R-UI-ORD-4.
+- [x] **T-4-8** Cancel: reason modal ≥ 10 client-blocked; success → cancelled + toast, stock untouched (no reversal — R-ORD-6); 409 `INVALID_STATE` → localized + server refresh. R-UI-ORD-5.
+- [x] **T-4-9** Stock+orders page tests + evidence (this doc).
+
+## Tests added (it4) — 29 new
+
+| File | Count | Requirements |
+|---|---|---|
+| `tests/stock.test.tsx` | 14 | R-UI-STK-1 (4 rows string levels, low badge 3≤5, equal 5≤5 counts, warehouse filter), R-UI-STK-2 (type filter, pagination page 2), R-UI-STK-3 (adjust up 10→15, −5 on 3 → 409 cell stays, qty0/reason-x client block, 409 consumes key → NEW key + one movement), R-UI-STK-4 (transfer 4 A→B → 6/4 + 2 rows, same-warehouse block, insufficient → cells unchanged), isLowStock pure |
+| `tests/orders.test.tsx` | 15 | R-UI-ORD-1 (badges, confirmed filter, per-state actions), R-UI-ORD-2 (lines + D13 totals, 404 state), R-UI-ORD-3 (scale>2 block, zero-lines block, two lines es→"12.50" payload, same-key replay one order), R-UI-ORD-4 (happy optimistic, insufficient rollback + no order_out, INVALID_STATE refresh, gate cancel zero requests), R-UI-ORD-5 (short reason block, cancel → cancelled + toast + stock untouched) |
+
+Also updated `tests/api-client.test.ts` movements contract fixture → MovementListItem DTO (was StockRow — contract fidelity).
+
+## Files created / changed (it4)
+
+| File | Action |
+|---|---|
+| `ui/src/modules/stock/forms.ts` | Created — isLowStock/validateAdjust/validateTransfer pure + MOVEMENT_TYPE_KEYS |
+| `ui/src/modules/stock/AdjustForm.tsx` | Created |
+| `ui/src/modules/stock/TransferForm.tsx` | Created |
+| `ui/src/pages/StockPage.tsx` | Replaced placeholder — tabs levels/movements/warehouses |
+| `ui/src/modules/orders/validate.ts` | Created — validateOrderLine/validateOrderForm pure |
+| `ui/src/modules/orders/CreateOrderForm.tsx` | Created |
+| `ui/src/modules/orders/CancelOrderModal.tsx` | Created |
+| `ui/src/pages/OrdersPage.tsx` | Replaced placeholder — useOptimistic confirm |
+| `ui/src/pages/OrderDetailPage.tsx` | Replaced placeholder |
+| `ui/src/api/stock.ts` | Modified — listMovements → `Paginated<MovementListItem>` |
+| `ui/src/api/types.ts` | Modified — MovementListItem |
+| `ui/src/i18n/locales/{es,en}.ts` | Modified — review-gated additions (orders.create.customerRequired/productRequired) |
+| `ui/tests/{stock,orders}.test.tsx` | Created |
+| `ui/tests/api-client.test.ts` | Modified — movements DTO fixture |
+
+## Verification (cumulative — Batch C gate)
+
+- `npm test -w ui`: **155/155 passed (13 files)** — 84 it2 + 71 new (42 it3 + 29 it4)
+- `npx tsc --noEmit` (ui): CLEAN
+- `npm run build -w ui`: OK — initial chunk **130.51 kB gzip** (≤ 250 kB, R-UI-NFR-5), governance lazy chunks split
+- Backend `npm test`: **256/256 passed** (0 failures — no regressions; it3/it4 touched UI only)
+
+## Demo commands (ES)
+
+```bash
+cd capstone && docker compose up -d --build
+cd ui && npm run dev   # http://localhost:5173
+# /stock → Niveles: Ajustar stock (−5 sobre nivel 3 → 409 "La operación dejaría el stock en negativo"),
+#          Transferir (origen=destino → bloqueo localizado); Movimientos: filtro tipo Ajuste;
+#          Almacenes: crear/renombrar/eliminar (en uso → 409 localizado)
+# /orders: filtrar por estado, Crear pedido (2 líneas, precio "12,50" → payload "12.50"),
+#          Confirmar (dos pasos, optimista; stock insuficiente → rollback + toast localizado),
+#          Cancelar (motivo ≥ 10)
+# /orders/:id: líneas + totales D13 por locale (es "3,00 €" / en "$3.00")
+```

@@ -1,0 +1,93 @@
+# Output — capstone-ui it5 (Governance: Notifications, Audit, Users, Jobs)
+
+**Change**: capstone-ui · **Batch**: D (it5) · **Date**: 2026-09-23 · **Mode**: Strict TDD (RED→GREEN→TRIANGULATE→REFACTOR)
+
+**Runner**: vitest 5 + RTL 16 + jsdom 30 (`npm test -w ui`) · tsc 5.9 strict · vite build · backend `node --test` (256 regression gate)
+
+## Tasks completed (it5)
+
+- [x] **T-5-1** api/notifications + NotificationsPage: unread-only toggle (server-side `unreadOnly=true`), stored title/body snapshot rendered VERBATIM (R-BE-3 — EN row shows EN text under an ES UI, no re-translation, R-UI-NOT-1), type/channel identifiers localized via label maps, mark-read idempotent `POST /:id/read` (204; double-mark no-op, R-UI-NOT-2), sidebar unread badge = `GET /api/notifications?unreadOnly=true&limit=1` pagination.total, refresh via module-scoped unread bus + navigation dep, hidden at zero (R-UI-NOT-3).
+- [x] **T-5-2** api/audit + AuditPage: server-side filters (entity/action exact + from/to ISO datetimes, newest-first as served), payload column rendered as JSON **text** (React-escaped — `<script>` payload shows literally, never executes, R-UI-NFR-2/R-UI-AUD-1), date inputs converted to day-bounds ISO (backend zod `.datetime({offset:true})` contract), 403 guard for operator (redirect + denial toast, zero `/api/audit` requests).
+- [x] **T-5-3** api/users + UsersPage + UserForm: list with localized role + active/inactive badges + pagination (R-UI-USR-1); create/invite modal — username 3-50 `[A-Za-z0-9_]`, email, password 12-128 with letter+digit + live strength hint, role select (5 roles), **NO locale field** (locked delta — asserted, R-UI-USR-2), 409 `USERNAME_TAKEN` localized, invitation toast without password echo.
+- [x] **T-5-4** User edit modal (role change → `PATCH {role}`) + row-level activate/deactivate confirm-gated (`PATCH {active}`); **self-deactivate blocked client-side** with localized warning, zero requests (R-UI-USR-3).
+- [x] **T-5-5** api/jobs + JobsPage: server-side state (6 real pg-boss states) + queue filters via query params (it1 T-1-7 — no client-side fallback, R-UI-JOB-1), state/queue/attempts columns with localized labels, failed rows visually distinct (danger badge + Retry), retry confirm-gated `POST /:id/retry` → toast "Trabajo reencolado" + row refresh; 404 → localized "Trabajo no encontrado" + list refresh (R-UI-JOB-2).
+- [x] **T-5-6** Governance page tests (40 new) + evidence (this doc).
+
+## Tests added (it5) — 40 new (195 cumulative)
+
+| File | Count | Requirements |
+|---|---|---|
+| `tests/notifications.test.tsx` | 10 | R-UI-NOT-1 (unreadOnly toggle → request param + 2/3 rows, EN snapshot under es UI, empty unread state), R-UI-NOT-2 (mark one → 204 + 'Leída' + badge −1; double mark → second 204, no change), R-UI-NOT-3 (badge 5→3→hidden, limit=1 pagination.total contract, refresh on navigation), pure helpers (7 type keys + unknown → null, channel keys) |
+| `tests/audit.test.tsx` | 8 | R-UI-AUD-1 (rows + newest-first order, entity/action filter → request params, from/to → ISO datetimes in request, `<script>` payload as literal text, empty state), operator guard (redirect + denial, no request), auditDateRangeToIso pure (2 cases) |
+| `tests/users.test.tsx` | 12 | R-UI-USR-1 (list + role/active badges, manager guard no request), R-UI-USR-2 (NO locale field asserted, weak password 'abc' client-block zero requests, valid → 201 + invitation toast + payload has no locale + password never echoed, 409 USERNAME_TAKEN form intact), R-UI-USR-3 (deactivate other → PATCH {active:false} + row badge, self-deactivate blocked zero requests, role change → PATCH {role} + badge update), pure validators (username/password/email, 3 cases each) |
+| `tests/jobs.test.tsx` | 10 | R-UI-JOB-1 (list + localized labels + attempts, failed row distinct + retry only on failed, state filter → server-side param, queue filter → server-side param, empty state, operator guard no request), R-UI-JOB-2 (confirm-gated retry → POST + toast + row refresh, gate cancel zero requests, unknown id → localized 404), jobStateLabelKey pure (6 states) |
+
+Also updated `tests/rbac.test.tsx` (R-RBAC-1 auditor /audit): the real AuditPage (it5) fetches `/api/audit` on mount — the mock now serves an empty page and the lazy-chunk heading wait is raised to 10 s (first-load transform on the slow machine; same class as Batch C deviation #19). 14/14 still green.
+
+## Files created / changed (it5)
+
+| File | Action |
+|---|---|
+| `ui/src/pages/NotificationsPage.tsx` | Replaced placeholder — list + unread filter + idempotent mark-read + badge bus |
+| `ui/src/pages/AuditPage.tsx` | Replaced placeholder — filterable trail, payload JSON as text |
+| `ui/src/pages/UsersPage.tsx` | Replaced placeholder — list + create/invite + edit + confirm-gated active toggle |
+| `ui/src/pages/JobsPage.tsx` | Replaced placeholder — server-side filters + confirm-gated retry |
+| `ui/src/modules/governance/notifications.ts` | Created — type/channel label key maps (pure) |
+| `ui/src/modules/governance/audit.ts` | Created — `auditDateRangeToIso` pure |
+| `ui/src/modules/governance/jobs.ts` | Created — 6-state label key map (pure) |
+| `ui/src/modules/governance/userForm.ts` | Created — username/password/email validators + role label keys (pure) |
+| `ui/src/modules/governance/UserForm.tsx` | Created — create/edit modal form (NO locale field) |
+| `ui/src/modules/governance/NotificationBadge.tsx` | Created — sidebar unread badge (limit=1 pagination.total) |
+| `ui/src/modules/governance/unreadBus.ts` | Created — module-scoped unread-change emitter |
+| `ui/src/api/{notifications,audit,jobs,users}.ts` | Filled in from it2a stubs — typed list/create/update/retry calls |
+| `ui/src/api/types.ts` | Modified — Notification/AuditRow/Job/JobState; removed dead `UnreadCountResponse` |
+| `ui/src/components/{Layout,Sidebar}.tsx` | Modified — badge slot wired to NotificationBadge (T-2-8 slot) |
+| `ui/src/i18n/locales/{es,en}.ts` | Modified — review-gated governance keys (notifications.*, audit.*, users.*, jobs.*; parity + banned-token green) |
+| `ui/tests/{notifications,audit,users,jobs}.test.tsx` | Created |
+| `ui/tests/rbac.test.tsx` | Modified — auditor /audit test serves the real page |
+| `ui/tests/__fixtures__/api.ts` | Modified — notificationFixture/auditRowFixture/jobFixture |
+
+## Verification (cumulative — Batch D gate)
+
+- `npm test -w ui`: **195/195 passed (17 files)** — 155 it2-it4 + **40 new** (notifications 10, audit 8, users 12, jobs 10)
+- `npx tsc --noEmit` (ui): CLEAN
+- `npm run build -w ui`: OK — initial chunk **132.63 kB gzip** (≤ 250 kB, R-UI-NFR-5); governance lazy chunks split (AuditPage 2.52 / UsersPage 3.13 / JobsPage 2.60 kB gzip)
+- Backend `npm test`: **256/256 passed** (58 suites, 0 failures — no regressions; it5 touched UI + tests only)
+
+## Real gate outputs (2026-09-23)
+
+```
+$ npm test -w ui
+ Test Files  17 passed (17)
+      Tests  195 passed (195)
+
+$ npx tsc --noEmit   # ui — exit 0, no diagnostics
+
+$ npm run build -w ui
+✓ 120 modules transformed.
+dist/assets/JobsPage-HaEY4BAu.js     5.47 kB │ gzip:   2.60 kB
+dist/assets/AuditPage-DXa4oHBI.js    5.62 kB │ gzip:   2.52 kB
+dist/assets/UsersPage-DD_pXu3J.js    7.48 kB │ gzip:   3.13 kB
+dist/assets/index-Bv94GXpP.js      426.21 kB │ gzip: 132.63 kB
+✓ built in 28.58s
+
+$ npm test -w backend
+ℹ tests 256 · ℹ suites 58 · ℹ pass 256 · ℹ fail 0
+```
+
+## Demo commands (ES)
+
+```bash
+cd capstone && docker compose up -d --build
+cd ui && npm run dev   # http://localhost:5173
+# /notifications: alternar "Solo no leídas"; Marcar como leída (badge lateral decrementa;
+#                  con 0 no leídas el badge desaparece — limit=1 pagination.total)
+# /audit (admin/auditor): filtrar por Entidad/Acción/Desde/Hasta; columna Datos como JSON texto
+# /users (admin): Crear usuario (sin campo idioma; contraseña débil → bloqueo local);
+#                 Editar rol; Desactivar (confirmación; la propia fila → aviso localizado)
+# /jobs (admin/manager): filtrar por Estado/Cola (server-side); Reintentar en fallidos (confirmación)
+```
+
+## Known infra note (pre-existing, NOT a test failure)
+
+The parallel-execution flake documented at Batch C (deviation #19 — random ~5 s timeouts on this slow machine; 84/84 and 155/155 serial) still surfaces intermittently: one run today failed `stock R-UI-STK-2` then `orders R-UI-ORD-3` — both pass 100% in isolation and the final cumulative run is 195/195. Mitigation stays at config (`testTimeout: 15000`); a `pool: 'vmThreads'` / serial CI strategy is deferred to it6 (Docker/CI, T-6-4).

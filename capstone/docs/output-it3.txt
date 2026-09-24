@@ -1,0 +1,35 @@
+CAPSTONE — Business Operations Platform (BOP v1)
+Evidence: Iteration 3 (Orders — T-3-1..T-3-7)
+Generated: 2026-09-20 · Node v26.8.2 · Postgres 16 (compose, bop-db)
+
+=== Iteration 3 — Orders (status machine, D13 money, idempotent create) ===
+- Migrations: 002b_stock_catalog (products + warehouses — SEE DEVIATION #1:
+  file renamed from the tasks' "004_stock.sql (partial)" because the migrate
+  runner applies files in sorted order and order_items FK → products requires
+  products BEFORE 003_orders; 004_stock.sql stays free for the it4 ledger) +
+  003_orders (orders + order_items, state CHECK, NUMERIC(13,2), snapshots,
+  idempotency_key UNIQUE, confirm_idempotency_key reserved for it4).
+- lib/decimal.ts: D13 exact string math (mul/add/format2 — integer cents),
+  zod schemas (scale ≤ 2 → 422). 8 unit tests.
+- modules/orders/: dto → repository (create w/ lines, list filters +
+  pagination, detail = 2 queries) → service (pure status machine R-ORD-3,
+  exact totals R-ORD-2, create idempotency R-ORD-4, UNKNOWN_PRODUCT /
+  UNKNOWN_CUSTOMER 422 per ADR-1) → controller → routes (POST/GET/GET:id
+  /api/orders, POST :id/confirm|cancel — STATE-ONLY per S5; the atomic stock
+  composition lands at it4 T-4-6).
+- modules/stock/: minimal products/warehouses CRUD (R-STK-8, product_manage /
+  stock_read per matrix) — seedable products for orders tests.
+- R-ORD-1..4, R-ORD-7 + R-NFR-6 (detail ≤2 queries) + R-STK-8 + R-ORD-3 unit
+  transition matrix — 19 orders + 5 stock + 3 unit tests.
+- Cumulative suite at it3: 119 tests, all green, tsc --noEmit clean.
+=== Evidence it3 — 2026-09-20T16:02:46.498Z ===
+Command: node --test --test-concurrency=1 "tests/**/*.test.ts"
+Suite: 119 tests, 119 passed, 0 failed
+Requirement IDs covered in test names (28):
+R-AUD-1, R-AUD-2, R-AUD-3, R-AUTH-1, R-AUTH-2, R-AUTH-3, R-AUTH-4, R-AUTH-5, R-AUTH-6, R-AUTH-7, R-AUTH-8, R-CRM-1, R-CRM-2, R-CRM-3, R-CRM-4, R-CRM-5, R-NFR-1, R-NFR-2, R-NFR-5, R-NFR-6, R-OBS-1, R-ORD-1, R-ORD-2, R-ORD-3, R-ORD-4, R-ORD-7, R-PROD-5, R-STK-8
+
+=== Evidence it3 — 2026-09-21T00:38:22.025Z ===
+Command: node --test --test-concurrency=1 "tests/**/*.test.ts"
+Suite: 119 tests, 119 passed, 0 failed
+Requirement IDs covered in test names (28):
+R-AUD-1, R-AUD-2, R-AUD-3, R-AUTH-1, R-AUTH-2, R-AUTH-3, R-AUTH-4, R-AUTH-5, R-AUTH-6, R-AUTH-7, R-AUTH-8, R-CRM-1, R-CRM-2, R-CRM-3, R-CRM-4, R-CRM-5, R-NFR-1, R-NFR-2, R-NFR-5, R-NFR-6, R-OBS-1, R-ORD-1, R-ORD-2, R-ORD-3, R-ORD-4, R-ORD-7, R-PROD-5, R-STK-8

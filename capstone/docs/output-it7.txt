@@ -1,0 +1,86 @@
+# Iteration 7 — Production (T-7-1..T-7-8)
+
+## What landed
+
+- Dockerfile multi-stage (R-PROD-1): node:22-alpine build (npm ci + tsc
+  gate) → runtime (npm ci --omit=dev, USER node, EXPOSE 3000, HEALTHCHECK on
+  /api/health). Verified with a REAL build + container run (id -u = 1000).
+- docker-compose full appliance (R-PROD-2): db → migrate (SQL + ensure-queues
+  one-shot) → api + worker (same image) + mailpit; prod boot race fixed
+  (pgboss schema+queue exist before first enqueue).
+- CI/CD (R-PROD-3/4): ci.yml (push/PR: install → migrate --db=test → tsc →
+  node --test → docker build → GHCR on main + v*) + cd.yml (v* tags) +
+  docs/deploy-oracle.md runbook (pull → env → compose up → backup → rollback).
+- Verification UI (R-PROD-7, ADR-12): vanilla JS served by the API at /
+  (login, customers, products, stock, orders + confirm flow, notifications,
+  status); tokens in memory only.
+- Env pass (R-PROD-5): server-exit test (short JWT_SECRET → non-zero exit,
+  var named, value never echoed) + .env.example completeness (secrets blank).
+- Evidence (R-PROD-6/8): this doc + docs/evidence/ dashboard (dashboard-pages:
+  relative links, zero CDN, docs/index.html stub → ./evidence/); repo naming
+  readiness: package name + README = business-operations-platform.
+- README flagship: stack, quickstart, module map, evidence, runbook link.
+
+=== Evidence it7 — 2026-09-21T16:00:14.282Z ===
+Command: node --test --test-concurrency=1 "tests/**/*.test.ts"
+Suite: 229 tests, 229 passed, 0 failed
+Requirement IDs covered in test names (63):
+R-AUD-1, R-AUD-2, R-AUD-3, R-AUD-4, R-AUTH-1, R-AUTH-2, R-AUTH-3, R-AUTH-4, R-AUTH-5, R-AUTH-6, R-AUTH-7, R-AUTH-8, R-CRM-1, R-CRM-2, R-CRM-3, R-CRM-4, R-CRM-5, R-DOC-1, R-DOC-2, R-JOB-1, R-JOB-2, R-JOB-3, R-JOB-4, R-JOB-5, R-JOB-6, R-NFR-1, R-NFR-2, R-NFR-3, R-NFR-4, R-NFR-5, R-NFR-6, R-NOT-1, R-NOT-2, R-NOT-3, R-NOT-4, R-NOT-5, R-NOT-6, R-OBS-1, R-OBS-2, R-OBS-3, R-ORD-1, R-ORD-2, R-ORD-3, R-ORD-4, R-ORD-5, R-ORD-6, R-ORD-7, R-PROD-1, R-PROD-2, R-PROD-3, R-PROD-4, R-PROD-5, R-PROD-6, R-PROD-7, R-PROD-8, R-STK-1, R-STK-2, R-STK-3, R-STK-4, R-STK-5, R-STK-6, R-STK-7, R-STK-8
+
+=== Real Docker verification (T-7-1/T-7-2, R-PROD-1/R-PROD-2) — 2026-09-21 ===
+
+Command: docker build -t bop-appliance:it7 .        → EXIT 0 (multi-stage, npm ci + tsc gate inside)
+Command: docker run --rm --entrypoint sh bop-appliance:it7 -c 'id -u && id -un && node --version'
+Output:
+  1000
+  node
+  v22.23.2
+  → R-PROD-1: container runs as NON-ROOT (uid 1000, user node); Node >= 22.18
+    runs TypeScript natively (no build step).
+
+Command: docker inspect bop-appliance:it7 --format '{{json .Config.Healthcheck}}'
+→ {"Test":["CMD-SHELL","node -e "fetch('http://localhost:3000/api/health')...""],
+   "Interval":30000000000,"Timeout":5000000000,"StartPeriod":15000000000,"Retries":3}
+→ R-PROD-1: HEALTHCHECK hits /api/health; EXPOSE 3000; User=node.
+
+Command: docker compose up -d --build                → EXIT 0
+Full appliance: db (healthy) → migrate (one-shot: SQL migrations + pgboss
+schema/queue bootstrap — prod boot race fix) → api + worker (same image) + mailpit.
+Command: docker compose ps
+  bop-api      Up (healthy)      0.0.0.0:3000->3000/tcp
+  bop-db       Up (healthy)      0.0.0.0:55437->5432/tcp
+  bop-mailpit  Up (healthy)      0.0.0.0:1025->1025/tcp, 0.0.0.0:8025->8025/tcp
+  bop-worker   Up                 (healthcheck disabled — no HTTP surface)
+→ R-PROD-1 healthcheck scenario: api marked healthy after boot.
+
+Command: curl http://localhost:3000/api/health        → {"status":"ok","db":"up"} HTTP 200
+Command: curl http://localhost:3000/                  → 200 text/html (verification UI)
+Command: curl http://localhost:3000/app.js            → 200 text/javascript
+Command: curl http://localhost:3000/api/docs          → 200 text/html (Swagger UI, offline)
+Command: curl http://localhost:3000/api/docs.json     → 200
+
+Appliance demo (seeded admin via backend/scripts/seed.ts — DEMO ONLY, the API
+has no self-registration per R-AUTH-1):
+  1. POST /api/auth/login admin/AdminPass123            → 200 user: admin role: admin
+  2. POST /api/warehouses {"name":"Main WH"}            → 201 id 1
+     POST /api/products {"name":"Widget","sku":"WID-1","lowStockThreshold":2} → 201 id 1
+     POST /api/stock/movements +5 "initial stock"       → 201
+  3. POST /api/customers "Ana Ruiz"                     → 201
+     POST /api/orders 1 × Widget @ "1.50"               → 201 total "3.00" (D13 exact string)
+  4. POST /api/orders/1/confirm                         → state: confirmed total: 3.00
+  5. POST /api/notifications                            → 1 notification: order_confirmed "Order confirmed"
+  6. mailpit GET /api/v1/messages                       → "Order confirmed" → admin@seed.local
+     (worker consumed the email job and SENT via SMTP — R-PROD-2 worker-consumes proof)
+  7. GET /api/audit?limit=6 →
+       auth.login       | admin   | user 1
+       job.completed    | -       | job 408a4918…
+       job.created      | -       | job 408a4918…
+       order.confirm    | admin   | order 1
+       customer.create  | admin   | customer 1
+       stock.adjustment | admin   | movement 1
+     → the full atomic chain (order.confirm + notifications + job lifecycle audit)
+       committed and observable on the real appliance.
+
+Deviation (T-7-2): the worker container has no HTTP surface, so the image
+HEALTHCHECK (which fetches the API port) is disabled for the worker service —
+restart policy covers crashes (healthcheck.disable: true).

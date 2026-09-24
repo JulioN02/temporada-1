@@ -1,0 +1,25 @@
+# SDD change state — CAPSTONE-UI (React 19 SPA + system-wide ES/EN i18n + backend delta)
+schema: spec-driven
+change: capstone-ui
+project: temporada-1
+status: archived
+archived_at: 2026-09-24
+verdict: PASS WITH WARNINGS (archive-ready)
+
+phases:
+  explore: skipped (not required — upstream capstone v1 context complete)
+  propose: complete
+  spec: complete (6 delta files, 72 requirement IDs per verify coverage scan)
+  design: complete (8 ADRs)
+  tasks: complete (48/48)
+  apply: complete (48/48 tasks, 217/217 vitest + 256/256 backend, tsc clean, vite build ok, Docker serves SPA)
+  verify: complete (PASS WITH WARNINGS, 33/33 deviations accepted, 72/72 req IDs)
+  archive: complete
+
+repo: business-operations-platform
+post_archive:
+  - F1: R-UI-NFR-3 dist secret scan is vacuous in CI/Docker (vitest runs before vite build) — build-before-test in gates or split scan into post-build step (orchestrator decision, one-line config change)
+  - F3: stale Dockerfile build-stage comment re: openspec in build context (doc-only fix)
+  - S1: additive `customerName` on OrderListItemDto to polish orders UX (#<customerId> today)
+  - S2: optional role-name i18n keys for the user chip (raw identifiers today)
+  - S3: optional failure toast for LocaleToggle PATCH (self-heals via backend-wins-on-boot)

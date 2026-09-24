@@ -1,0 +1,23 @@
+CAPSTONE — Business Operations Platform (BOP v1)
+Evidence: Iteration 1 (Foundation F-1..F-9 + Auth/RBAC T-1-1..T-1-8)
+Generated: 2026-09-19 · Node v26.8.2 · npm 11.19.1 · Docker 29.8.0 · Postgres 16 (compose, bop-db)
+
+=== Setup (F-1) ===
+- Monorepo scaffolded at capstone/: root package.json (workspaces: backend, ui),
+  .gitignore, .env.example (secrets blank), ui/ placeholder package.
+- backend/: express 5 + pg + jsonwebtoken + bcryptjs + zod v4 + pino + pg-boss v12
+  + @asteasolutions/zod-to-openapi v9 + swagger-ui-dist; strict tsconfig
+  (strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes,
+  erasableSyntaxOnly, verbatimModuleSyntax, allowImportingTsExtensions).
+  NOTE: nodemailer intentionally NOT installed yet — deferred to it5 per the
+  T-5-3 user checkpoint (ADR-13 confirmation).
+- docker-compose: postgres:16-alpine on host port 55437 (bop DB) + init script
+  creating bop_test; pg_isready healthcheck; named volume.
+- Quality gate: tsc --noEmit (0 errors) + node --test (all green).
+- Migrations: 001_rbac.sql + 006_audit.sql, idempotent via _migrations ledger
+  (migrate twice → second run applies 0 files).
+=== Evidence it1 — 2026-09-19T05:53:16.896Z ===
+Command: node --test --test-concurrency=1 "tests/**/*.test.ts"
+Suite: 63 tests, 63 passed, 0 failed
+Requirement IDs covered in test names (16):
+R-AUD-1, R-AUD-2, R-AUD-3, R-AUTH-1, R-AUTH-2, R-AUTH-3, R-AUTH-4, R-AUTH-5, R-AUTH-6, R-AUTH-7, R-AUTH-8, R-NFR-1, R-NFR-2, R-NFR-5, R-OBS-1, R-PROD-5

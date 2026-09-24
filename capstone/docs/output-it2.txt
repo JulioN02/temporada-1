@@ -1,0 +1,29 @@
+CAPSTONE — Business Operations Platform (BOP v1)
+Evidence: Iteration 2 (CRM-lite — T-2-1..T-2-5)
+Generated: 2026-09-20 · Node v26.8.2 · Postgres 16 (compose, bop-db)
+
+=== Iteration 2 — CRM-lite (first full vertical slice) ===
+- Migration 002_crm: customers (CITEXT UNIQUE email → dup 409 DUPLICATE_EMAIL,
+  status CHECK active|inactive, R-CRM-4 default list excludes inactive).
+- modules/crm/: dto → repository (parameterized, q ILIKE substring ci, status
+  filter, 2-query pagination) → service (dup-email 409, same-tx audit R-CRM-5)
+  → controller (≤15 lines) → routes (POST/GET/GET:id/PATCH /api/customers,
+  perms per locked matrix).
+- R-CRM-1..5 + R-AUTH-8 (viewer denied customer_create) + R-NFR-1 (injection
+  inert via q) + R-NFR-6 (list ≤2 queries, spy) — 17 integration tests.
+- DB-level migration tests: duplicate email 23505 (case-insensitive via
+  CITEXT), status CHECK 23514.
+- Cumulative suite at it2: CRM tests green on top of the it1 suite (63 base +
+  21 CRM/migration tests); the it2 evidence run below shows the full 119-test
+  suite because the it3 files were already present in the workspace at run time.
+=== Evidence it2 — 2026-09-20T16:00:39.115Z ===
+Command: node --test --test-concurrency=1 "tests/**/*.test.ts"
+Suite: 119 tests, 119 passed, 0 failed
+Requirement IDs covered in test names (28):
+R-AUD-1, R-AUD-2, R-AUD-3, R-AUTH-1, R-AUTH-2, R-AUTH-3, R-AUTH-4, R-AUTH-5, R-AUTH-6, R-AUTH-7, R-AUTH-8, R-CRM-1, R-CRM-2, R-CRM-3, R-CRM-4, R-CRM-5, R-NFR-1, R-NFR-2, R-NFR-5, R-NFR-6, R-OBS-1, R-ORD-1, R-ORD-2, R-ORD-3, R-ORD-4, R-ORD-7, R-PROD-5, R-STK-8
+
+=== Evidence it2 — 2026-09-21T00:35:44.762Z ===
+Command: node --test --test-concurrency=1 "tests/**/*.test.ts"
+Suite: 119 tests, 119 passed, 0 failed
+Requirement IDs covered in test names (28):
+R-AUD-1, R-AUD-2, R-AUD-3, R-AUTH-1, R-AUTH-2, R-AUTH-3, R-AUTH-4, R-AUTH-5, R-AUTH-6, R-AUTH-7, R-AUTH-8, R-CRM-1, R-CRM-2, R-CRM-3, R-CRM-4, R-CRM-5, R-NFR-1, R-NFR-2, R-NFR-5, R-NFR-6, R-OBS-1, R-ORD-1, R-ORD-2, R-ORD-3, R-ORD-4, R-ORD-7, R-PROD-5, R-STK-8
