@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Dashboard de publicacion del capstone Business Operations Platform (BOP v1) — Temporada 1" />
+<title>Business Operations Platform (BOP v1) — Dashboard de Publicación</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0f1115; color: #e8eaf0; line-height: 1.6;
+  }
+  a { color: #8b5cf6; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    background: #1a1d24; border: 1px solid #262a33; border-radius: 4px;
+    padding: 0.1rem 0.35rem; font-size: 0.85em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  pre {
+    background: #14171d; border: 1px solid #262a33; border-radius: 10px;
+    padding: 1rem 1.2rem; overflow-x: auto; font-size: 0.8rem; line-height: 1.5;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #c7cdd8;
+  }
+
+  /* Nav */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(15,17,21,0.92); backdrop-filter: blur(6px);
+    border-bottom: 1px solid #262a33;
+  }
+  nav .nav-inner {
+    max-width: 1080px; margin: 0 auto; padding: 0.55rem 1.2rem;
+    display: flex; gap: 0.5rem; overflow-x: auto; white-space: nowrap; align-items: center;
+  }
+  nav a {
+    color: #9aa3b2; font-size: 0.8rem; padding: 0.3rem 0.55rem; border-radius: 6px;
+  }
+  nav a:hover { color: #e8eaf0; text-decoration: none; background: #1a1d24; }
+  nav a.active { color: #8b5cf6; background: rgba(139,92,246,0.12); }
+
+  /* Layout */
+  main { max-width: 1080px; margin: 0 auto; padding: 1rem 1.4rem 3rem; }
+  section { margin: 2.6rem 0 3.2rem; scroll-margin-top: 60px; }
+  section > h2 {
+    font-size: 1.35rem; color: #e8eaf0; margin: 0 0 0.9rem;
+    padding-bottom: 0.4rem; border-bottom: 1px solid #262a33;
+  }
+  section > h2 .sec-num { color: #8b5cf6; margin-right: 0.5rem; }
+  h3 { color: #c7cdd8; font-size: 1.05rem; margin: 1.6rem 0 0.5rem; }
+  p { color: #b9c0cc; margin: 0.6rem 0; }
+  ul, ol { color: #b9c0cc; }
+  li { margin: 0.35rem 0; }
+  .muted { color: #9aa3b2; font-size: 0.85rem; }
+
+  /* Hero */
+  .hero {
+    padding: 3.2rem 0 1rem; text-align: center;
+    border-bottom: 1px solid #262a33;
+  }
+  .hero .kicker { color: #8b5cf6; font-size: 0.8rem; letter-spacing: 0.14em; text-transform: uppercase; }
+  .hero h1 { font-size: 2.3rem; margin: 0.5rem 0 0.6rem; }
+  .hero .tagline { max-width: 720px; margin: 0 auto; color: #b9c0cc; font-size: 1.02rem; }
+  .hero .status {
+    display: inline-block; margin-top: 1rem; padding: 0.25rem 0.9rem;
+    background: #123524; color: #4ade80; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+  }
+  .hero .badges { margin-top: 1.2rem; display: flex; flex-wrap: wrap; gap: 0.45rem; justify-content: center; }
+  .badge {
+    display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
+    font-size: 0.74rem; background: #1a1d24; border: 1px solid #262a33; color: #c7cdd8;
+  }
+  .badge.purple { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.35); color: #b9a9f5; }
+
+  /* Cards / stats */
+  .stats { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 1.2rem 0; }
+  .stat {
+    background: #14171d; border: 1px solid #262a33; border-radius: 10px;
+    padding: 0.7rem 1.1rem; min-width: 150px; flex: 1;
+  }
+  .stat .num { font-size: 1.5rem; font-weight: 700; color: #4ade80; }
+  .stat .label { font-size: 0.72rem; color: #9aa3b2; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat.accent .num { color: #8b5cf6; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; background: #14171d; border: 1px solid #262a33; margin: 0.8rem 0; }
+  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #1f232b; font-size: 0.85rem; vertical-align: top; }
+  th { color: #9aa3b2; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:last-child td { border-bottom: none; }
+
+  /* Requirements filter */
+  .filter-bar { margin: 0.8rem 0; }
+  .filter-bar input {
+    width: 100%; max-width: 480px; padding: 0.5rem 0.8rem;
+    background: #14171d; border: 1px solid #262a33; border-radius: 8px;
+    color: #e8eaf0; font-size: 0.9rem;
+  }
+  .filter-bar input:focus { outline: none; border-color: #8b5cf6; }
+  details.req-group { margin: 0.8rem 0; background: #14171d; border: 1px solid #262a33; border-radius: 10px; }
+  details.req-group > summary {
+    cursor: pointer; padding: 0.7rem 1rem; font-weight: 600; color: #c7cdd8; font-size: 0.92rem;
+  }
+  details.req-group > summary:hover { color: #8b5cf6; }
+  details.req-group > summary .count { color: #6b7280; font-weight: 400; margin-left: 0.4rem; }
+  details.req-group .req-table { margin: 0; border: none; border-top: 1px solid #262a33; }
+  details.req-group .req-table th:first-child, details.req-group .req-table td:first-child { white-space: nowrap; color: #b9a9f5; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; }
+  .req-table .hid { display: none; }
+
+  /* Two-column layouts */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  .card { background: #14171d; border: 1px solid #262a33; border-radius: 10px; padding: 0.9rem 1.1rem; }
+  .card h3 { margin-top: 0; }
+
+  /* Axioms / lessons lists */
+  .numbered { counter-reset: item; list-style: none; padding: 0; }
+  .numbered > li { counter-increment: item; position: relative; padding-left: 2.6rem; margin: 0.7rem 0; }
+  .numbered > li::before {
+    content: counter(item);
+    position: absolute; left: 0; top: 0.1rem;
+    width: 1.7rem; height: 1.7rem; border-radius: 8px;
+    background: rgba(139,92,246,0.14); border: 1px solid rgba(139,92,246,0.4);
+    color: #b9a9f5; font-weight: 700; font-size: 0.85rem;
+    display: grid; place-items: center;
+  }
+  .numbered > li b { color: #e8eaf0; }
+
+  footer {
+    border-top: 1px solid #262a33; margin-top: 2rem;
+    padding: 1.6rem 1.4rem 2.4rem; color: #6b7280; font-size: 0.8rem;
+  }
+  footer .foot-inner { max-width: 1080px; margin: 0 auto; }
+  .note { font-size: 0.8rem; color: #9aa3b2; background: #14171d; border: 1px solid #262a33; border-radius: 8px; padding: 0.6rem 0.9rem; margin: 0.7rem 0; }
+</style>
+</head>
+<body>
+
+<nav id="topnav" aria-label="Navegación">
+  <div class="nav-inner">
+    <a href="#hero">Inicio</a>
+    <a href="#problema">Problema</a>
+    <a href="#requisitos">Requisitos</a>
+    <a href="#arquitectura">Arquitectura</a>
+    <a href="#fundamentacion">Fundamentación</a>
+    <a href="#axiomas">Axiomas</a>
+    <a href="#lecciones">Lecciones</a>
+    <a href="#mejoras">Mejoras</a>
+    <a href="#documentacion">Documentación técnica</a>
+    <a href="#guia">Guía de uso</a>
+    <a href="#evidencia">Evidencia</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ============ 1. HERO ============ -->
+  <section id="hero">
+    <div class="hero">
+      <div class="kicker">Capstone · Temporada 1 · Repositorio business-operations-platform</div>
+      <h1>Business Operations Platform (BOP v1)</h1>
+      <p class="tagline">
+        Una plataforma de operaciones integrada: autenticación con RBAC, CRM, pedidos con
+        confirmación atómica sobre inventario, notificaciones bilingües, auditoría inmutable,
+        jobs durables y una SPA React 19 con i18n ES/EN — empaquetada como appliance Docker.
+      </p>
+      <span class="status">Estado: Completado</span>
+      <div class="badges">
+        <span class="badge purple">Node 22</span>
+        <span class="badge purple">Express 5</span>
+        <span class="badge purple">PostgreSQL 16</span>
+        <span class="badge purple">React 19</span>
+        <span class="badge purple">Vite 6</span>
+        <span class="badge purple">pg-boss v12</span>
+        <span class="badge purple">OpenAPI 3.1</span>
+        <span class="badge purple">Docker + GHCR</span>
+        <span class="badge">API-first</span>
+        <span class="badge">Strict TDD</span>
+        <span class="badge">i18n ES/EN</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. PROBLEMA ============ -->
+  <section id="problema">
+    <h2><span class="sec-num">1.</span>Introducción al problema</h2>
+    <p>
+      Las operaciones diarias de una empresa —inventario, pedidos, notificaciones y control de
+      cambios— suelen vivir dispersas en planillas, correos y herramientas inconexas. Esa
+      fragmentación produce errores caros: vender stock que no existe, perder avisos críticos,
+      pedidos sin estado claro y cero trazabilidad sobre quién hizo qué. Ningún proceso
+      importante queda auditado, y el crecimiento convierte cada decisión operativa en un
+      riesgo manual.
+    </p>
+    <p>
+      <b>Por qué importa:</b> el inventario debe reflejarse en tiempo real, la confirmación de
+      un pedido no puede dejar estados parciales, las notificaciones tienen que llegar a la
+      persona correcta en su idioma, y toda mutación debe quedar registrada de forma inmutable.
+      Son requisitos de integridad de datos y de confianza, no solo de conveniencia.
+    </p>
+    <p>
+      <b>Qué resuelve este capstone:</b> construir una plataforma de operaciones donde los
+      workflows automatizados orquestan inventario, pedidos y notificaciones. El núcleo técnico
+      es la confirmación atómica de un pedido: en una sola transacción se valida el stock bajo
+      bloqueos de base de datos, se descuentan los movimientos, se escribe la auditoría, se crean
+      las notificaciones bilingües y se encolan los correos. Todo o nada, sin estados parciales
+      observables. Además incluye RBAC de 5 roles y 19 permisos, un CRM, auditoría append-only,
+      jobs durables y una SPA React completa con i18n español/inglés neutro.
+    </p>
+  </section>
+
+  <!-- ============ 3. REQUISITOS ============ -->
+  <section id="requisitos">
+    <h2><span class="sec-num">2.</span>Análisis de requerimientos y requisitos</h2>
+    <p>
+      El contrato v2 fusionado (spec.md, 1103 líneas) contiene <b>122 requisitos</b>: 63 de la
+      plataforma v1 más 59 añadidos por el cambio capstone-ui (SPA React + i18n). Cada requisito
+      funcional tiene un escenario verificable (Given/When/Then) que mapea 1:1 a un test nombrado
+      con su ID (por ejemplo <code>R-ORD-5</code>). La cobertura de IDs es un gate automatizado:
+      <b>72/72 IDs del cambio capstone-ui</b> aparecen en al menos un test, y el gate backend
+      exigía 63/63 IDs de v1.
+    </p>
+
+    <div class="filter-bar">
+      <input id="reqFilter" type="search" placeholder="Filtrar requisitos por ID o texto (por ejemplo: R-ORD-5, stock, auditoría)…" aria-label="Filtrar requisitos" />
+    </div>
+
+    <details class="req-group" open>
+      <summary>Autenticación y RBAC (R-AUTH · R-AUTHUI · R-RBAC) <span class="count">16 requisitos</span></summary>
+      <table class="req-table">
+        <thead><tr><th>ID</th><th>Requisito</th><th>Medida / criterio</th></tr></thead>
+        <tbody>
+          <tr><td>R-AUTH-1</td><td>Registro de usuarios solo por admin; emite notificación <code>user_invited</code>; sin auto-registro</td><td>201 / 403 / 409 / 422</td></tr>
+          <tr><td>R-AUTH-2</td><td>Login con 401 idéntico (sin enumeración de usuarios)</td><td>Respuesta byte-idéntica para usuario inexistente y contraseña incorrecta</td></tr>
+          <tr><td>R-AUTH-3</td><td>Access token JWT de 15 min, exp verificada con <code>jwt.verify</code> + typ check</td><td>Token vencido y typ incorrecto → 401</td></tr>
+          <tr><td>R-AUTH-4</td><td>Refresh con rotación y detección de reuso (invalida toda la familia)</td><td>7 días de vida, SHA-256 en reposo, cookie httpOnly</td></tr>
+          <tr><td>R-AUTH-5</td><td>Logout idempotente</td><td>204 siempre; refresh posterior → 401</td></tr>
+          <tr><td>R-AUTH-6</td><td>Política de contraseña: 12–128 caracteres, ≥1 letra y ≥1 dígito; bcrypt cost 10</td><td>Débil → 422; hash <code>$2b$10$</code> en BD</td></tr>
+          <tr><td>R-AUTH-7</td><td>Seed de 5 roles × 19 permisos con paridad registro TS ↔ SQL</td><td>Paridad bidireccional testeada</td></tr>
+          <tr><td>R-AUTH-8</td><td>Chequeo de permiso por request contra la BD (no solo el token)</td><td>Falta de permiso → 403; democión en sesión aplica sin re-login</td></tr>
+          <tr><td>R-AUTHUI-1</td><td>Refresh single-flight acotado con exactamente un reintento</td><td>N 401s concurrentes → 1 refresh; sin loops</td></tr>
+          <tr><td>R-AUTHUI-2</td><td>Access token solo en memoria</td><td>Scan: cero tokens en storage</td></tr>
+          <tr><td>R-AUTHUI-3</td><td>Logout llama a la API y luego limpia el estado</td><td>POST logout + limpieza + redirección a /login</td></tr>
+          <tr><td>R-AUTHUI-4</td><td>Restauración de sesión al arrancar preservando la ruta</td><td>Boot en /orders restaura sin flash de login</td></tr>
+          <tr><td>R-RBAC-1</td><td>Guards de ruta que reflejan los permisos del backend</td><td>Ruta prohibida → redirección + toast, sin request</td></tr>
+          <tr><td>R-RBAC-2</td><td>Guards de acción: botones ocultos (nunca deshabilitados)</td><td>Sweep exacto por rol y acción</td></tr>
+          <tr><td>R-RBAC-3</td><td>Matriz rol × módulo × acción idéntica al backend</td><td>Paridad por import directo del registry backend</td></tr>
+          <tr><td>R-RBAC-4</td><td>Cambio de rol en sesión se refleja en el próximo <code>/api/auth/me</code></td><td>Sidebar y acciones se re-renderizan</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details class="req-group">
+      <summary>CRM — clientes, productos, bodegas (R-CRM · R-UI-CRM) <span class="count">13 requisitos</span></summary>
+      <table class="req-table">
+        <thead><tr><th>ID</th><th>Requisito</th><th>Medida / criterio</th></tr></thead>
+        <tbody>
+          <tr><td>R-CRM-1</td><td>Crear cliente con validación de email y duplicados</td><td>201 / 409 DUPLICATE_EMAIL / 422</td></tr>
+          <tr><td>R-CRM-2</td><td>Listar, buscar y paginar clientes</td><td>Envelope <code>{data, pagination}</code>; búsqueda case-insensitive</td></tr>
+          <tr><td>R-CRM-3</td><td>Actualizar cliente (PATCH parcial)</td><td>200 / 404 / 409</td></tr>
+          <tr><td>R-CRM-4</td><td>Ciclo de vida active/inactive; inactivos excluidos de la lista por defecto</td><td>PATCH status; estado inválido → 422</td></tr>
+          <tr><td>R-CRM-5</td><td>Auditoría en la misma transacción de cada mutación</td><td>Rollback borra la fila de auditoría</td></tr>
+          <tr><td>R-UI-CRM-1</td><td>Lista de clientes con búsqueda, filtro y paginación</td><td>Estado vacío / error / 403 localizados</td></tr>
+          <tr><td>R-UI-CRM-2</td><td>Formulario de creación con validación localizada</td><td>Bloqueo client-side antes del request</td></tr>
+          <tr><td>R-UI-CRM-3</td><td>Edición con campos parciales</td><td>404 y 409 localizados</td></tr>
+          <tr><td>R-UI-CRM-4</td><td>Desactivar/reactivar con paso de confirmación</td><td>Cancelar → cero requests</td></tr>
+          <tr><td>R-UI-CRM-5</td><td>Lista de productos con insignia de inactivo</td><td>Inactivos excluidos del módulo Stock</td></tr>
+          <tr><td>R-UI-CRM-6</td><td>Crear producto (SKU, umbral bajo stock)</td><td>409 DUPLICATE_SKU; umbral ≥ 0</td></tr>
+          <tr><td>R-UI-CRM-7</td><td>Editar/desactivar producto (PATCH, nunca hard-delete)</td><td>Confirmación + 409 duplicado</td></tr>
+          <tr><td>R-UI-CRM-8</td><td>CRUD de bodegas dentro del módulo Stock</td><td>DELETE en uso → 409 WAREHOUSE_IN_USE</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details class="req-group">
+      <summary>Pedidos y Stock — showpiece atómico (R-ORD · R-STK · R-UI-STK · R-UI-ORD) <span class="count">24 requisitos</span></summary>
+      <table class="req-table">
+        <thead><tr><th>ID</th><th>Requisito</th><th>Medida / criterio</th></tr></thead>
+        <tbody>
+          <tr><td>R-ORD-1</td><td>Crear pedido con líneas (≥1, qty ≥1, precio D13)</td><td>201 draft / 422 / UNKNOWN_PRODUCT</td></tr>
+          <tr><td>R-ORD-2</td><td>Dinero D13: NUMERIC(13,2), strings con 2 decimales, nunca float</td><td><code>3 × 0.10 = "0.30"</code>, nunca 0.30000000000000004</td></tr>
+          <tr><td>R-ORD-3</td><td>Máquina de estados draft→confirmed→cancelled; cancel con motivo ≥10</td><td>Transición inválida → 409</td></tr>
+          <tr><td>R-ORD-4</td><td>Creación idempotente con <code>Idempotency-Key</code></td><td>Replay → 200 con el mismo id</td></tr>
+          <tr><td>R-ORD-5</td><td>Confirmación ATÓMICA: lock → movimientos → auditoría → notificaciones → emails</td><td>Todo o nada; stock insuficiente → 409 sin efectos</td></tr>
+          <tr><td>R-ORD-6</td><td>Cancelar NO revierte stock (integridad del ledger)</td><td>Recuperación manual con motivo</td></tr>
+          <tr><td>R-ORD-7</td><td>APIs de lectura de pedidos, detalle en ≤2 consultas</td><td>Sin N+1</td></tr>
+          <tr><td>R-STK-1</td><td>Ledger de movimientos inmutable (trigger bloquea UPDATE/DELETE)</td><td>Append-only</td></tr>
+          <tr><td>R-STK-2</td><td>Niveles derivados por vista (SUM sign×qty), nunca contador almacenado</td><td>Refleja cada movimiento al instante</td></tr>
+          <tr><td>R-STK-3</td><td>Ajustes con motivo y invariante de stock negativo</td><td>409 NEGATIVE_STOCK dentro del lock</td></tr>
+          <tr><td>R-STK-4</td><td>Transferencias = 2 filas en una transacción; from ≠ to</td><td>422 / 409 según el caso</td></tr>
+          <tr><td>R-STK-5</td><td>Concurrencia con advisory locks en orden determinista</td><td>Paralelos = secuenciales; sin lost update</td></tr>
+          <tr><td>R-STK-6</td><td>Idempotencia de movimientos por clave única</td><td>Replay → mismo id, 1 fila</td></tr>
+          <tr><td>R-STK-7</td><td>Evento de bajo stock al cruzar el umbral (event-driven, SIN cron)</td><td>Cada cruce emite; sin poller</td></tr>
+          <tr><td>R-STK-8</td><td>Productos/bodegas; productos se desactivan, nunca se borran</td><td>Snapshots de línea intactos</td></tr>
+          <tr><td>R-UI-STK-1</td><td>Tabla de niveles con insignia de stock bajo (≤ umbral)</td><td>Levels como strings, sin floats</td></tr>
+          <tr><td>R-UI-STK-2</td><td>Historial de movimientos con filtros y paginación</td><td>Newest-first</td></tr>
+          <tr><td>R-UI-STK-3</td><td>Ajustar stock (qty firmada, motivo, idempotente)</td><td>409 → celda sin cambios; clave nueva para reintento</td></tr>
+          <tr><td>R-UI-STK-4</td><td>Transferir stock (from ≠ to, motivo, idempotente)</td><td>409 → ambas celdas sin cambios</td></tr>
+          <tr><td>R-UI-ORD-1</td><td>Lista de pedidos con filtro de estado y paginación</td><td>Insignias Borrador/Confirmada/Cancelada</td></tr>
+          <tr><td>R-UI-ORD-2</td><td>Detalle con líneas y totales D13 formateados</td><td>Formato por locale</td></tr>
+          <tr><td>R-UI-ORD-3</td><td>Crear pedido con editor dinámico de líneas</td><td>Validación client-side previa</td></tr>
+          <tr><td>R-UI-ORD-4</td><td>Confirmar con UI optimista y 409 limpio</td><td>Rollback optimista; cero movimientos visibles</td></tr>
+          <tr><td>R-UI-ORD-5</td><td>Cancelar con motivo (≥10) sin tocar stock</td><td>409 INVALID_STATE → refresco</td></tr>
+          <tr><td>R-UI-ORD-6</td><td>Formato de dinero D13 por locale, round-trip sin floats</td><td>"12,50 €" es · "$12.50" en</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details class="req-group">
+      <summary>Notificaciones (R-NOT · R-UI-NOT) <span class="count">9 requisitos</span></summary>
+      <table class="req-table">
+        <thead><tr><th>ID</th><th>Requisito</th><th>Medida / criterio</th></tr></thead>
+        <tbody>
+          <tr><td>R-NOT-1</td><td>Notificaciones in-app, owner-scoped (solo las propias)</td><td>Leer fila ajena → 404; marcar leída idempotente</td></tr>
+          <tr><td>R-NOT-2</td><td>Matriz canal-por-tipo (7 tipos) como registry const</td><td>Paridad de matriz testeada</td></tr>
+          <tr><td>R-NOT-3</td><td>Email SOLO desde el worker; credenciales de env; jamás en el request path</td><td>Enforced por scan</td></tr>
+          <tr><td>R-NOT-4</td><td>Fallo SMTP no afecta la transacción de dominio</td><td>Retry con backoff → dead-letter; estado en la fila</td></tr>
+          <tr><td>R-NOT-5</td><td>Plantillas bilingües renderizadas en el locale del receptor (snapshot inmutable)</td><td>El worker nunca re-renderiza; fallback 'es'</td></tr>
+          <tr><td>R-NOT-6</td><td>Disparadores event-driven (sin polling), exactly-once</td><td>Scan de codebase: cero cron/setInterval</td></tr>
+          <tr><td>R-UI-NOT-1</td><td>Lista con filtro de no leídas y snapshot almacenado</td><td>Muestra el snapshot, no re-traduce</td></tr>
+          <tr><td>R-UI-NOT-2</td><td>Marcar leída (204 idempotente)</td><td>Badge decrementa</td></tr>
+          <tr><td>R-UI-NOT-3</td><td>Badge de no leídas en el shell</td><td>Cero no leídas → badge oculto</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details class="req-group">
+      <summary>Jobs y worker (R-JOB · R-UI-JOB) <span class="count">8 requisitos</span></summary>
+      <table class="req-table">
+        <thead><tr><th>ID</th><th>Requisito</th><th>Medida / criterio</th></tr></thead>
+        <tbody>
+          <tr><td>R-JOB-1</td><td>Colas pg-boss con retryLimit ≥3, backoff y dead-letter</td><td>Cola <code>notification.send</code> configurada</td></tr>
+          <tr><td>R-JOB-2</td><td>Worker procesa jobs; éxito → completed + efecto aplicado</td><td>Restart retoma jobs pendientes (durable)</td></tr>
+          <tr><td>R-JOB-3</td><td>Retry con backoff hasta dead-letter; auditoría por intento</td><td>Intentos registrados en audit</td></tr>
+          <tr><td>R-JOB-4</td><td>Handlers idempotentes (redelivery sin duplicar efectos)</td><td>1 fila de notificación, 1 envío (mailpit)</td></tr>
+          <tr><td>R-JOB-5</td><td>Auditoría del ciclo de vida del job (sin secretos)</td><td>job.created/completed/failed</td></tr>
+          <tr><td>R-JOB-6</td><td>API de lectura + reintento manual de jobs</td><td>Filtro por estado/cola; retry mueve a active</td></tr>
+          <tr><td>R-UI-JOB-1</td><td>Lista de jobs con filtros server-side (6 estados pg-boss v12)</td><td>Fallo visualmente distintivo</td></tr>
+          <tr><td>R-UI-JOB-2</td><td>Reintento confirmado (manager+)</td><td>Toast "Trabajo reencolado"</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details class="req-group">
+      <summary>Auditoría (R-AUD · R-UI-AUD) <span class="count">5 requisitos</span></summary>
+      <table class="req-table">
+        <thead><tr><th>ID</th><th>Requisito</th><th>Medida / criterio</th></tr></thead>
+        <tbody>
+          <tr><td>R-AUD-1</td><td>Auditoría append-only (trigger bloquea UPDATE/DELETE)</td><td>Solo INSERT permitido</td></tr>
+          <tr><td>R-AUD-2</td><td>Escrituras en la misma transacción de negocio</td><td>Rollback del negocio → rollback del audit</td></tr>
+          <tr><td>R-AUD-3</td><td>Jamás credenciales en payloads de auditoría</td><td>auth.login/refresh sin password/hash/token</td></tr>
+          <tr><td>R-AUD-4</td><td>API de lectura de auditoría (admin/auditor)</td><td>Filtros entity/action/rango; newest-first</td></tr>
+          <tr><td>R-UI-AUD-1</td><td>Tabla de auditoría con payload como texto JSON</td><td><code>&lt;script&gt;</code> se muestra literal</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details class="req-group">
+      <summary>i18n y delta backend (R-I18N · R-BE · R-UI-FND · R-UI-DSH · R-UI-USR) <span class="count">20 requisitos</span></summary>
+      <table class="req-table">
+        <thead><tr><th>ID</th><th>Requisito</th><th>Medida / criterio</th></tr></thead>
+        <tbody>
+          <tr><td>R-BE-1</td><td>Migración 007: columnas locale en users y notifications</td><td>Idempotente, CHECK es/en, default 'es'</td></tr>
+          <tr><td>R-BE-2</td><td>Diccionarios bilingües de plantillas con paridad de claves</td><td>Paridad + español neutro (tokens prohibidos)</td></tr>
+          <tr><td>R-BE-3</td><td>emitEvent renderiza por locale del receptor y guarda el snapshot</td><td>Exactly-once preservado</td></tr>
+          <tr><td>R-BE-4</td><td>PATCH /api/auth/me {locale} auto-servicio + campo locale en DTOs</td><td>422 inválido; sin locale en POST /api/users</td></tr>
+          <tr><td>R-BE-5</td><td>Servir SPA con fallback de historial preservando el 404 JSON de /api</td><td>Deep link 200; /api/unknown → JSON 404</td></tr>
+          <tr><td>R-I18N-1</td><td>Paridad de claves de diccionarios UI (es ≡ en)</td><td>236/236 claves; falta de clave = error de tsc</td></tr>
+          <tr><td>R-I18N-2</td><td>Español neutro (sin voseo/Rioplatense) en toda la UI y plantillas</td><td>Scan de tokens prohibidos en ambos</td></tr>
+          <tr><td>R-I18N-3</td><td>Toggle ES/EN: default 'es', persistencia, backend-wins-on-boot</td><td>Pre-auth localStorage; post-auth PATCH</td></tr>
+          <tr><td>R-I18N-4</td><td>Mapeo de errores de API a mensajes localizados</td><td>Códigos desconocidos → fallback genérico</td></tr>
+          <tr><td>R-UI-FND-1</td><td>Login localizado con 401 idéntico</td><td>Mensaje único sin pistas de enumeración</td></tr>
+          <tr><td>R-UI-FND-2</td><td>Shell con sidebar por rol (9 módulos según la matriz)</td><td>Sweep de 5 roles exacto</td></tr>
+          <tr><td>R-UI-FND-3</td><td>Estados de carga/vacío/error y toasts localizados</td><td>Retry re-consulta</td></tr>
+          <tr><td>R-UI-FND-4</td><td>Idempotency-Key por envío de mutación</td><td>Doble click → 1 recurso</td></tr>
+          <tr><td>R-UI-DSH-1</td><td>Tarjetas de estado y KPIs</td><td>Fallo parcial no bloquea las demás</td></tr>
+          <tr><td>R-UI-DSH-2</td><td>Tarjeta de alertas de bajo stock</td><td>"Sin alertas de stock" cuando no hay</td></tr>
+          <tr><td>R-UI-DSH-3</td><td>Resumen de notificaciones recientes</td><td>Consistente con el badge</td></tr>
+          <tr><td>R-UI-DSH-4</td><td>Refresco on-demand sin recargar (stale-while-revalidating)</td><td>Fallo no borra datos previos</td></tr>
+          <tr><td>R-UI-USR-1</td><td>Lista de usuarios (solo admin)</td><td>Guard sin request</td></tr>
+          <tr><td>R-UI-USR-2</td><td>Crear/invitar usuario sin campo locale; contraseña nunca mostrada</td><td>Toast de invitación por correo</td></tr>
+          <tr><td>R-UI-USR-3</td><td>Editar rol + activar/desactivar; auto-desactivación bloqueada</td><td>Cero requests en auto-bloqueo</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details class="req-group">
+      <summary>NFRs, observabilidad, docs y producción (R-NFR · R-OBS · R-DOC · R-PROD · R-UI-NFR) <span class="count">27 requisitos</span></summary>
+      <table class="req-table">
+        <thead><tr><th>ID</th><th>Requisito</th><th>Medida / criterio</th></tr></thead>
+        <tbody>
+          <tr><td>R-NFR-1</td><td>Solo SQL parametrizado</td><td>Inyección inerte; intento no rompe la tabla</td></tr>
+          <tr><td>R-NFR-2</td><td>Secretos solo de env validado, redactados en logs</td><td>JWT_SECRET ≥32; scan sin literales</td></tr>
+          <tr><td>R-NFR-3</td><td>Quality gate: tsc estricto + cada requisito en ≥1 test</td><td>63/63 backend + 72/72 UI</td></tr>
+          <tr><td>R-NFR-4</td><td>Arquitectura: controllers ≤15 líneas; services sin express/pg</td><td>Acceso a DB solo en repositories</td></tr>
+          <tr><td>R-NFR-5</td><td>Disciplina JWT: verify + typ + exp; sin decode-only; hashes en BD</td><td>Scans de código</td></tr>
+          <tr><td>R-NFR-6</td><td>Sin N+1 (detalle de pedido ≤2 consultas)</td><td>Spy sobre el pool</td></tr>
+          <tr><td>R-OBS-1</td><td>GET /api/health público (ping DB)</td><td>200 ok / 503 degradado; HEALTHCHECK Docker</td></tr>
+          <tr><td>R-OBS-2</td><td>GET /api/status autenticado (version, uptime, db)</td><td>401 sin token</td></tr>
+          <tr><td>R-OBS-3</td><td>Logs pino JSON con redact (authorization, cookie, password, *.token)</td><td>Línea parseable por request</td></tr>
+          <tr><td>R-DOC-1</td><td>OpenAPI 3.1 generado de los DTOs zod (Swagger UI en /api/docs)</td><td>Regenerado al arrancar</td></tr>
+          <tr><td>R-DOC-2</td><td>Sin docs manuscritas</td><td>Sin openapi.json estático en src/</td></tr>
+          <tr><td>R-PROD-1</td><td>Docker multi-stage, non-root, HEALTHCHECK</td><td><code>id -u</code> ≠ 0 dentro del contenedor</td></tr>
+          <tr><td>R-PROD-2</td><td>Appliance autocontenido y offline</td><td>compose up completo sin servicios externos</td></tr>
+          <tr><td>R-PROD-3</td><td>CI con gate frontend (typecheck + vitest + build) antes de Docker</td><td>Fallo de UI falla el workflow</td></tr>
+          <tr><td>R-PROD-4</td><td>CD: GHCR + runbook Oracle Cloud Always Free</td><td>Tags v* publican imagen</td></tr>
+          <tr><td>R-PROD-5</td><td>Validación fail-fast de env al arrancar</td><td>Mensaje claro sin valores de secretos</td></tr>
+          <tr><td>R-PROD-6</td><td>Evidencia por iteración (docs/output-it&lt;N&gt;.txt)</td><td>7 backend + 6 UI</td></tr>
+          <tr><td>R-PROD-7</td><td>SPA React servida por el appliance en / con fallback</td><td>Flujos end-to-end desde la SPA</td></tr>
+          <tr><td>R-PROD-8</td><td>Repositorio business-operations-platform + dashboard de evidencia</td><td>Dashboard lista las 13 iteraciones</td></tr>
+          <tr><td>R-UI-NFR-1</td><td>TypeScript estricto en la UI (mismos flags que el backend)</td><td>Sin <code>any</code>; const-types</td></tr>
+          <tr><td>R-UI-NFR-2</td><td>Sin superficie XSS con datos de usuario</td><td>Sin dangerouslySetInnerHTML con datos API</td></tr>
+          <tr><td>R-UI-NFR-3</td><td>Sin secretos en el bundle del cliente</td><td>Scan de ui/dist</td></tr>
+          <tr><td>R-UI-NFR-4</td><td>React Compiler activo; sin useMemo/useCallback</td><td>Scan de código</td></tr>
+          <tr><td>R-UI-NFR-5</td><td>Code-splitting: governance lazy (login+dashboard ≤250 kB gzip)</td><td>132.53 kB gzip medido</td></tr>
+          <tr><td>R-UI-NFR-6</td><td>Contrato de tests frontend (vitest + RTL + jsdom); nombres prefijados R-</td><td>Cobertura de IDs 72/72</td></tr>
+          <tr><td>R-UI-NFR-7</td><td>Build, contenedor, CI y evidencia de la UI</td><td>ui/dist servido por el appliance</td></tr>
+          <tr><td>R-NOT-5 (mod)</td><td>Plantillas bilingües por tipo, renderizadas al emitir en el locale del receptor</td><td>Snapshot inmutable; sin secretos</td></tr>
+        </tbody>
+      </table>
+    </details>
+  </section>
+
+  <!-- ============ 4. ARQUITECTURA ============ -->
+  <section id="arquitectura">
+    <h2><span class="sec-num">3.</span>Estructuración de componentes y arquitectura</h2>
+    <p>
+      Monorepo npm con dos workspaces: <code>backend/</code> (API + worker en un solo paquete,
+      Node ≥22 con TypeScript nativo, sin paso de build) y <code>ui/</code> (SPA React 19 con
+      Vite 6). API-first: todo flujo se expone como endpoints con DTOs zod, y el frontend
+      consume exactamente el mismo contrato que genera la documentación OpenAPI.
+    </p>
+
+    <h3>Layout del monorepo</h3>
+<pre>
+capstone/
+├── backend/                # paquete único: server.ts (API) + worker.ts (jobs)
+│   ├── app.ts              # wiring + orden de middlewares (API → static → SPA fallback → 404 → error)
+│   ├── config/             # zod env fail-fast (R-PROD-5)
+│   ├── db/                 # pool + migraciones 001–007 (RBAC, CRM, catálogo, órdenes, stock, audit, locale)
+│   ├── modules/            # auth · crm · orders · stock · notifications · jobs · audit · observability
+│   │   └─ routes → controller (≤15 líneas) → service (sin express/pg) → repository (SQL parametrizado) → dto
+│   ├── jobs/               # queues · handlers · mailer · templates (bilingües)
+│   ├── permissions/        # registry const: 5 roles × 19 permisos (paridad con SQL)
+│   ├── openapi/            # zod → OpenAPI 3.1 (regenerado al arrancar, Swagger UI)
+│   ├── middleware/         # auth · requestLogger (pino redact) · spaFallback
+│   └── lib/                # decimal.ts (D13 exacto), pgBossTx (enqueue atómico), etc.
+├── ui/                     # SPA React 19 (Vite 6 + React Compiler + TS estricto)
+│   └── src/ api · auth · components · hooks · i18n (es/en) · modules · pages · styles
+├── Dockerfile              # multi-stage (build = gate de calidad; runtime sirve ui/dist), non-root, HEALTHCHECK
+├── docker-compose.yml      # db → migrate → api + worker + mailpit
+├── .github/workflows/      # ci.yml (push/PR) + cd.yml (tags v* → GHCR)
+└── docs/                   # evidencia (output-*.txt), runbook, dashboard, spikes
+</pre>
+
+    <h3>Flujo de una request y de un evento</h3>
+<pre>
+REQUEST:  HTTP → routes → controller (≤15 líneas) → service (framework-free)
+                     → repository (SQL $1,$2 parametrizado) → PostgreSQL 16
+                     └─ dto zod (fail-fast) → OpenAPI 3.1 → Swagger UI /api/docs
+
+EVENTO (confirmación atómica de pedido, R-ORD-5 / §3.1):
+  transacción única:
+    order lock → advisory locks por producto (orden ascendente, sin deadlocks)
+    → valida stock → inserta movimientos out (inmutables)
+    → escribe auditoría → crea notificaciones in-app → encola emails
+  commit-all o rollback-all. Sin estados parciales observables.
+
+WORKER (worker.ts):
+  pg-boss <code>notification.send</code> (retryLimit 5, backoff, DLQ=failed)
+    → lee el snapshot almacenado de la notificación (nunca re-renderiza)
+    → nodemailer → mailpit (dev) / SMTP real (prod)
+</pre>
+
+    <h3>Estructura de la SPA React</h3>
+    <div class="cols">
+      <div class="card">
+        <h3>Capas</h3>
+        <ul>
+          <li><b>api/</b> — cliente fetch con refresh single-flight acotado, módulos tipados por endpoint, tipos de contrato.</li>
+          <li><b>auth/</b> — AuthContext (token en memoria), PermissionsRoute y RoleGate, mirror RBAC del backend.</li>
+          <li><b>components/</b> — Layout, Sidebar, ProtectedRoute, DataTable, Modal, ToastProvider, MoneyText, ConfirmButton, estados de carga/vacío/error.</li>
+          <li><b>i18n/</b> — diccionarios const es/en (236/236 claves), useTranslation, localizeError, formatters D13 float-free.</li>
+          <li><b>pages/</b> — Login, Dashboard, Customers, Products, Stock, Orders, OrderDetail, Notifications, Audit, Users, Jobs (governance lazy).</li>
+          <li><b>hooks/</b> — useResource, usePagination, useDebouncedValue.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Áreas de la base de datos</h3>
+        <ul>
+          <li><b>RBAC</b> — roles, permissions, role_permissions, users (+locale).</li>
+          <li><b>CRM</b> — customers (status active/inactive).</li>
+          <li><b>Catálogo</b> — products, warehouses.</li>
+          <li><b>Órdenes</b> — orders, order_items (snapshot de precio/nombre).</li>
+          <li><b>Stock</b> — stock_movements (inmutable, trigger-blocked), vista stock_levels derivada.</li>
+          <li><b>Notificaciones</b> — notifications (7 tipos, snapshot bilingüe + locale).</li>
+          <li><b>Auditoría</b> — audit (append-only, trigger-blocked).</li>
+          <li><b>Jobs</b> — esquema pgboss (job, queue).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. FUNDAMENTACIÓN ============ -->
+  <section id="fundamentacion">
+    <h2><span class="sec-num">4.</span>Fundamentación aplicada al proyecto</h2>
+    <p>
+      Cada elección tecnológica responde a una necesidad concreta del proyecto, no a moda.
+      La tabla relaciona tecnología, decisión de diseño y motivo ligado a los requisitos.
+    </p>
+    <table>
+      <thead><tr><th>Tecnología</th><th>Decisión</th><th>Fundamentación</th></tr></thead>
+      <tbody>
+        <tr><td>Node ≥22 con TypeScript nativo</td><td>Sin paso de build en el backend</td><td>Mismo lenguaje en API, worker y tests; runtime moderno con soporte nativo de tipos; menos superficie de tooling.</td></tr>
+        <tr><td>Express 5</td><td>Framework de API mínimo y maduro</td><td>Maduro, extenso ecosistema y control total del orden de middlewares; el fallback SPA se implementa como middleware (no app.get('*')) para evitar trampas de path-to-regexp v8.</td></tr>
+        <tr><td>zod v4 fail-fast</td><td>Validación de env al arrancar y de DTOs en cada request</td><td>Env inválido → salida no-cero sin ecos de secretos (R-PROD-5); los DTOs son la fuente única de verdad que alimenta OpenAPI (R-DOC-1).</td></tr>
+        <tr><td>SQL crudo parametrizado + repository pattern</td><td>Acceso a datos explícito, sin ORM</td><td>Control total sobre transacciones y advisory locks (R-ORD-5, R-STK-5); inyección inerte por construcción (R-NFR-1); DB solo en repositories (R-NFR-4); N+1 evitable con joins medidos (R-NFR-6).</td></tr>
+        <tr><td>pg-boss v12</td><td>Cola durable en el mismo Postgres</td><td>Cero infraestructura extra (sin Redis); retry/backoff/dead-letter nativos; y sobre todo el enqueue atómico dentro de la transacción (spike-validado) que da exactly-once sin outbox ni poller (R-NOT-6, R-JOB-4).</td></tr>
+        <tr><td>D13, matemática decimal exacta</td><td>NUMERIC(13,2) + strings, jamás float JS</td><td>El dinero no tolera 0.1 + 0.2 = 0.30000000000000004; el total se calcula en SQL/matemática de strings y se serializa con 2 decimales exactos (R-ORD-2).</td></tr>
+        <tr><td>nodemailer, worker-only</td><td>Solo el worker envía correos</td><td>El request path no puede bloquearse ni fallar por SMTP; un fallo de envío no afecta la transacción de dominio ya commiteada (R-NOT-4); enforced por scan (R-NOT-3).</td></tr>
+        <tr><td>OpenAPI 3.1 desde DTOs zod</td><td>Docs generadas, nunca manuscritas</td><td>La documentación no puede desincronizarse del código; el delta backend regenera /api/docs automáticamente (R-DOC-1, R-DOC-2).</td></tr>
+        <tr><td>pino con redact</td><td>Logs JSON estructurados, sin secretos</td><td>Una línea parseable por request con requestId y duración; paths redactados para authorization, cookie, password y tokens (R-OBS-3, R-NFR-2).</td></tr>
+        <tr><td>React 19 + Vite 6 + React Compiler</td><td>SPA moderna con memoización automática</td><td>El compilador elimina la necesidad de useMemo/useCallback (R-UI-NFR-4); Vite da builds rápidos y code-splitting por ruta para gobernanza (R-UI-NFR-5).</td></tr>
+        <tr><td>TypeScript estricto en ambos workspaces</td><td>noUncheckedIndexedAccess, exactOptionalPropertyTypes, erasableSyntaxOnly</td><td>Los flags más estrictos atrapan bugs de índices y opcionales en tiempo de compilación; el const-types pattern deriva uniones sin string literals sueltos (R-UI-NFR-1).</td></tr>
+        <tr><td>Docker multi-stage + CI/CD → GHCR</td><td>Appliance autocontenido, non-root, con HEALTHCHECK</td><td>El build de Docker es el gate de calidad final (typecheck + tests + build de UI antes de empaquetar); la imagen sirve API + SPA en un solo contenedor, verificable offline (R-PROD-1/2/3) y publicada gratis en GHCR (R-PROD-4).</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 6. AXIOMAS ============ -->
+  <section id="axiomas">
+    <h2><span class="sec-num">5.</span>Axiomas</h2>
+    <p>Principios innegociables que estructuraron cada decisión, extraídos de la spec y el diseño.</p>
+    <ol class="numbered">
+      <li><b>El dinero nunca vive en un float.</b> Todo monto es NUMERIC(13,2) en BD, string con 2 decimales en la API y matemática exacta en SQL/strings. Un float es un bug de facturación esperando pasar.</li>
+      <li><b>El correo solo sale del worker.</b> El request path jamás llama al mailer; un fallo SMTP no puede tocar la transacción de dominio. Enforced por scan.</li>
+      <li><b>Nada de polling.</b> Los eventos (order_confirmed, low_stock) nacen dentro de su propia transacción; no existe cron ni setInterval de barrido.</li>
+      <li><b>Encolado en la misma transacción.</b> El job se inserta en pgboss dentro del commit del negocio; rollback → cero jobs huérfanos. Sin outbox, sin poller.</li>
+      <li><b>Confirmación atómica, todo o nada.</b> Lock de pedido + advisory locks por producto en orden ascendente + movimientos + auditoría + notificaciones + emails: o se commitea todo o se revierte todo, sin estados parciales observables.</li>
+      <li><b>Auditoría append-only y en la misma transacción.</b> Las filas de auditoría no se borran ni se editan (trigger), y acompañan el commit del negocio que las generó.</li>
+      <li><b>Español neutro obligatorio.</b> Sin voseo ni expresiones rioplatenses en UI ni plantillas; un gate de tokens prohibidos lo hace cumplir en ambos diccionarios.</li>
+      <li><b>Idempotencia por clave en cada mutación.</b> Todo submit que crea o mueve recursos lleva Idempotency-Key; el replay devuelve el resultado original, nunca duplica.</li>
+      <li><b>Secretos solo en env, redactados en todo log.</b> JWT_SECRET ≥32, credenciales SMTP jamás en el código ni en el bundle del cliente.</li>
+      <li><b>Strict TDD con tests referenciados por requisito.</b> Todo requisito tiene un escenario y un test con su ID (R-XXX-N); el gate de cobertura impide código sin contrato.</li>
+      <li><b>El token de acceso vive solo en memoria.</b> Nunca en localStorage ni cookies; el refresh usa cookie httpOnly y la sesión se restaura de forma acotada (1 refresh + 1 reintento).</li>
+      <li><b>RBAC verificado dos veces.</b> La UI es un espejo del registry del backend, y un test de paridad importa el registry real: si el backend cambia permisos, el test de la UI falla.</li>
+    </ol>
+  </section>
+
+  <!-- ============ 7. LECCIONES ============ -->
+  <section id="lecciones">
+    <h2><span class="sec-num">6.</span>Lecciones aprendidas</h2>
+    <p>
+      Aprendizajes reales del viaje de construcción, documentados en el verify-report y en los
+      spikes (<a href="../spike-pgboss-tx.md">pg-boss tx</a> y <a href="../spike-vitest-rtl.md">vitest+RTL</a>).
+    </p>
+    <ol class="numbered">
+      <li><b>El enqueue atómico en la misma transacción existe y funciona.</b> <code>boss.send(queue, data, { db: { executeSql } })</code> con adapter de transacción inserta en <code>pgboss.job</code> dentro del <code>withTransaction</code>: rollback → el job desaparece. Esto eliminó la necesidad de outbox o poller (ADR-2 validado).</li>
+      <li><b>El request path necesita un boss NUNCA iniciado sobre un pool compartido.</b> Un boss iniciado corre timers de mantenimiento; <code>stop()</code> cierra su pool. La cola además debe existir antes del send, si no lanza "Queue does not exist".</li>
+      <li><b>RTL no hace auto-cleanup con vitest <code>globals:false</code>.</b> La primera corrida falló por DOM filtrado entre tests; la solución fue <code>afterEach(() =&gt; cleanup())</code> en el setup. Detalle pequeño, efecto grande en suites de componentes.</li>
+      <li><b>npm 11 gatea los postinstall.</b> esbuild quedó sin binario al hacer npm install; hubo que aprobar scripts (<code>npm install-scripts approve esbuild</code>). Para CI/Docker se añadió <code>--allow-scripts</code>. Y <code>@vitejs/plugin-react</code> debe pinarse en 4.7.0: la línea 6.x exige Vite 8.</li>
+      <li><b>La paridad RBAC se logra importando el registry real del backend.</b> El test de la UI importa <code>backend/src/permissions/registry.ts</code> directamente (módulo const puro) y hace deep-equality con el mirror. Más fuerte que copiar la matriz a mano.</li>
+      <li><b>El orden de los gates importa: dist-scan.</b> El scan de secretos sobre <code>ui/dist</code> (R-UI-NFR-3) se vuelve vacuo si vitest corre antes de <code>vite build</code> en CI/Docker (early-return). Lección: build antes de test, o separar el scan a un paso post-build. El scan de fuente sí corre en todos lados.</li>
+      <li><b>Los gates de paridad i18n son baratos y potentes.</b> 236/236 claves por locale con fallo de compilación si falta una (<code>keyof typeof</code>), test de paridad bidireccional, scan de tokens prohibidos (vos/tenés/querés/sos/andá/che/dale) sobre UI y plantillas, y render al emitir con snapshot inmutable para que el worker nunca re-renderice.</li>
+      <li><b>El regex de cobertura debe usar la misma convención que los IDs.</b> El regex original de R-UI-NFR-6 no matcheaba IDs de dos segmentos como <code>R-UI-CRM-1</code>, así que el gate pasaba en silencio. Se endureció a multi-segmento y se añadió una lista estática para que el mismo gate corra dentro del contexto de build de Docker (donde openspec/ no existe).</li>
+      <li><b>La spec se equivoca a veces; la verificación la corrige.</b> "11 módulos" vs la matriz de 9 (bodegas plegadas en Stock); el transfer devuelve <code>NEGATIVE_STOCK</code> y no <code>INSUFFICIENT_STOCK</code> (el outcome UX es idéntico porque localizeError mapea ambos); y la lista de pedidos muestra <code>#customerId</code> porque el DTO no trae nombre de cliente.</li>
+      <li><b>vitest serial para determinismo.</b> fileParallelism:false + timeout 15s convirtieron una suite flaky en una gate determinista (217/217); los tests de concurrencia (R-ORD-5, R-STK-5) corren contra Postgres real, no contra mocks.</li>
+      <li><b>Dinero float-free también en el front.</b> Mostrar "12,50 €" / "$12.50" se hace formateando la parte entera del string D13 con Intl.NumberFormat (sin tocar floats) y el round-trip de entrada normaliza la escala a 2 decimales. Nunca Number() sobre dinero.</li>
+    </ol>
+  </section>
+
+  <!-- ============ 8. MEJORAS ============ -->
+  <section id="mejoras">
+    <h2><span class="sec-num">7.</span>Posibles mejoras y opciones descartadas</h2>
+    <div class="cols">
+      <div class="card">
+        <h3>Mejoras futuras (post-v1)</h3>
+        <ul>
+          <li><b>S1 · Nombre del cliente en pedidos:</b> añadir <code>customerName</code> aditivo a <code>OrderListItemDto</code>; hoy la columna muestra <code>#customerId</code> (el id es autoritativo, pero el nombre puliría la UX).</li>
+          <li><b>S2 · Nombres de rol localizados:</b> claves i18n para los 5 roles en el chip de usuario (hoy muestra identificadores técnicos).</li>
+          <li><b>S3 · Toast para el fallo del toggle de idioma:</b> el PATCH de locale falla en silencio (se autocura con backend-wins-on-boot), pero un toast lo haría más claro.</li>
+          <li><b>F1 · Orden del gate de dist:</b> reordenar CI/Docker para build antes de vitest y que el scan de secretos de ui/dist no sea vacuo.</li>
+          <li><b>F3 · Comentario stale del Dockerfile:</b> aclarar que openspec/ no está en el contexto de build.</li>
+          <li><b>E2E con Playwright:</b> diferido de forma deliberada; complementaría vitest/RTL con flujos de navegador reales.</li>
+          <li><b>Websockets/SSE para notificaciones en vivo:</b> hoy la SPA usa refresco on-demand y el badge se actualiza en navegación; un canal en vivo lo haría instantáneo (descartado en v1, locked).</li>
+          <li><b>Ventana de dedupe para low_stock:</b> hoy cada cruce de umbral notifica; una ventana de tiempo evitaría ruido en operaciones muy activas.</li>
+          <li><b>Rate limiting y cache:</b> out of scope en v1 (locked), pero natural como siguiente capa de hardening para producción compartida.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Opciones descartadas (con motivo)</h3>
+        <ul>
+          <li><b>TanStack Query:</b> descartado — el estado es por-página con refresco on-demand; un hook de ~60 líneas (useResource) lo cubre con cero dependencias.</li>
+          <li><b>Redux / Zustand:</b> descartados — el estado global es diminuto (usuario, locale, toasts); contexto de React basta.</li>
+          <li><b>i18next / react-intl:</b> descartados — 2 locales y claves planas; diccionarios const dan paridad en compilación y cero dependencias de cadena de suministro y bundle.</li>
+          <li><b>Archivos de strings por componente:</b> descartados — riesgo de drift; el catálogo central se congela en it2 y solo crece por revisión.</li>
+          <li><b>Locale por Accept-Language en plantillas:</b> descartado — los destinatarios de email no envían headers; gana el locale almacenado del usuario.</li>
+          <li><b>Locale por contexto del evento:</b> descartado — inconsistente entre destinatarios; se renderiza por receptor.</li>
+          <li><b>Contenedor nginx/estático separado:</b> descartado — el appliance es de un solo contenedor; express sirve ui/dist.</li>
+          <li><b>Build servido por CDN:</b> descartado — requisito offline del appliance.</li>
+          <li><b>Redis / BullMQ:</b> descartados (out of scope, locked) — pg-boss usa el mismo Postgres, cero infra adicional.</li>
+          <li><b>Gate de cobertura de código:</b> descartado (out of scope, locked) — el gate es cobertura de IDs de requisitos, que mide lo que importa al contrato.</li>
+          <li><b>useMemo/useCallback:</b> prohibidos — el React Compiler los hace innecesarios (R-UI-NFR-4).</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 9. DOCUMENTACIÓN TÉCNICA ============ -->
+  <section id="documentacion">
+    <h2><span class="sec-num">8.</span>Documentación técnica</h2>
+
+    <h3>Stack resumido</h3>
+    <table>
+      <thead><tr><th>Capa</th><th>Elección</th></tr></thead>
+      <tbody>
+        <tr><td>Runtime</td><td>Node ≥22 (TypeScript nativo, sin build step)</td></tr>
+        <tr><td>API</td><td>Express 5 · zod v4 (fail-fast env + DTOs)</td></tr>
+        <tr><td>Frontend</td><td>React 19 · Vite 6 · react-router-dom 7 · React Compiler · TS estricto</td></tr>
+        <tr><td>i18n</td><td>Diccionarios const ES/EN, paridad + gates de español neutro, locale por usuario</td></tr>
+        <tr><td>Base de datos</td><td>PostgreSQL 16 (SQL crudo parametrizado, repository pattern)</td></tr>
+        <tr><td>Dinero</td><td>D13 exacto (lib/decimal.ts, nunca float JS)</td></tr>
+        <tr><td>Jobs</td><td>pg-boss v12 — durable, retry/backoff/dead-letter, enqueue same-tx</td></tr>
+        <tr><td>Email</td><td>nodemailer, worker-only (enforced por scan)</td></tr>
+        <tr><td>Docs</td><td>OpenAPI 3.1 desde los DTOs zod (Swagger UI autocontenido en /api/docs)</td></tr>
+        <tr><td>Observabilidad</td><td>pino JSON logs (redact) · /api/health (público) + /api/status (authed)</td></tr>
+        <tr><td>Entrega</td><td>Docker multi-stage (non-root, HEALTHCHECK, ui/dist horneado) · compose · CI/CD → GHCR</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Resumen de endpoints de la API</h3>
+    <details class="req-group">
+      <summary>Tabla de superficie de la API (método · ruta · permiso)</summary>
+      <table class="req-table">
+        <thead><tr><th>Método</th><th>Ruta</th><th>Permiso</th><th>Notas</th></tr></thead>
+        <tbody>
+          <tr><td>POST</td><td>/api/auth/login</td><td>público</td><td>{user, accessToken} + refresh cookie</td></tr>
+          <tr><td>POST</td><td>/api/auth/refresh</td><td>público (cookie)</td><td>Rota el refresh token</td></tr>
+          <tr><td>POST</td><td>/api/auth/logout</td><td>auth</td><td>204 idempotente</td></tr>
+          <tr><td>GET / PATCH</td><td>/api/auth/me</td><td>auth</td><td>PATCH {locale} auto-servicio</td></tr>
+          <tr><td>POST / GET / PATCH</td><td>/api/users (/:id)</td><td>auth:user_*</td><td>Solo admin</td></tr>
+          <tr><td>POST / GET / PATCH</td><td>/api/customers (/:id)</td><td>crm:customer_*</td><td>Buscar, paginar, status</td></tr>
+          <tr><td>POST / GET / PATCH</td><td>/api/orders (/:id, /:id/confirm, /:id/cancel)</td><td>orders:order_*</td><td>Idempotency-Key en create/confirm</td></tr>
+          <tr><td>POST / GET / PATCH</td><td>/api/products (/:id)</td><td>stock:product_manage / stock:stock_read</td><td>Deactivate nunca borra</td></tr>
+          <tr><td>GET / POST / PATCH / DELETE</td><td>/api/warehouses (/:id)</td><td>stock:product_manage / stock:stock_read</td><td>DELETE en uso → 409 WAREHOUSE_IN_USE</td></tr>
+          <tr><td>GET / POST</td><td>/api/stock (/:…, /movements, /transfers)</td><td>stock:stock_read / adjust / transfer</td><td>GET /api/stock devuelve {items} (desviación documentada)</td></tr>
+          <tr><td>GET / POST</td><td>/api/notifications (/:id/read)</td><td>notification:read / update</td><td>Owner-scoped</td></tr>
+          <tr><td>GET / POST</td><td>/api/jobs (/:id/retry)</td><td>jobs:job_read / job_retry</td><td>Filtros server-side</td></tr>
+          <tr><td>GET</td><td>/api/audit</td><td>audit:read</td><td>Admin/auditor</td></tr>
+          <tr><td>GET</td><td>/api/health</td><td>público</td><td>200/503, HEALTHCHECK</td></tr>
+          <tr><td>GET</td><td>/api/status</td><td>auth</td><td>version, uptime, db</td></tr>
+          <tr><td>GET</td><td>/api/docs</td><td>público</td><td>Swagger UI generado</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <h3>Modelo de seguridad</h3>
+    <ul>
+      <li><b>Auth:</b> access token JWT 15 min (verify + typ + exp); refresh 7 días, SHA-256 en reposo, cookie httpOnly firmada (Secure en producción), rotación con detección de reuso (invalida la familia completa).</li>
+      <li><b>RBAC:</b> 5 roles (admin, manager, operator, viewer, auditor) × 19 permisos; chequeo por request contra la BD; registro TS con paridad SQL testeada.</li>
+      <li><b>Contraseñas:</b> política 12–128 con ≥1 letra y ≥1 dígito; bcrypt cost 10.</li>
+      <li><b>Frontend:</b> token solo en memoria; 401 → refresh single-flight → 1 reintento → logout acotado; guards de ruta y acción.</li>
+      <li><b>Secrets:</b> env-only validado al arrancar; pino redact (authorization, cookie, password, *.token, SMTP); sin secretos en el bundle.</li>
+    </ul>
+
+    <h3>Observabilidad y jobs</h3>
+    <ul>
+      <li><b>/api/health</b> público (ping DB) usado por el HEALTHCHECK de Docker; <b>/api/status</b> autenticado con colas.</li>
+      <li><b>pino</b>: una línea JSON por request (método, path, status, durationMs, requestId), redactada.</li>
+      <li><b>Jobs:</b> cola <code>notification.send</code>, retryLimit 5 con backoff, dead-letter a failed, reintento manual por API/UI, auditoría del ciclo de vida.</li>
+      <li><b>Notificaciones:</b> 7 tipos con matriz canal-por-tipo (in-app/email); plantillas bilingües; snapshot inmutable renderizado al emitir; SMTP solo en worker.</li>
+    </ul>
+  </section>
+
+  <!-- ============ 10. GUÍA DE USO ============ -->
+  <section id="guia">
+    <h2><span class="sec-num">9.</span>Guía de uso para el usuario</h2>
+
+    <h3>Ejecutar localmente (appliance completo, offline)</h3>
+    <pre>docker compose up -d --build</pre>
+    <ul>
+      <li>SPA React → <code>http://localhost:3000</code> (login en /; datos demo sembrados por init/)</li>
+      <li>Swagger UI → <code>http://localhost:3000/api/docs</code></li>
+      <li>Health → <code>http://localhost:3000/api/health</code></li>
+      <li>Mailpit (SMTP de desarrollo) → <code>http://localhost:8025</code></li>
+    </ul>
+    <p class="note">
+      Los valores por defecto del compose (postgres:postgres, secretos dev-only) son solo para
+      desarrollo. Para cualquier entorno compartido o de producción, sobrescribe todas las
+      variables con un <code>.env</code> real — ver el runbook.
+    </p>
+    <p>Crear el primer admin (credenciales dev — cambiar antes de uso real):</p>
+    <pre>curl -X POST http://localhost:3000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","fullName":"Admin","email":"admin@example.com","role":"admin","password":"&lt;12+ chars, letra+dígito&gt;"}'
+
+curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"&lt;contraseña&gt;"}'</pre>
+    <p>
+      Desarrollo local sin Docker para la API: <code>docker compose up -d db mailpit</code> →
+      <code>npm ci</code> (workspaces raíz) → <code>npm run dev -w backend</code> +
+      <code>npm run dev -w ui</code> (SPA en :5173 con proxy /api hacia :3000).
+    </p>
+
+    <h3>Usar la SPA</h3>
+    <p>
+      Login con usuario/contraseña. El sistema tiene <b>5 roles</b>: <b>admin</b> (todo: usuarios,
+      auditoría, jobs, productos/bodegas), <b>manager</b> (operaciones + productos/bodegas + jobs),
+      <b>operator</b> (clientes, pedidos, ajuste de stock; sin transferencias), <b>viewer</b>
+      (solo lectura) y <b>auditor</b> (lectura + auditoría). El sidebar y los botones reflejan el
+      rol en cada sesión; el idioma se alterna con el toggle ES/EN (persistente).
+    </p>
+    <ul>
+      <li><b>Dashboard:</b> estado del sistema, KPIs, alertas de bajo stock, notificaciones recientes y refresco on-demand.</li>
+      <li><b>Clientes / Productos / Bodegas (CRM):</b> CRUD con búsqueda, paginación y estados; los inactivos nunca se borran.</li>
+      <li><b>Stock:</b> niveles con insignia de stock bajo, historial de movimientos, ajustar (qty firmada + motivo) y transferir (from ≠ to).</li>
+      <li><b>Pedidos:</b> crear con editor de líneas, confirmar (confirmación atómica, UI optimista con rollback limpio ante 409) y cancelar con motivo.</li>
+      <li><b>Notificaciones:</b> listar las propias, filtrar no leídas, marcar leídas; badge en el sidebar.</li>
+      <li><b>Gobernanza:</b> auditoría (admin/auditor), usuarios (admin), jobs con reintento (manager+).</li>
+    </ul>
+
+    <h3>Desplegar</h3>
+    <ul>
+      <li><b>CI/CD:</b> push/PR corre typecheck + tests (backend y UI) + build antes del build de Docker; los tags <code>v*</code> publican la imagen en GitHub Container Registry (<code>ghcr.io/&lt;owner&gt;/business-operations-platform</code>).</li>
+      <li><b>Oracle Cloud Always Free ($0):</b> runbook completo con comandos exactos en <a href="../deploy-oracle.md">docs/deploy-oracle.md</a> — VM Ampere A1.Flex, Docker + compose, env con secretos generados (jamás commiteados), pull de GHCR y compose up; incluye backup con pg_dump y procedimiento de upgrade/rollback.</li>
+      <li><b>Secretos:</b> solo por env en runtime, nunca horneados en la imagen; <code>.env.example</code> documenta cada variable con valores en blanco.</li>
+    </ul>
+  </section>
+
+  <!-- ============ 11. EVIDENCIA ============ -->
+  <section id="evidencia">
+    <h2><span class="sec-num">10.</span>Evidencia</h2>
+    <div class="stats">
+      <div class="stat"><div class="num">256/256</div><div class="label">tests backend (58 suites)</div></div>
+      <div class="stat"><div class="num">217/217</div><div class="label">tests UI (18 archivos, serial)</div></div>
+      <div class="stat"><div class="num">72/72</div><div class="label">IDs de requisitos cubiertos</div></div>
+      <div class="stat"><div class="num">0</div><div class="label">fallos tsc (ambos workspaces)</div></div>
+      <div class="stat accent"><div class="num">132.53 kB</div><div class="label">chunk inicial gzip (≤250 kB)</div></div>
+      <div class="stat"><div class="num">7+6</div><div class="label">iteraciones TDD (backend + UI)</div></div>
+    </div>
+    <ul>
+      <li><b>Backend:</b> <code>node --test</code> + supertest contra Postgres real — 256/256 verde, 0 fallos, 0 skipped. Progresión por iteración: it1 63 → it2/3 119 → it4 157 → it5 186 → it6/7 229 → final (con delta i18n) 256.</li>
+      <li><b>UI:</b> vitest + React Testing Library (jsdom, mock fetch como única costura) — 217/217 verde en 18 archivos. Progresión: it2 84 → it3 126 → it4 155 → it5 195 → it6 217.</li>
+      <li><b>Typecheck:</b> tsc --noEmit estricto exit 0 en backend y UI.</li>
+      <li><b>Build:</b> chunk inicial 132.53 kB gzip (límite R-UI-NFR-5: 250 kB); governance lazy: JobsPage 2.60 / AuditPage 2.52 / UsersPage 3.13 kB gzip.</li>
+      <li><b>Appliance Docker en vivo:</b> / sirve la SPA React; /api/docs 200; deep link /orders/42 200 (fallback); /assets/* static wins; /api/does-not-exist → JSON 404; /api/health ok.</li>
+      <li><b>Cobertura de requisitos:</b> 72/72 IDs del cambio capstone-ui (scan dinámico ≡ lista estática); gate backend 63/63 de v1; i18n 236/236 claves por locale con cero tokens prohibidos.</li>
+      <li><b>Seguridad (lente code-auditor):</b> token solo en memoria (scan de storage), sin secretos en bundle (scan de fuente), sin dangerouslySetInnerHTML con datos de API, sin any, paridad RBAC por import directo del registry, español neutro verificado.</li>
+    </ul>
+    <p>
+      Dashboard de evidencia detallado con las 13 iteraciones, enlaces a cada output y artefactos
+      (spikes y runbook): <a href="../evidence/">../evidence/</a>. Evidencia por iteración:
+      <a href="../output-it1.txt">it1</a> · <a href="../output-it2.txt">it2</a> ·
+      <a href="../output-it3.txt">it3</a> · <a href="../output-it4.txt">it4</a> ·
+      <a href="../output-it5.txt">it5</a> · <a href="../output-it6.txt">it6</a> ·
+      <a href="../output-it7.txt">it7</a> · <a href="../output-ui-it1.txt">ui-it1</a> ·
+      <a href="../output-ui-it2.txt">ui-it2</a> · <a href="../output-ui-it3.txt">ui-it3</a> ·
+      <a href="../output-ui-it4.txt">ui-it4</a> · <a href="../output-ui-it5.txt">ui-it5</a> ·
+      <a href="../output-ui-it6.txt">ui-it6</a>. Resultado de verificación: <b>PASS WITH WARNINGS</b>
+      (48/48 tareas, 33/33 desviaciones aceptadas, 0 críticas).
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="foot-inner">
+    <p>
+      <b>Business Operations Platform (BOP v1)</b> · Capstone de la Temporada 1 ·
+      Repositorio <code>business-operations-platform</code> · Contrato v2 fusionado (122 requisitos, spec de 1103 líneas).
+    </p>
+    <p>
+      Construido con strict TDD (requirement-referenced tests) y evidencia por iteración ·
+      Dashboard de publicación generado con el patrón dashboard-pages (un solo HTML autocontenido,
+      cero dependencias externas, offline-ready para GitHub Pages) · Español neutro (sin voseo).
+    </p>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    "use strict";
+
+    // Navegación: resaltar la sección activa (scroll spy)
+    var links = Array.prototype.slice.call(document.querySelectorAll("#topnav a"));
+    var map = {};
+    links.forEach(function (l) {
+      var id = l.getAttribute("href").slice(1);
+      var el = document.getElementById(id);
+      if (el) map[id] = l;
+    });
+    var sections = Object.keys(map).map(function (id) { return document.getElementById(id); });
+
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            links.forEach(function (l) { l.classList.remove("active"); });
+            var ln = map[entry.target.id];
+            if (ln) ln.classList.add("active");
+          }
+        });
+      }, { rootMargin: "-40% 0px -55% 0px", threshold: 0 });
+      sections.forEach(function (s) { if (s) io.observe(s); });
+    }
+
+    // Filtro de requisitos: oculta filas que no coincidan (ID o texto)
+    var input = document.getElementById("reqFilter");
+    if (input) {
+      input.addEventListener("input", function () {
+        var q = input.value.trim().toLowerCase();
+        var tables = Array.prototype.slice.call(document.querySelectorAll(".req-table"));
+        tables.forEach(function (t) {
+          var rows = Array.prototype.slice.call(t.querySelectorAll("tbody tr"));
+          var visible = 0;
+          rows.forEach(function (r) {
+            var match = !q || r.textContent.toLowerCase().indexOf(q) !== -1;
+            r.classList.toggle("hid", !match);
+            if (match) visible++;
+          });
+          // Sin coincidencias en un grupo: dejar el details cerrado no es crítico;
+          // marcamos el grupo con un título visible solo si tiene filas.
+          var grp = t.closest("details.req-group");
+          if (grp) {
+            var count = grp.querySelector("summary .count");
+            if (count) count.textContent = visible + " resultados";
+          }
+        });
+      });
+    }
+  })();
+</script>
+</body>
+</html>

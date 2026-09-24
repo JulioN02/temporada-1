@@ -10,6 +10,10 @@ with strict TDD (requirement-referenced tests, evidence per iteration).
 > inventario, pedidos y notificaciones." — API-first, single backend package, two
 > entrypoints (`server.ts` API + `worker.ts` jobs), one React SPA workspace.
 
+**Publicación:** [Repo dedicado](https://github.com/JulioN02/business-operations-platform) ·
+[Dashboard de publicación](https://julion02.github.io/business-operations-platform/) ·
+[Evidencia](https://julion02.github.io/business-operations-platform/evidence/)
+
 ---
 
 ## Stack
@@ -93,7 +97,8 @@ lazy-chunked, requirement-ID coverage scan (R-UI-NFR-1..7).
 
 ## Evidence
 
-- **Dashboard**: [`docs/evidence/`](docs/evidence/) — 7 backend iterations + 6 capstone-ui iterations, green, links to per-iteration evidence (R-PROD-6/8, R-UI-NFR-7)
+- **Dashboard de publicación**: [`docs/dashboard/`](docs/dashboard/) — proyecto completo: problema, requisitos, arquitectura, fundamentación, axiomas, lecciones, mejoras, documentación técnica y guía de uso (autocontenido, offline-ready) · publicado en [GitHub Pages](https://julion02.github.io/business-operations-platform/)
+- **Dashboard de evidencia**: [`docs/evidence/`](docs/evidence/) — 7 backend iterations + 6 capstone-ui iterations, green, links to per-iteration evidence (R-PROD-6/8, R-UI-NFR-7)
 - Backend iterations: `docs/output-it1.txt` … `docs/output-it7.txt`
 - UI iterations: `docs/output-ui-it1.txt` … `docs/output-ui-it6.txt` (suite counts + requirement IDs + demo commands)
 - Spikes: [`docs/spike-pgboss-tx.md`](docs/spike-pgboss-tx.md) (same-tx enqueue), [`docs/spike-vitest-rtl.md`](docs/spike-vitest-rtl.md) (first vitest+RTL run)
@@ -129,4 +134,4 @@ capstone/
 
 ---
 
-*Repository: `business-operations-platform` · Capstone Temporada 1 · Built with strict TDD, evidence per iteration.*
+*Repository: [`JulioN02/business-operations-platform`](https://github.com/JulioN02/business-operations-platform) · Capstone Temporada 1 · Built with strict TDD, evidence per iteration.*
