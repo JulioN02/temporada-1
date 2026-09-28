@@ -27,9 +27,17 @@ pedidos, notificaciones y auditoría en un solo appliance:
   auditoría → notificaciones → emails — todo o nada, sin estados parciales.
 - **Ledger de stock inmutable** con niveles derivados (nunca un contador) y eventos
   de bajo stock **sin polling**.
-- **Auditoría append-only** en la misma transacción de cada mutación.
+- **Auditoría append-only** (write-only) en la misma transacción de cada mutación.
 - **Notificaciones bilingües (ES/EN neutro)** renderizadas al emitir, snapshot inmutable.
 - **Jobs durables** (pg-boss) encolados en la misma transacción: exactly-once, sin outbox.
+
+## How it works
+
+An operator creates an order for a customer with several products. On confirm, BOP
+checks that stock is sufficient and runs the whole operation atomically: it records the
+outbound stock movements, writes the audit entry, creates the notifications and leaves
+the email job pending for the worker. If any step fails, every change is rolled back —
+no partial states, no half-sent notifications, no phantom stock.
 
 ## Qué demuestra
 
@@ -66,9 +74,9 @@ escenario y un test nombrado con su ID; el gate de cobertura impide código sin 
 | API | Express 5 · zod v4 (fail-fast env + DTOs) | DTOs = fuente única de verdad → OpenAPI |
 | Frontend | React 19 SPA · Vite 6 · RR7 · Compiler · TS strict | Contrato frontend verificable (217/217) |
 | i18n | ES/EN const dictionaries + parity gates | Paridad en compilación; español neutro enforced |
-| DB | PostgreSQL 16 (raw SQL + repository) | Control total de transacciones y advisory locks |
-| Money | D13 exact string math (never JS float) | 0.1 + 0.2 ≠ 0.30000000000000004 |
-| Jobs | pg-boss v12 | Misma transacción, cero infra extra; same-tx enqueue |
+| DB | PostgreSQL 16 (raw SQL + repository) | Control total de transacciones y advisory locks (database locks) |
+| Money | D13 (exact decimal representation for money) exact string math (never JS float) | 0.1 + 0.2 ≠ 0.30000000000000004 |
+| Jobs | pg-boss v12 | Misma transacción, cero infra extra; same-tx (job enqueued in the same transaction) enqueue |
 | Email | nodemailer, worker-only | Fallo SMTP nunca toca la transacción de dominio |
 | Docs | OpenAPI 3.1 from zod DTOs | Docs no pueden desincronizarse del código |
 | Observabilidad | pino redact · health/status | Una línea parseable por request, sin secretos |
@@ -118,7 +126,7 @@ Role-aware, fully localized (ES default / EN toggle) shell with dark theme:
 | **Stock** | levels (string levels + low badge), immutable movements, adjust/transfer with zero-side-effect 409 UX |
 | **Orders** | list/detail (D13 money), create with line editor + Idempotency-Key, **optimistic confirm** with rollback, cancel with reason gate |
 | **Governance** | notifications (stored snapshots + mark-read), audit (JSON-text payload), users (invite/edit, no locale field), jobs (server-side filters + retry) |
-| **RBAC** | 5 roles × 19 permissions mirrored from the backend registry (parity-tested); mid-session demotion re-renders on the next `/api/auth/me` |
+| **RBAC** (role-based access control) | 5 roles × 19 permissions mirrored from the backend registry (parity-tested); mid-session demotion re-renders on the next `/api/auth/me` |
 
 NFRs enforced by the suite: no `any`, no `dangerouslySetInnerHTML`, no secrets in
 the bundle, React Compiler on (no `useMemo`/`useCallback`), governance pages
@@ -165,6 +173,12 @@ capstone/
 - Backend iterations: `docs/output-it1.txt` … `docs/output-it7.txt`
 - UI iterations: `docs/output-ui-it1.txt` … `docs/output-ui-it6.txt` (suite counts + requirement IDs + demo commands)
 - Spikes: [`docs/spike-pgboss-tx.md`](docs/spike-pgboss-tx.md) (same-tx enqueue), [`docs/spike-vitest-rtl.md`](docs/spike-vitest-rtl.md) (first vitest+RTL run)
+
+## Documentation layers
+
+`docs/dashboard/` — functional + engineering overview (GitHub Pages) · `docs/evidence/` —
+verification by iteration · `docs/deploy-oracle.md` — operations/runbook ·
+`docs/spike-*.md` — deep engineering spikes · `openspec/` — requirements & ADRs.
 
 ## Deploy
 

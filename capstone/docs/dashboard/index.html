@@ -55,6 +55,10 @@
   ul, ol { color: #b9c0cc; }
   li { margin: 0.35rem 0; }
   .muted { color: #9aa3b2; font-size: 0.85rem; }
+  .exec {
+    background: #14171d; border-left: 3px solid #8b5cf6; border-radius: 0 8px 8px 0;
+    padding: 0.6rem 1rem; margin: 0.6rem 0 1rem; color: #c7cdd8; font-size: 0.92rem;
+  }
 
   /* Hero */
   .hero {
@@ -164,6 +168,7 @@
   <div class="nav-inner">
     <a href="#hero">Inicio</a>
     <a href="#problema">El problema</a>
+    <a href="#comofunciona">Cómo funciona</a>
     <a href="#metodo">El método</a>
     <a href="#requisitos">Análisis y requisitos</a>
     <a href="#decisiones">Decisiones</a>
@@ -208,7 +213,7 @@
         <span class="badge purple">PostgreSQL 16</span>
         <span class="badge purple">React 19</span>
         <span class="badge purple">pg-boss v12</span>
-        <span class="badge purple">Docker + GHCR</span>
+        <span class="badge purple">Docker + GHCR (registro de contenedores de GitHub)</span>
       </div>
     </div>
   </section>
@@ -216,6 +221,11 @@
   <!-- ============ 2. EL PROBLEMA ============ -->
   <section id="problema">
     <h2><span class="sec-num">1.</span>El problema</h2>
+    <p class="exec">
+      Las operaciones de una empresa viven dispersas en planillas, correos y herramientas
+      sueltas, y eso produce errores caros y cero trazabilidad. BOP integra todo en un solo
+      lugar con garantías de integridad.
+    </p>
     <p>
       Las operaciones diarias de una empresa —inventario, pedidos, notificaciones y control de
       cambios— suelen vivir dispersas en planillas, correos y herramientas inconexas. Esa
@@ -236,14 +246,51 @@
       es la confirmación atómica de un pedido: en una sola transacción se valida el stock bajo
       bloqueos de base de datos, se descuentan los movimientos, se escribe la auditoría, se crean
       las notificaciones bilingües y se encolan los correos. Todo o nada, sin estados parciales
-      observables. Además incluye RBAC de 5 roles y 19 permisos, un CRM, auditoría append-only,
-      jobs durables y una SPA React completa con i18n español/inglés neutro.
+      observables. Además incluye RBAC (control de acceso basado en roles) de 5 roles y 19
+      permisos, un CRM, auditoría append-only (solo escritura), jobs durables y una SPA
+      (aplicación de una sola página) React completa con i18n español/inglés neutro.
     </p>
   </section>
 
-  <!-- ============ 3. EL MÉTODO APLICADO ============ -->
+  <!-- ============ 3. ¿CÓMO FUNCIONA BOP? ============ -->
+  <section id="comofunciona">
+    <h2><span class="sec-num">2.</span>¿Cómo funciona BOP?</h2>
+    <p class="exec">
+      En pocas palabras: confirmar un pedido es una sola operación que valida el stock,
+      registra la salida, audita y notifica de forma automática. Si algo falla, no queda
+      nada a medias.
+    </p>
+    <p>
+      Un operador crea un pedido para un cliente con varios productos. Al confirmarlo, BOP
+      comprueba que exista inventario suficiente y ejecuta la operación de forma atómica:
+      registra la salida de productos, guarda la operación en auditoría, genera las
+      notificaciones y deja el correo pendiente para el worker. Si una parte no puede
+      completarse, todos los cambios se revierten.
+    </p>
+
+    <pre class="method-chain">
+<span class="step">Confirmar pedido</span><span class="arrow"> → </span><span class="step">Bloquear pedido</span><span class="arrow"> → </span><span class="step">Bloquear productos</span><span class="arrow"> → </span><span class="step">Verificar stock disponible</span><span class="arrow"> → </span><span class="step">(No disponible → rollback)</span><span class="arrow"> → </span><span class="step">Registrar salida de inventario</span><span class="arrow"> → </span><span class="step">Registrar auditoría</span><span class="arrow"> → </span><span class="step">Crear notificaciones</span><span class="arrow"> → </span><span class="step">Encolar emails</span><span class="arrow"> → </span><span class="step">COMMIT</span>
+    </pre>
+
+    <pre class="method-chain">
+HTTP → Order Service → PostgreSQL transaction (order lock · stock validation · stock movements · audit · notifications · pg-boss enqueue) → COMMIT
+    </pre>
+
+    <p>
+      La implementación utiliza bloqueos de base de datos (advisory locks), movimientos de
+      stock inmutables, auditoría de solo escritura (append-only) y encolado del trabajo
+      dentro de la misma transacción (same-tx): si la transacción revierte, el correo
+      pendiente tampoco se persiste.
+    </p>
+  </section>
+
+  <!-- ============ 4. EL MÉTODO APLICADO ============ -->
   <section id="metodo">
-    <h2><span class="sec-num">2.</span>El método aplicado</h2>
+    <h2><span class="sec-num">3.</span>El método aplicado</h2>
+    <p class="exec">
+      El problema cambia, el método no: analizar, diseñar, implementar, verificar y operar.
+      Cada etapa de este proyecto dejó evidencia concreta y comprobable.
+    </p>
     <p>
       El objeto del problema cambia (una API y una base de datos, un servidor, una red); el método
       no. Este capstone se construyó con un núcleo transferible de resolución de problemas que se
@@ -260,18 +307,22 @@
       <tbody>
         <tr><td><b>ANALIZAR</b></td><td>Análisis de requisitos hasta convertirlos en un contrato verificable: escenarios Given/When/Then por requisito, sin ambigüedad medible.</td><td>Contrato v2 fusionado de <b>122 requisitos</b> (spec de 1103 líneas); cada requisito funcional con escenario verificable.</td></tr>
         <tr><td><b>DISEÑAR</b></td><td>Arquitectura dirigida por los requisitos de integridad: API-first, vertical slices, confirmación atómica con locks, ledger de stock inmutable, auditoría append-only.</td><td>Sección 5 de este dashboard (decisiones) y sección 6 (diseño y arquitectura); ADR-1..8 del design.</td></tr>
-        <tr><td><b>DIAGNOSTICAR</b></td><td>Errores reales encontrados durante la verificación y corregidos con causa raíz: el scan de secretos de <code>ui/dist</code> era vacuo en CI (vitest corría antes del build), el regex de cobertura R-UI-NFR-6 no matcheaba IDs multi-segmento como <code>R-UI-CRM-1</code>, y la spec decía "11 módulos" cuando la matriz real tenía 9.</td><td>Verify-report §8–9 (desviaciones #13, #28; warnings F1, F2, F3); sección 9 de este dashboard (lecciones).</td></tr>
+        <tr><td><b>DIAGNOSTICAR</b></td><td>Errores reales encontrados durante la verificación y corregidos con causa raíz: el scan de secretos de <code>ui/dist</code> era vacuo en CI (vitest corría antes del build), el regex de cobertura R-UI-NFR-6 no matcheaba IDs multi-segmento como <code>R-UI-CRM-1</code>, y la spec decía "11 módulos" cuando la matriz real tenía 9.</td><td>Verify-report §8–9 (desviaciones #13, #28; warnings F1, F2, F3); sección 10 de este dashboard (lecciones).</td></tr>
         <tr><td><b>IMPLEMENTAR</b></td><td>Strict TDD: cada requisito con su test nombrado por ID (RED → GREEN → TRIANGULATE → REFACTOR), evidencia por iteración.</td><td>7 iteraciones backend + 6 iteraciones UI (<code>docs/output-it*.txt</code>, <code>docs/output-ui-it*.txt</code>).</td></tr>
-        <tr><td><b>VERIFICAR</b></td><td>Suites completas contra la realidad (Postgres real, Docker en vivo), no contra mocks: 256/256 backend, 217/217 UI, tsc estricto, appliance corriendo.</td><td>Sección 7 de este dashboard (verificación); verify-report con resultado PASS WITH WARNINGS.</td></tr>
-        <tr><td><b>OPERAR</b></td><td>El resultado no es un repositorio, es un sistema operado: appliance Docker autocontenido, CI/CD que publica a GHCR, runbook de despliegue en Oracle Cloud, observabilidad con health/status y logs redactados.</td><td><code>docs/deploy-oracle.md</code>; <code>/api/health</code> y <code>/api/status</code> en el appliance.</td></tr>
-        <tr><td><b>MEJORAR</b></td><td>Cierre del ciclo: hallazgos de la verificación convertidos en mejoras priorizadas (S1–S3, F1, F3) y en una lista de ideas post-v1.</td><td>Sección 10 de este dashboard (mejoras).</td></tr>
+        <tr><td><b>VERIFICAR</b></td><td>Suites completas contra la realidad (Postgres real, Docker en vivo), no contra mocks: 256/256 backend, 217/217 UI, tsc estricto, appliance corriendo.</td><td>Sección 8 de este dashboard (verificación); verify-report con resultado PASS WITH WARNINGS.</td></tr>
+        <tr><td><b>OPERAR</b></td><td>El resultado no es un repositorio, es un sistema operado: appliance Docker autocontenido, CI/CD (integración y despliegue continuos) que publica a GHCR, runbook de despliegue en Oracle Cloud, observabilidad con health/status y logs redactados.</td><td><code>docs/deploy-oracle.md</code>; <code>/api/health</code> y <code>/api/status</code> en el appliance.</td></tr>
+        <tr><td><b>MEJORAR</b></td><td>Cierre del ciclo: hallazgos de la verificación convertidos en mejoras priorizadas (S1–S3, F1, F3) y en una lista de ideas post-v1.</td><td>Sección 11 de este dashboard (mejoras).</td></tr>
       </tbody>
     </table>
   </section>
 
-  <!-- ============ 4. ANÁLISIS Y REQUISITOS ============ -->
+  <!-- ============ 5. ANÁLISIS Y REQUISITOS ============ -->
   <section id="requisitos">
-    <h2><span class="sec-num">3.</span>Análisis y requisitos</h2>
+    <h2><span class="sec-num">4.</span>Análisis y requisitos</h2>
+    <p class="exec">
+      Antes de programar, cada requisito se definió con un resultado medible y una prueba que
+      lo verifica. Nada se deja a la intuición.
+    </p>
     <p>
       Antes de escribir una línea de código, el problema se convirtió en un contrato verificable.
       El contrato v2 fusionado (spec.md, 1103 líneas) contiene <b>122 requisitos</b>: 63 de la
@@ -340,7 +391,7 @@
       <table class="req-table">
         <thead><tr><th>ID</th><th>Requisito</th><th>Medida / criterio</th></tr></thead>
         <tbody>
-          <tr><td>R-ORD-1</td><td>Crear pedido con líneas (≥1, qty ≥1, precio D13)</td><td>201 draft / 422 / UNKNOWN_PRODUCT</td></tr>
+          <tr><td>R-ORD-1</td><td>Crear pedido con líneas (≥1, qty ≥1, precio D13 (representación decimal exacta para dinero))</td><td>201 draft / 422 / UNKNOWN_PRODUCT</td></tr>
           <tr><td>R-ORD-2</td><td>Dinero D13: NUMERIC(13,2), strings con 2 decimales, nunca float</td><td><code>3 × 0.10 = "0.30"</code>, nunca 0.30000000000000004</td></tr>
           <tr><td>R-ORD-3</td><td>Máquina de estados draft→confirmed→cancelled; cancel con motivo ≥10</td><td>Transición inválida → 409</td></tr>
           <tr><td>R-ORD-4</td><td>Creación idempotente con <code>Idempotency-Key</code></td><td>Replay → 200 con el mismo id</td></tr>
@@ -448,7 +499,7 @@
     </details>
 
     <details class="req-group">
-      <summary>NFRs, observabilidad, docs y producción (R-NFR · R-OBS · R-DOC · R-PROD · R-UI-NFR) <span class="count">27 requisitos</span></summary>
+      <summary>NFRs (requisitos no funcionales), observabilidad, docs y producción (R-NFR · R-OBS · R-DOC · R-PROD · R-UI-NFR) <span class="count">27 requisitos</span></summary>
       <table class="req-table">
         <thead><tr><th>ID</th><th>Requisito</th><th>Medida / criterio</th></tr></thead>
         <tbody>
@@ -484,9 +535,13 @@
     </details>
   </section>
 
-  <!-- ============ 5. ALTERNATIVAS Y DECISIONES ============ -->
+  <!-- ============ 6. ALTERNATIVAS Y DECISIONES ============ -->
   <section id="decisiones">
-    <h2><span class="sec-num">4.</span>Alternativas y decisiones</h2>
+    <h2><span class="sec-num">5.</span>Alternativas y decisiones</h2>
+    <p class="exec">
+      Cada tecnología se eligió por un motivo ligado a un problema real y se comparó con al
+      menos una alternativa. Esta sección documenta el razonamiento completo.
+    </p>
     <p>
       Cada elección tecnológica fue una decisión tomada ante una alternativa concreta, ligada a un
       problema del proyecto y no a una moda. La tabla resume el razonamiento completo: qué se
@@ -559,9 +614,13 @@
     </table>
   </section>
 
-  <!-- ============ 6. DISEÑO Y ARQUITECTURA ============ -->
+  <!-- ============ 7. DISEÑO Y ARQUITECTURA ============ -->
   <section id="arquitectura">
-    <h2><span class="sec-num">5.</span>Diseño y arquitectura</h2>
+    <h2><span class="sec-num">6.</span>Diseño y arquitectura</h2>
+    <p class="exec">
+      La arquitectura garantiza por construcción lo que el contrato exige: atomicidad,
+      inmutabilidad y trabajos durables. Confirmar un pedido es todo-o-nada.
+    </p>
     <p>
       El diseño responde directamente a los requisitos de integridad. Donde el contrato exige
       atomicidad, inmutabilidad, ausencia de polling y enqueued en la misma transacción, la
@@ -646,9 +705,13 @@ WORKER (worker.ts):
     </div>
   </section>
 
-  <!-- ============ 7. IMPLEMENTACIÓN ============ -->
+  <!-- ============ 8. IMPLEMENTACIÓN ============ -->
   <section id="implementacion">
-    <h2><span class="sec-num">6.</span>Implementación</h2>
+    <h2><span class="sec-num">7.</span>Implementación</h2>
+    <p class="exec">
+      Código construido con tests que referencian cada requisito por su ID, capas claras y
+      TypeScript estricto en ambos workspaces.
+    </p>
     <p>
       La construcción siguió el método de forma disciplinada: cada slice vertical respeta la
       cadena <code>routes → controller (≤15 líneas) → service (sin express/pg) → repository
@@ -677,9 +740,13 @@ WORKER (worker.ts):
     </table>
   </section>
 
-  <!-- ============ 8. VERIFICACIÓN Y VALIDACIÓN ============ -->
+  <!-- ============ 9. VERIFICACIÓN Y VALIDACIÓN ============ -->
   <section id="verificacion">
-    <h2><span class="sec-num">7.</span>Verificación y validación</h2>
+    <h2><span class="sec-num">8.</span>Verificación y validación</h2>
+    <p class="exec">
+      No basta con que el código compile: se probó contra una base de datos real y un
+      contenedor en vivo. Cada número es el resultado de una ejecución completa.
+    </p>
     <p>
       La verificación es el corazón del método: no basta con que el código compile, hay que probar
       que cumple el contrato. Las suites corren contra la realidad —Postgres real, appliance
@@ -694,6 +761,11 @@ WORKER (worker.ts):
       <div class="stat accent"><div class="num">132.53 kB</div><div class="label">chunk inicial gzip (≤250 kB)</div></div>
       <div class="stat"><div class="num">7+6</div><div class="label">iteraciones TDD (backend + UI)</div></div>
     </div>
+    <p>
+      El sistema fue probado contra PostgreSQL real y un appliance Docker en ejecución. Las
+      pruebas cubren comportamiento funcional, concurrencia, RBAC, internacionalización,
+      seguridad y operación.
+    </p>
     <p>
       <b>Qué demostró la verificación:</b> cobertura completa de requisitos (72/72 IDs UI, 63/63
       backend); que el dinero nunca vive en un float (D13 testeado hasta el round-trip del front);
@@ -726,9 +798,13 @@ WORKER (worker.ts):
     </p>
   </section>
 
-  <!-- ============ 9. OPERACIÓN ============ -->
+  <!-- ============ 10. OPERACIÓN ============ -->
   <section id="operacion">
-    <h2><span class="sec-num">8.</span>Operación</h2>
+    <h2><span class="sec-num">9.</span>Operación</h2>
+    <p class="exec">
+      El resultado no es un repositorio, es un sistema operado: contenedor autocontenido,
+      despliegue documentado, CI/CD y observabilidad.
+    </p>
     <p>
       El resultado no es un repositorio, es un sistema operado. El appliance Docker se construye
       con un gate de calidad interno (typecheck + tests + build de UI antes de empaquetar),
@@ -744,9 +820,13 @@ WORKER (worker.ts):
     </ul>
   </section>
 
-  <!-- ============ 10. LECCIONES APRENDIDAS ============ -->
+  <!-- ============ 11. LECCIONES APRENDIDAS ============ -->
   <section id="lecciones">
-    <h2><span class="sec-num">9.</span>Lecciones aprendidas</h2>
+    <h2><span class="sec-num">10.</span>Lecciones aprendidas</h2>
+    <p class="exec">
+      Aprendizajes reales del proceso de construcción, documentados con su causa raíz. El
+      detalle que parecía menor resultó decisivo.
+    </p>
     <p>
       Aprendizajes reales del viaje de construcción, documentados en el verify-report y en los
       spikes (<a href="../spike-pgboss-tx.md">pg-boss tx</a> y <a href="../spike-vitest-rtl.md">vitest+RTL</a>).
@@ -766,12 +846,16 @@ WORKER (worker.ts):
     </ol>
   </section>
 
-  <!-- ============ 11. POSIBLES MEJORAS ============ -->
+  <!-- ============ 12. POSIBLES MEJORAS ============ -->
   <section id="mejoras">
-    <h2><span class="sec-num">10.</span>Posibles mejoras</h2>
+    <h2><span class="sec-num">11.</span>Posibles mejoras</h2>
+    <p class="exec">
+      El cierre del ciclo deja mejoras priorizadas con su motivo, además de las opciones
+      descartadas y las ideas post-v1.
+    </p>
     <p>
       El cierre del ciclo deja mejoras priorizadas a partir de la verificación y una lista de ideas
-      post-v1. (Las opciones descartadas con su motivo ya están documentadas en la sección 4,
+      post-v1. (Las opciones descartadas con su motivo ya están documentadas en la sección 5,
       Alternativas y decisiones; aquí solo quedan las mejoras futuras.)
     </p>
     <ul>
@@ -787,9 +871,13 @@ WORKER (worker.ts):
     </ul>
   </section>
 
-  <!-- ============ 12. HABILIDADES DEMOSTRADAS ============ -->
+  <!-- ============ 13. HABILIDADES DEMOSTRADAS ============ -->
   <section id="habilidades">
-    <h2><span class="sec-num">11.</span>Habilidades demostradas</h2>
+    <h2><span class="sec-num">12.</span>Habilidades demostradas</h2>
+    <p class="exec">
+      Una pieza de portafolio orientada a problemas: la tecnología al servicio de un problema
+      real, con evidencia como constante.
+    </p>
     <p>
       Este capstone es una pieza de un portafolio orientado a problemas: cada proyecto demuestra
       la capacidad de usar tecnología para resolver un problema real, no el conocimiento de una
@@ -817,9 +905,12 @@ WORKER (worker.ts):
     </p>
   </section>
 
-  <!-- ============ 13. DOCUMENTACIÓN TÉCNICA ============ -->
+  <!-- ============ 14. DOCUMENTACIÓN TÉCNICA ============ -->
   <section id="documentacion">
-    <h2><span class="sec-num">12.</span>Documentación técnica</h2>
+    <h2><span class="sec-num">13.</span>Documentación técnica</h2>
+    <p class="exec">
+      Referencia técnica del sistema: stack, API, seguridad, observabilidad y guías de uso.
+    </p>
 
     <h3>Stack resumido</h3>
     <table>
