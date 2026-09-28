@@ -1,14 +1,14 @@
 # Business Operations Platform (BOP v1)
 
-**The capstone of Temporada 1.** A serious, integrated operations platform:
-auth/RBAC, CRM, orders with an **atomic confirm → stock ledger → notifications
-→ email-job** transaction, pg-boss jobs, append-only audit, OpenAPI docs, a full
-**React 19 SPA with ES/EN i18n**, and a production Docker appliance — all built
-with strict TDD (requirement-referenced tests, evidence per iteration).
+**The capstone of Temporada 1.** A platform that solves a real business problem —
+the fragmentation of operations (inventory, orders, notifications, audit) scattered
+across spreadsheets, email and disconnected tools — by integrating them into one
+system where order confirmation is **atomic**, every mutation is **audited** and
+**immutable**, and the whole thing is **verified with evidence**.
 
-> "Construí una plataforma de operaciones donde workflows automatizados orquestan
-> inventario, pedidos y notificaciones." — API-first, single backend package, two
-> entrypoints (`server.ts` API + `worker.ts` jobs), one React SPA workspace.
+> "No demuestro que conozco una tecnología; demuestro que sé utilizarla para
+> construir algo que tiene sentido." — El foco del dashboard es el problema y el
+> método, no el stack.
 
 **Publicación:** [Repo dedicado](https://github.com/JulioN02/business-operations-platform) ·
 [Dashboard de publicación](https://julion02.github.io/business-operations-platform/) ·
@@ -16,21 +16,63 @@ with strict TDD (requirement-referenced tests, evidence per iteration).
 
 ---
 
-## Stack
+## Qué resuelve
 
-| Layer | Choice |
+Las operaciones diarias viven dispersas: planillas, correos, herramientas
+inconexas. Eso produce errores caros — vender stock que no existe, perder avisos
+críticos, pedidos sin estado claro, cero trazabilidad. BOP integra inventario,
+pedidos, notificaciones y auditoría en un solo appliance:
+
+- **Confirmación atómica de pedidos**: en una transacción — lock → movimientos →
+  auditoría → notificaciones → emails — todo o nada, sin estados parciales.
+- **Ledger de stock inmutable** con niveles derivados (nunca un contador) y eventos
+  de bajo stock **sin polling**.
+- **Auditoría append-only** en la misma transacción de cada mutación.
+- **Notificaciones bilingües (ES/EN neutro)** renderizadas al emitir, snapshot inmutable.
+- **Jobs durables** (pg-boss) encolados en la misma transacción: exactly-once, sin outbox.
+
+## Qué demuestra
+
+El portafolio está orientado a problemas, no a tecnologías. BOP demuestra un
+núcleo transferible de resolución de problemas — *ANALIZAR → DISEÑAR →
+DIAGNOSTICAR → IMPLEMENTAR → VERIFICAR → OPERAR → MEJORAR* — con evidencia en cada etapa:
+
+| Etapa | Qué demuestra BOP |
 |---|---|
-| Runtime | Node ≥ 22 (native TypeScript, no build step) |
-| API | Express 5 · zod v4 (fail-fast env + DTOs) |
-| Frontend | **React 19 SPA** · Vite 6 · react-router-dom 7 · React Compiler · TypeScript strict (capstone-ui) |
-| i18n | ES/EN const dictionaries, parity + neutral-Spanish gates, per-user locale (self-service) |
-| DB | PostgreSQL 16 (raw parameterized SQL, repository pattern) |
-| Money | D13 exact string math (`lib/decimal.ts`, never JS float) |
-| Jobs | pg-boss v12 — durable queue, retry/backoff/dead-letter, same-tx enqueue |
-| Email | nodemailer, **worker-only** (request path never sends — enforced by scan) |
-| Docs | OpenAPI 3.1 generated from the zod DTOs (self-hosted Swagger UI, offline) |
-| Observability | pino JSON logs (redact), `/api/health` (public) + `/api/status` (authed) |
-| Delivery | Multi-stage Docker (non-root, HEALTHCHECK, ui/dist baked) · docker compose appliance · CI/CD → GHCR |
+| ANALIZAR | 122 requisitos en un contrato verificable con escenarios Given/When/Then; 72/72 IDs cubiertos por tests |
+| DISEÑAR | Diseño de integridad transaccional: API-first, vertical slices, confirmación atómica, ledger inmutable |
+| DIAGNOSTICAR | Bugs reales encontrados en verificación (scan de dist vacuo en CI, regex de cobertura, spec 11 vs 9 módulos) |
+| IMPLEMENTAR | Strict TDD con tests referenciados por requisito, evidencia por iteración |
+| VERIFICAR | 256/256 backend, 217/217 UI, tsc limpio, appliance Docker verificado en vivo |
+| OPERAR | No es un repositorio, es un sistema operado: Docker appliance, CI/CD → GHCR, runbook Oracle, observabilidad |
+| MEJORAR | S1–S3, F1, F3 y mejoras post-v1 documentadas con su motivo |
+
+El nombre del cargo varía entre empresas (Software/Backend, Systems Analyst/IT
+Analyst); la evidencia es la constante.
+
+## El método
+
+Marco de ingeniería **ISO-lite** completo (capstone): *problema → contexto → análisis
+→ requisitos → alternativas → diseño → implementación → verificación → validación →
+operación → lecciones aprendidas*. Cada decisión tecnológica se tomó ante una
+alternativa, ligada a un problema — no a moda. **Strict TDD**: todo requisito tiene un
+escenario y un test nombrado con su ID; el gate de cobertura impide código sin contrato.
+
+## Stack (decisiones, no moda)
+
+| Layer | Choice | Decisión (por qué) |
+|---|---|---|
+| Runtime | Node ≥ 22 (native TS, no build step) | Menos tooling; mismo lenguaje en API, worker y tests |
+| API | Express 5 · zod v4 (fail-fast env + DTOs) | DTOs = fuente única de verdad → OpenAPI |
+| Frontend | React 19 SPA · Vite 6 · RR7 · Compiler · TS strict | Contrato frontend verificable (217/217) |
+| i18n | ES/EN const dictionaries + parity gates | Paridad en compilación; español neutro enforced |
+| DB | PostgreSQL 16 (raw SQL + repository) | Control total de transacciones y advisory locks |
+| Money | D13 exact string math (never JS float) | 0.1 + 0.2 ≠ 0.30000000000000004 |
+| Jobs | pg-boss v12 | Misma transacción, cero infra extra; same-tx enqueue |
+| Email | nodemailer, worker-only | Fallo SMTP nunca toca la transacción de dominio |
+| Docs | OpenAPI 3.1 from zod DTOs | Docs no pueden desincronizarse del código |
+| Observabilidad | pino redact · health/status | Una línea parseable por request, sin secretos |
+| Delivery | Multi-stage Docker (non-root, HEALTHCHECK) · compose · CI/CD → GHCR | Appliance autocontenido y offline |
 
 ## Quickstart (full appliance, offline — dev-only credentials)
 
@@ -82,35 +124,20 @@ NFRs enforced by the suite: no `any`, no `dangerouslySetInnerHTML`, no secrets i
 the bundle, React Compiler on (no `useMemo`/`useCallback`), governance pages
 lazy-chunked, requirement-ID coverage scan (R-UI-NFR-1..7).
 
-## What's inside (backend vertical slices)
+## Backend modules (vertical slices)
 
 | Module | Highlights |
 |---|---|
 | **auth** | 5 roles × 19 permissions (const registry + SQL parity), identical 401, refresh rotation + reuse detection, per-request DB permission check, self-service locale |
 | **crm** | customers CRUD/search/pagination, same-transaction audit |
-| **orders** | status machine, idempotent create/confirm, **atomic confirm** (§3.1): order lock → product advisory locks → out-movements → audit → notifications → email jobs, commit-all or rollback-all |
-| **stock** | immutable movement ledger (trigger-blocked), derived levels view, adjustments/transfers with negative-stock invariant, low-stock events (no cron), inactive products excluded |
+| **orders** | status machine, idempotent create/confirm, **atomic confirm**: order lock → product advisory locks → out-movements → audit → notifications → email jobs, commit-all or rollback-all |
+| **stock** | immutable movement ledger (trigger-blocked), derived levels view, adjustments/transfers with negative-stock invariant, low-stock events (no cron) |
 | **jobs** | pg-boss `notification.send` queue (retryLimit 5, backoff, DLQ=failed), lifecycle audit, read API + manual retry |
 | **notifications** | 7-type channel matrix, bilingual templates rendered per recipient locale (immutable snapshot), in-app API owner-scoped, templates without secrets |
 | **audit** | append-only (trigger-blocked), same-tx writes, read API (admin/auditor), no credentials ever |
-| **observability** | `/api/health` (public, Docker HEALTHCHECK), `/api/status` (authed, `queues` field), pino request logs with redact |
+| **observability** | `/api/health` (public, Docker HEALTHCHECK), `/api/status` (authed), pino request logs with redact |
 
-## Evidence
-
-- **Dashboard de publicación**: [`docs/dashboard/`](docs/dashboard/) — proyecto completo: problema, requisitos, arquitectura, fundamentación, axiomas, lecciones, mejoras, documentación técnica y guía de uso (autocontenido, offline-ready) · publicado en [GitHub Pages](https://julion02.github.io/business-operations-platform/)
-- **Dashboard de evidencia**: [`docs/evidence/`](docs/evidence/) — 7 backend iterations + 6 capstone-ui iterations, green, links to per-iteration evidence (R-PROD-6/8, R-UI-NFR-7)
-- Backend iterations: `docs/output-it1.txt` … `docs/output-it7.txt`
-- UI iterations: `docs/output-ui-it1.txt` … `docs/output-ui-it6.txt` (suite counts + requirement IDs + demo commands)
-- Spikes: [`docs/spike-pgboss-tx.md`](docs/spike-pgboss-tx.md) (same-tx enqueue), [`docs/spike-vitest-rtl.md`](docs/spike-vitest-rtl.md) (first vitest+RTL run)
-
-## Deploy
-
-- **CI/CD** → GitHub Container Registry (`ghcr.io/<owner>/business-operations-platform`) — see `.github/workflows/`
-- **CI gate (R-PROD-3)**: backend typecheck + `node --test` **and** UI typecheck + vitest + vite build, all before the Docker build; the image itself re-runs the gate inside its build stage
-- **Oracle Cloud Always Free ($0)**: full runbook with exact commands — [`docs/deploy-oracle.md`](docs/deploy-oracle.md)
-- Secrets: env-only at runtime (never baked into the image); `.env.example` documents every variable with blank values
-
-## Project layout
+## Arquitectura
 
 ```
 capstone/
@@ -126,12 +153,37 @@ capstone/
 └── docs/               # evidence + runbook + dashboard
 ```
 
-## Quality gates (R-NFR-3, R-UI-NFR-6)
+## Evidencia
 
-- `npm run typecheck` — strict tsconfig both workspaces (`noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `erasableSyntaxOnly`)
-- `npm test` — backend `node --test` + UI vitest; every requirement ID (backend R-AUTH-1 … R-PROD-8 + UI R-UI-*/R-RBAC-*/R-I18N-* …) appears in ≥1 test name
-- Contract scans: parameterized SQL only, secrets from env only, no polling, mailer isolation, no hand-written OpenAPI, no `any`, no `dangerouslySetInnerHTML`, React Compiler on, i18n parity + neutral Spanish
+- **Dashboard de publicación**: [`docs/dashboard/`](docs/dashboard/) — el proyecto
+  completo leído como un caso de resolución de problemas: problema, método, análisis y
+  requisitos, decisiones, diseño, implementación, verificación, operación, lecciones,
+  mejoras y habilidades demostradas (autocontenido, offline-ready) · publicado en
+  [GitHub Pages](https://julion02.github.io/business-operations-platform/)
+- **Dashboard de evidencia**: [`docs/evidence/`](docs/evidence/) — 7 backend iterations
+  + 6 capstone-ui iterations, green, links to per-iteration evidence (R-PROD-6/8, R-UI-NFR-7)
+- Backend iterations: `docs/output-it1.txt` … `docs/output-it7.txt`
+- UI iterations: `docs/output-ui-it1.txt` … `docs/output-ui-it6.txt` (suite counts + requirement IDs + demo commands)
+- Spikes: [`docs/spike-pgboss-tx.md`](docs/spike-pgboss-tx.md) (same-tx enqueue), [`docs/spike-vitest-rtl.md`](docs/spike-vitest-rtl.md) (first vitest+RTL run)
+
+## Deploy
+
+- **CI/CD** → GitHub Container Registry (`ghcr.io/<owner>/business-operations-platform`) — see `.github/workflows/`
+- **CI gate (R-PROD-3)**: backend typecheck + `node --test` **and** UI typecheck + vitest + vite build, all before the Docker build; the image itself re-runs the gate inside its build stage
+- **Oracle Cloud Always Free ($0)**: full runbook with exact commands — [`docs/deploy-oracle.md`](docs/deploy-oracle.md)
+- **Secrets**: env-only at runtime (never baked into the image); `.env.example` documents every variable with blank values
+- **Observability**: `/api/health` (public), `/api/status` (authed), pino JSON logs with redact
+
+## Lecciones aprendidas
+
+Las 11 completas están en el dashboard; las más transferibles:
+
+1. El enqueue atómico en la misma transacción existe y funciona — eliminó outbox y poller.
+2. El orden de los gates importa: el scan de secretos de `ui/dist` era vacuo porque vitest corría antes del build.
+3. El regex de cobertura debe usar la misma convención que los IDs (multi-segmento), o el gate pasa en silencio.
+4. La spec se equivoca a veces (11 vs 9 módulos); la verificación la corrige y lo documenta.
+5. La paridad RBAC se logra importando el registry real del backend, no copiando la matriz a mano.
 
 ---
 
-*Repository: [`JulioN02/business-operations-platform`](https://github.com/JulioN02/business-operations-platform) · Capstone Temporada 1 · Built with strict TDD, evidence per iteration.*
+*Repository: [`JulioN02/business-operations-platform`](https://github.com/JulioN02/business-operations-platform) · Capstone Temporada 1 · Construido con el marco ISO-lite y strict TDD, evidencia por iteración.*
